@@ -35,6 +35,12 @@
 ![深色主题](cbg-web/public/design/theme-dark.png)
 ![浅色主题](cbg-web/public/design/theme-light.png)
 
+界面示例（静态页面，不连服务、不查数据）：
+
+- **[多模块布局预览](https://smaxhero.github.io/CBGCHECK/design/modules-preview.html)** —— 顶部 Tab 切换两个模块、条件分组由模块自定义、右侧版式固定
+- [第一模块界面示例](https://smaxhero.github.io/CBGCHECK/design/style-preview.html) —— 角色模块的完整静态还原
+- 本机开发时用 `http://127.0.0.1:5173/design/index.html` 打开示例索引
+
 ---
 
 ## 它长什么样

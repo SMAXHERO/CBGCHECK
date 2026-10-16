@@ -1,0 +1,746 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>多模块布局预览 · 藏宝阁数据面板</title>
+<style>
+/* =========================================================================
+   这个页面是「多模块布局」的静态预览，不是真实应用。
+   样式令牌与 cbg-web/src/index.css 一致，所以它看起来就是真实面板的样子。
+   目的：在动手改真实代码之前，先把「第二个模块怎么摆」确认下来。
+   ========================================================================= */
+
+/* ---- 令牌（与 index.css 同步）---- */
+:root, :root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg:#0e1014; --header:rgba(14,16,20,.93); --footer:rgba(14,16,20,.94);
+  --surface:#161920; --surface-2:#1c2029; --surface-3:#232833;
+  --thead:#191d26; --row-hover:#1a1e27;
+  --border:#272c37; --border-soft:#1e222b; --border-ctl:#3f4a5e; --border-soft-2:#39414f;
+  --text:#e9ecf2; --dim:#8f99ab; --faint:#626c7e; --text-mid:#c8cfdb; --text-strong:#d5dbe6;
+  --accent:#ff5a45; --accent-hover:#ff6d5a;
+  --accent-soft:rgba(255,90,69,.14); --accent-shadow:rgba(255,90,69,.22);
+  --price-text:#ff8b74; --hover-tint:#39414f;
+  --ok:#34d07f; --warn:#e5b567;
+  --danger:#ff6b6b; --danger-soft:rgba(255,107,107,.14); --danger-border:rgba(255,107,107,.42);
+  --link:#6aa9ff; --scroll-thumb:#2b313d;
+  --radius:12px; --radius-sm:9px;
+  /* 模块主色：每个模块一个色相，让人一眼知道自己在哪个模块 */
+  --mod:#ff5a45; --mod-soft:rgba(255,90,69,.14);
+}
+:root[data-theme='light'] {
+  color-scheme: light;
+  --bg:#f5f7fa; --header:rgba(255,255,255,.92); --footer:rgba(255,255,255,.94);
+  --surface:#fff; --surface-2:#f7f8fa; --surface-3:#eef1f5;
+  --thead:#fafafa; --row-hover:#f5f7fa;
+  --border:#e5e7eb; --border-soft:#f0f0f0; --border-ctl:#c3cbd8; --border-soft-2:#d9dde3;
+  --text:#1f2329; --dim:#6b7280; --faint:#9aa3b0; --text-mid:#4b5563; --text-strong:#374151;
+  --accent:#ff5a45; --accent-hover:#f2452f;
+  --accent-soft:rgba(255,90,69,.08); --accent-shadow:rgba(255,90,69,.18);
+  --price-text:#d4380d; --hover-tint:#e5e7eb;
+  --ok:#16a34a; --warn:#b45309;
+  --danger:#d4380d; --danger-soft:rgba(212,56,13,.08); --danger-border:rgba(212,56,13,.35);
+  --link:#1677ff; --scroll-thumb:#c9cfd8;
+  --mod:#ff5a45; --mod-soft:rgba(255,90,69,.08);
+}
+/* 第二个模块用青色系，和角色模块区分开 */
+body[data-module='m2'] { --mod:#2bb3a3; --mod-soft:rgba(43,179,163,.14); }
+
+* { box-sizing:border-box; }
+html, body { height:100%; margin:0; }
+body {
+  background:var(--bg); color:var(--text);
+  font:13px/1.55 -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+  overflow:hidden;
+}
+.app { display:flex; flex-direction:column; height:100vh; }
+
+/* ========================= 顶部：品牌 + 模块 Tab ========================= */
+header.top {
+  flex:0 0 auto; display:flex; align-items:center; gap:14px;
+  padding:0 16px; height:56px;
+  background:var(--header); border-bottom:1px solid var(--border);
+  backdrop-filter:blur(10px); position:relative; z-index:20;
+}
+.brand { font-size:15px; font-weight:700; letter-spacing:.2px; white-space:nowrap; }
+.brand small { color:var(--dim); font-weight:400; font-size:11.5px; margin-left:7px; }
+
+/* 模块 Tab —— 这是本次要确认的核心 */
+.modtabs { display:flex; align-items:center; gap:4px; padding:3px; border-radius:10px; background:var(--surface-2); border:1px solid var(--border-soft); }
+.modtab {
+  display:flex; align-items:center; gap:7px;
+  height:32px; padding:0 13px; border:0; border-radius:8px;
+  background:transparent; color:var(--dim); font:inherit; font-size:12.5px;
+  cursor:pointer; white-space:nowrap; transition:background .12s, color .12s;
+}
+.modtab:hover { color:var(--text); background:var(--surface-3); }
+.modtab.on { background:var(--surface); color:var(--text); font-weight:600; box-shadow:0 1px 3px rgba(0,0,0,.18); }
+.modtab .dot { width:7px; height:7px; border-radius:99px; background:var(--faint); flex:0 0 auto; }
+.modtab.on .dot { background:var(--mod); }
+.modtab .n { font-size:11px; color:var(--faint); }
+.modtab.on .n { color:var(--mod); }
+
+.top .spacer { flex:1; }
+.status-pill { display:flex; align-items:center; gap:6px; font-size:12px; color:var(--dim); }
+.status-pill .live-dot { width:8px; height:8px; border-radius:99px; background:var(--ok); box-shadow:0 0 0 3px rgba(52,208,127,.16); }
+.top .meta { font-size:11.5px; color:var(--faint); }
+.icon-btn {
+  width:32px; height:32px; display:grid; place-items:center;
+  border:1px solid var(--border-soft-2); border-radius:8px;
+  background:var(--surface-2); color:var(--dim); cursor:pointer; font-size:14px;
+}
+.icon-btn:hover { color:var(--text); border-color:var(--border-ctl); }
+
+/* ========================= 模块副标题条 ========================= */
+.modbar {
+  flex:0 0 auto; display:flex; align-items:center; gap:10px;
+  padding:7px 16px; border-bottom:1px solid var(--border-soft);
+  background:var(--surface-2); font-size:12px; color:var(--dim);
+}
+.modbar .modname { color:var(--mod); font-weight:600; }
+.modbar .sep { color:var(--faint); }
+.modbar .hint { margin-left:auto; font-size:11.5px; color:var(--faint); }
+
+/* ========================= 主体两栏 ========================= */
+.layout {
+  flex:1 1 auto; min-height:0;
+  display:grid; grid-template-columns:340px minmax(0,1fr);
+  gap:14px; padding:14px 16px 0;
+}
+/* 关键：栅格列一律 minmax(0,1fr)，不要写 1fr —— 1fr 的最小尺寸是 auto，
+   会被内容（如图表画布的固定宽度）撑开而不收缩，窄屏下就溢出被裁掉 */
+.col { min-height:0; min-width:0; overflow:auto; padding-bottom:16px; }
+.col::-webkit-scrollbar { width:10px; }
+.col::-webkit-scrollbar-thumb { background:var(--scroll-thumb); border-radius:99px; border:3px solid transparent; background-clip:content-box; }
+
+/* ---- 左侧条件面板 ---- */
+.panel { background:var(--surface); border:1px solid var(--border-soft); border-radius:var(--radius); overflow:hidden; }
+.panel-head { display:flex; align-items:center; gap:8px; padding:10px 12px; border-bottom:1px solid var(--border-soft); }
+.panel-head input {
+  flex:1; height:32px; padding:0 10px; border-radius:8px;
+  border:1px solid var(--border-ctl); background:var(--surface-2); color:var(--text); font:inherit; font-size:12.5px;
+}
+.panel-head input::placeholder { color:var(--faint); }
+.panel-tools { padding:8px 12px; display:flex; gap:8px; border-bottom:1px solid var(--border-soft); }
+.linkbtn { border:0; background:none; color:var(--link); font:inherit; font-size:12px; cursor:pointer; padding:0; }
+.linkbtn:hover { text-decoration:underline; }
+
+.card { border-bottom:1px solid var(--border-soft); }
+.card:last-child { border-bottom:0; }
+.card-head { display:flex; align-items:center; gap:8px; padding:11px 12px; cursor:pointer; user-select:none; }
+.card-head:hover { background:var(--row-hover); }
+.card-head .caret { color:var(--faint); font-size:10px; transition:transform .14s; }
+.card.open .card-head .caret { transform:rotate(90deg); }
+.card-head .nm { font-size:12.5px; font-weight:600; }
+.card-head .badge {
+  min-width:18px; height:18px; padding:0 6px; border-radius:99px;
+  background:var(--mod); color:#fff; font-size:11px; font-weight:700;
+  display:grid; place-items:center;
+}
+.card-body { display:none; padding:0 12px 12px; }
+.card.open .card-body { display:block; }
+
+.field { margin-bottom:11px; }
+.field:last-child { margin-bottom:0; }
+.flabel { display:flex; align-items:baseline; gap:6px; font-size:12px; color:var(--text-mid); margin-bottom:6px; }
+.flabel .unit { color:var(--faint); font-size:11px; }
+.flabel .mul { margin-left:auto; color:var(--faint); font-size:11px; }
+
+.opts { display:flex; flex-wrap:wrap; gap:6px; }
+.opt {
+  height:28px; padding:0 10px; border-radius:8px;
+  border:1px solid var(--border-soft-2); background:var(--surface-2);
+  color:var(--text-mid); font:inherit; font-size:12px; cursor:pointer;
+}
+.opt:hover { border-color:var(--border-ctl); color:var(--text); }
+.opt.on { background:var(--mod); border-color:var(--mod); color:#fff; font-weight:600; }
+
+.range { display:flex; align-items:center; gap:7px; }
+.num-in {
+  width:100%; min-width:0; height:30px; padding:0 9px; border-radius:8px;
+  border:1px solid var(--border-ctl); background:var(--surface-2); color:var(--text); font:inherit; font-size:12.5px;
+}
+.range .num-in { flex:1 1 0; }
+.range .dash { color:var(--faint); }
+
+.check { display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--text-mid); padding:4px 0; cursor:pointer; }
+.check .box { width:15px; height:15px; border-radius:4px; border:1px solid var(--border-ctl); background:var(--surface-2); display:grid; place-items:center; font-size:10px; color:transparent; }
+.check.on .box { background:var(--mod); border-color:var(--mod); color:#fff; }
+
+/* ---- 右侧数据区 ---- */
+.mods { display:none; }
+body[data-module='m1'] .mods.m1 { display:block; }
+body[data-module='m2'] .mods.m2 { display:block; }
+
+/* KPI：固定 4 列，8 张正好两行，避免宽屏下排成 5+3 参差 */
+.kpi-grid { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:8px; }
+.kpi { background:var(--surface); border:1px solid var(--border-soft); border-radius:var(--radius-sm); padding:11px 12px; min-width:0; }
+.kpi .k-label { font-size:11.5px; color:var(--dim); display:flex; align-items:center; gap:5px; }
+.kpi .k-label .q { color:var(--faint); font-size:10px; border:1px solid var(--border-soft-2); border-radius:99px; width:13px; height:13px; display:grid; place-items:center; }
+.kpi .k-val { font-size:21px; font-weight:700; letter-spacing:-.3px; margin:3px 0 1px; }
+.kpi .k-sub { font-size:11px; color:var(--faint); }
+
+.sec { margin-top:14px; background:var(--surface); border:1px solid var(--border-soft); border-radius:var(--radius); padding:12px; }
+.sec-title { display:flex; align-items:baseline; gap:8px; margin-bottom:11px; }
+.sec-title b { font-size:13px; }
+.sec-title span { font-size:11.5px; color:var(--faint); }
+
+.charts { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:10px; min-width:0; }
+.cbox { background:var(--surface-2); border:1px solid var(--border-soft); border-radius:10px; padding:10px 12px; min-width:0; overflow:hidden; }
+.cbox.full { grid-column:1 / -1; }
+.cbox h4 { margin:0 0 9px; font-size:12px; font-weight:600; display:flex; align-items:baseline; gap:7px; }
+.cbox h4 span { font-size:11px; color:var(--faint); font-weight:400; }
+/* 所有图表画布等高 —— 同一行里高低不齐看着像没对齐 */
+.canvas { height:230px; position:relative; }
+
+/* 纯 CSS 假图表：只为看布局，不追求数据真实 */
+.bars { display:flex; align-items:flex-end; gap:5px; height:100%; padding-top:8px; }
+.bars .b { flex:1 1 0; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:4px; height:100%; }
+.bars .b i { display:block; width:100%; background:var(--mod); border-radius:3px 3px 0 0; opacity:.85; }
+.bars .b em { font-style:normal; font-size:10.5px; color:var(--dim); margin-bottom:2px; }
+.bars .b u { text-decoration:none; font-size:10px; color:var(--faint); }
+
+.hbars { display:flex; flex-direction:column; justify-content:space-between; height:100%; padding:6px 0; }
+.hbar { display:grid; grid-template-columns:74px minmax(0,1fr) 34px; align-items:center; gap:9px; }
+.hbar .lb { font-size:11.5px; color:var(--text-mid); text-align:right; }
+.hbar .tr { height:14px; background:var(--surface-3); border-radius:4px; overflow:hidden; }
+.hbar .tr i { display:block; height:100%; background:var(--mod); border-radius:4px; }
+.hbar .vl { font-size:11.5px; font-weight:700; color:var(--text-mid); text-align:left; }
+
+.donut-wrap { height:100%; display:flex; align-items:center; justify-content:center; gap:26px; }
+.donut {
+  width:132px; height:132px; border-radius:99px; flex:0 0 auto; position:relative;
+  background:conic-gradient(var(--mod) 0 47.5%, #3b82f6 47.5% 100%);
+}
+/* 内圈要留够，否则中心文字会贴着环内壁显得挤 */
+.donut::after { content:''; position:absolute; inset:38px; border-radius:99px; background:var(--surface-2); z-index:0; }
+.donut .ctr { position:absolute; inset:0; display:grid; place-items:center; z-index:1; text-align:center; }
+.donut .ctr b { font-size:19px; display:block; line-height:1.1; }
+.donut .ctr span { font-size:10.5px; color:var(--faint); }
+.legend { display:flex; flex-direction:column; gap:8px; }
+.legend div { display:flex; align-items:center; gap:7px; font-size:11.5px; color:var(--text-mid); }
+.legend i { width:8px; height:8px; border-radius:99px; display:block; }
+
+.scatter { position:relative; height:100%; }
+.scatter svg { width:100%; height:100%; display:block; }
+.scatter .ax { stroke:var(--border); stroke-width:1; }
+.scatter .gl { stroke:var(--border-soft); stroke-width:1; stroke-dasharray:3 4; }
+.scatter text { fill:var(--faint); font-size:9.5px; }
+.scatter circle { fill:var(--mod); opacity:.82; }
+
+/* 表格 */
+.tbl-wrap { overflow-x:auto; border:1px solid var(--border-soft); border-radius:10px; }
+table { border-collapse:collapse; width:100%; min-width:1000px; font-size:12.5px; }
+thead th {
+  background:var(--thead); color:var(--dim); font-weight:600; font-size:11.5px;
+  text-align:left; padding:9px 10px; border-bottom:1px solid var(--border); white-space:nowrap;
+}
+tbody td { padding:10px; border-bottom:1px solid var(--border-soft); white-space:nowrap; }
+tbody tr:hover { background:var(--row-hover); }
+tbody tr:last-child td { border-bottom:0; }
+.num { text-align:right; font-variant-numeric:tabular-nums; }
+.price { color:var(--price-text); font-weight:700; }
+.tag { display:inline-block; padding:1px 7px; border-radius:99px; font-size:11px; background:var(--surface-3); color:var(--dim); }
+.tag.on { background:var(--accent-soft); color:var(--accent); }
+.th-sort { color:var(--text-mid); }
+.th-sort::after { content:'↕'; margin-left:4px; color:var(--faint); font-size:10px; }
+
+/* ========================= 底部控制台 ========================= */
+footer.bar {
+  flex:0 0 auto; display:flex; align-items:center; gap:10px;
+  padding:10px 16px; background:var(--footer);
+  border-top:1px solid var(--border); backdrop-filter:blur(10px);
+}
+.bar .cnt { font-size:12.5px; color:var(--dim); flex:1; min-width:0; }
+.bar .cnt b { color:var(--text); }
+.bar .dirty { margin-left:12px; color:var(--warn); font-size:11.5px; }
+/* 按钮统一 36px 高 —— 需要无边框时写 border:1px solid transparent，
+   不要写 border:0，否则比有边框的按钮矮 2px，一排会显得参差 */
+.btn {
+  height:36px; padding:0 13px; border-radius:9px; font:inherit; font-size:12.5px;
+  border:1px solid var(--border-soft-2); background:var(--surface-2); color:var(--text-mid);
+  cursor:pointer; white-space:nowrap;
+}
+.btn:hover { color:var(--text); border-color:var(--border-ctl); }
+.btn-primary { background:var(--mod); color:#fff; border:1px solid transparent; font-weight:600; }
+.btn-danger { background:var(--danger-soft); color:var(--danger); border:1px solid var(--danger-border); }
+
+/* ========================= 说明区 ========================= */
+.notes { margin-top:14px; background:var(--surface); border:1px solid var(--border-soft); border-radius:var(--radius); padding:14px; }
+.notes h3 { margin:0 0 4px; font-size:13px; }
+.notes p.lead { margin:0 0 12px; font-size:12px; color:var(--dim); }
+.notes ol { margin:0; padding-left:20px; }
+.notes li { font-size:12.5px; color:var(--text-mid); margin-bottom:9px; }
+.notes li b { color:var(--text); }
+.notes code { background:var(--surface-3); padding:1px 6px; border-radius:5px; font-size:11.5px; color:var(--text-strong); }
+.notes .grid2 { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:0 22px; }
+@media (max-width:1100px) { .notes .grid2 { grid-template-columns:minmax(0,1fr); } }
+
+/* ========================= 响应式 ========================= */
+@media (max-width:1400px) { .kpi-grid { grid-template-columns:repeat(3, minmax(0,1fr)); } }
+@media (max-width:1180px) {
+  .layout { grid-template-columns:minmax(0,1fr); }
+  .col.side { max-height:380px; }
+}
+@media (max-width:1000px) { .kpi-grid { grid-template-columns:repeat(2, minmax(0,1fr)); } }
+@media (max-width:900px) { .charts { grid-template-columns:minmax(0,1fr); } }
+@media (max-width:620px) { .kpi-grid { grid-template-columns:minmax(0,1fr); } }
+</style>
+</head>
+<body data-module="m1">
+<div class="app">
+
+  <!-- ============ 顶部 ============ -->
+  <header class="top">
+    <div class="brand">藏宝阁数据面板<small>阴阳师</small></div>
+
+    <!-- 模块 Tab：本次要确认的核心 -->
+    <nav class="modtabs" id="modtabs">
+      <button class="modtab on" data-m="m1"><span class="dot"></span>角色<span class="n">73 项</span></button>
+      <button class="modtab" data-m="m2"><span class="dot"></span>模块二<span class="n">48 项</span></button>
+    </nav>
+
+    <div class="spacer"></div>
+    <div class="status-pill"><span class="live-dot"></span>实时</div>
+    <div class="meta">站点共 10000 条 ｜ 上次成功 02:47:04</div>
+    <button class="icon-btn" id="themeBtn" title="切换深浅色">☀</button>
+  </header>
+
+  <!-- ============ 模块副标题条 ============ -->
+  <div class="modbar">
+    <span class="modname" id="barName">角色</span>
+    <span class="sep">·</span>
+    <span id="barDesc">账号交易 · 13 组条件 / 73 项</span>
+    <span class="hint">← 这是「模块副标题条」，给当前模块一句说明；不想要也可以去掉</span>
+  </div>
+
+  <!-- ============ 主体 ============ -->
+  <div class="layout">
+
+    <!-- ---------- 左：条件面板 ---------- -->
+    <div class="col side">
+      <div class="panel">
+        <div class="panel-head">
+          <input placeholder="搜索条件，例如「一速」「图鉴」「皮肤」" />
+        </div>
+        <div class="panel-tools">
+          <button class="linkbtn">展开全部分组</button>
+          <button class="linkbtn">默认条件</button>
+          <button class="linkbtn" style="margin-left:auto">清空</button>
+        </div>
+
+        <!-- 模块一的分组 -->
+        <div class="mods m1">
+          <div class="card open">
+            <div class="card-head" onclick="this.parentNode.classList.toggle('open')">
+              <span class="caret">▶</span><span class="nm">区服</span><span class="badge">1</span>
+            </div>
+            <div class="card-body">
+              <div class="field"><div class="opts">
+                <button class="opt on">网易-携手同心 ✕</button><button class="opt">+ 选择区服</button>
+              </div></div>
+            </div>
+          </div>
+          <div class="card open">
+            <div class="card-head" onclick="this.parentNode.classList.toggle('open')">
+              <span class="caret">▶</span><span class="nm">价格(元)</span><span class="badge">1</span>
+            </div>
+            <div class="card-body">
+              <div class="field">
+                <div class="flabel">价格<span class="unit">元</span><span class="mul">×100</span></div>
+                <div class="range"><input class="num-in" value="500" /><span class="dash">~</span><input class="num-in" value="1500" /></div>
+              </div>
+              <div class="field"><div class="opts">
+                <button class="opt">100~499</button><button class="opt on">500~1999</button>
+                <button class="opt">2000~4999</button><button class="opt">5000以上</button>
+              </div></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head" onclick="this.parentNode.classList.toggle('open')">
+              <span class="caret">▶</span><span class="nm">公示期</span>
+            </div>
+            <div class="card-body"><div class="field"><div class="opts">
+              <button class="opt">只显示公示期</button><button class="opt">不显示公示期</button>
+            </div></div></div>
+          </div>
+          <div class="card">
+            <div class="card-head" onclick="this.parentNode.classList.toggle('open')">
+              <span class="caret">▶</span><span class="nm">个人斗技</span><span class="badge">1</span>
+            </div>
+            <div class="card-body">
+              <div class="field">
+                <div class="flabel">散件一速<span class="mul">×100</span></div>
+                <input class="num-in" value="158" />
+              </div>
+            </div>
+          </div>
+          <div class="card"><div class="card-head" onclick="this.parentNode.classList.toggle('open')"><span class="caret">▶</span><span class="nm">图鉴</span></div><div class="card-body"><div class="field"><div class="opts"><button class="opt">SSR 全图</button><button class="opt">SP 全图</button><button class="opt">真全图</button></div></div></div></div>
+          <div class="card"><div class="card-head" onclick="this.parentNode.classList.toggle('open')"><span class="caret">▶</span><span class="nm">式神</span></div><div class="card-body"><div class="field"><input class="num-in" placeholder="搜索式神" /></div></div></div>
+          <div class="card"><div class="card-head" onclick="this.parentNode.classList.toggle('open')"><span class="caret">▶</span><span class="nm">资产</span><span class="badge">1</span></div><div class="card-body"><div class="field"><div class="flabel">勾玉</div><input class="num-in" value="100000" /></div></div></div>
+          <div class="card"><div class="card-head" onclick="this.parentNode.classList.toggle('open')"><span class="caret">▶</span><span class="nm">皮肤</span></div><div class="card-body"><div class="field"><input class="num-in" placeholder="皮肤名" /></div></div></div>
+        </div>
+
+        <!-- 模块二的分组：结构完全不同，证明「分组由模块自定义」 -->
+        <div class="mods m2">
+          <div class="card open">
+            <div class="card-head" onclick="this.parentNode.classList.toggle('open')">
+              <span class="caret">▶</span><span class="nm">所属区服</span><span class="badge">1</span>
+            </div>
+            <div class="card-body"><div class="field"><div class="opts">
+              <button class="opt on">网易-携手同心 ✕</button><button class="opt">+ 选择区服</button>
+            </div></div></div>
+          </div>
+          <div class="card open">
+            <div class="card-head" onclick="this.parentNode.classList.toggle('open')">
+              <span class="caret">▶</span><span class="nm">价格(元)</span><span class="badge">1</span>
+            </div>
+            <div class="card-body">
+              <div class="field">
+                <div class="flabel">价格<span class="unit">元</span><span class="mul">×100</span></div>
+                <div class="range"><input class="num-in" value="50" /><span class="dash">~</span><input class="num-in" value="800" /></div>
+              </div>
+            </div>
+          </div>
+          <div class="card open">
+            <div class="card-head" onclick="this.parentNode.classList.toggle('open')">
+              <span class="caret">▶</span><span class="nm">部位 / 类型</span><span class="badge">1</span>
+            </div>
+            <div class="card-body"><div class="field"><div class="opts">
+              <button class="opt">武器</button><button class="opt on">头盔</button><button class="opt">衣服</button>
+              <button class="opt">腰带</button><button class="opt">鞋子</button><button class="opt">项链</button>
+            </div></div></div>
+          </div>
+          <div class="card">
+            <div class="card-head" onclick="this.parentNode.classList.toggle('open')">
+              <span class="caret">▶</span><span class="nm">品质 / 等级</span>
+            </div>
+            <div class="card-body">
+              <div class="field"><div class="flabel">品质</div><div class="opts">
+                <button class="opt">普通</button><button class="opt">精良</button><button class="opt">稀有</button><button class="opt">史诗</button>
+              </div></div>
+              <div class="field"><div class="flabel">等级区间</div>
+                <div class="range"><input class="num-in" placeholder="最低" /><span class="dash">~</span><input class="num-in" placeholder="最高" /></div>
+              </div>
+            </div>
+          </div>
+          <div class="card"><div class="card-head" onclick="this.parentNode.classList.toggle('open')"><span class="caret">▶</span><span class="nm">属性词条</span></div><div class="card-body"><div class="field"><input class="num-in" placeholder="例如：攻击加成" /></div></div></div>
+          <div class="card"><div class="card-head" onclick="this.parentNode.classList.toggle('open')"><span class="caret">▶</span><span class="nm">套装效果</span></div><div class="card-body"><div class="field"><div class="opts"><button class="opt">2 件套</button><button class="opt">4 件套</button><button class="opt">6 件套</button></div></div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---------- 右：数据区 ---------- -->
+    <div class="col main">
+
+      <!-- ===== 模块一：角色 ===== -->
+      <div class="mods m1">
+        <div class="kpi-grid">
+          <div class="kpi"><div class="k-label">命中账号 <span class="q">?</span></div><div class="k-val">119</div><div class="k-sub">累计收藏 942 次</div></div>
+          <div class="kpi"><div class="k-label">价格中位数 <span class="q">?</span></div><div class="k-val">¥1,688</div><div class="k-sub">区间 ¥100 ~ ¥18,000</div></div>
+          <div class="kpi"><div class="k-label">价格四分位 <span class="q">?</span></div><div class="k-val">¥769 ~ ¥3,650</div><div class="k-sub">P25 ~ P75，代表主流成交带</div></div>
+          <div class="kpi"><div class="k-label">最快散件一速 <span class="q">?</span></div><div class="k-val">160.51</div><div class="k-sub">平均 157.34，65 个 ≥158</div></div>
+          <div class="kpi"><div class="k-label">最快招财一速 <span class="q">?</span></div><div class="k-val">159.94</div><div class="k-sub">平均 153.87</div></div>
+          <div class="kpi"><div class="k-label">平均签到 <span class="q">?</span></div><div class="k-val">1778 天</div><div class="k-sub">最长 10.0 年</div></div>
+          <div class="kpi"><div class="k-label">SSR / 六星均值 <span class="q">?</span></div><div class="k-val">141 / 140</div><div class="k-sub">SSR 最高 421</div></div>
+          <div class="kpi"><div class="k-label">高战号占比 <span class="q">?</span></div><div class="k-val">54.6%</div><div class="k-sub">散件一速 ≥158 的比例</div></div>
+        </div>
+
+        <div class="sec">
+          <div class="sec-title"><b>数据总览</b><span>价格分布 · 一速分段 · 平台占比 · 价格 × 签到</span></div>
+          <div class="charts">
+            <div class="cbox">
+              <h4>价格分布 <span>共 119 条</span></h4>
+              <div class="canvas">
+                <div class="bars">
+                  <div class="b"><em>74</em><i style="height:70%"></i><u>100</u></div>
+                  <div class="b"><em>21</em><i style="height:26%"></i><u>2338</u></div>
+                  <div class="b"><em>7</em><i style="height:12%"></i><u>4575</u></div>
+                  <div class="b"><em>7</em><i style="height:12%"></i><u>6813</u></div>
+                  <div class="b"><em>2</em><i style="height:5%"></i><u>9050</u></div>
+                  <div class="b"><em>4</em><i style="height:8%"></i><u>11288</u></div>
+                  <div class="b"><em>2</em><i style="height:5%"></i><u>13525</u></div>
+                  <div class="b"><em>2</em><i style="height:5%"></i><u>15763</u></div>
+                </div>
+              </div>
+            </div>
+            <div class="cbox">
+              <h4>散件一速分段 <span>≥158 有 65 个</span></h4>
+              <div class="canvas">
+                <div class="hbars">
+                  <div class="hbar"><span class="lb">&lt;150</span><span class="tr"><i style="width:8%"></i></span><span class="vl">5</span></div>
+                  <div class="hbar"><span class="lb">150~152</span><span class="tr"><i style="width:3%"></i></span><span class="vl">2</span></div>
+                  <div class="hbar"><span class="lb">152~154</span><span class="tr"><i style="width:6%"></i></span><span class="vl">4</span></div>
+                  <div class="hbar"><span class="lb">154~156</span><span class="tr"><i style="width:23%"></i></span><span class="vl">15</span></div>
+                  <div class="hbar"><span class="lb">156~158</span><span class="tr"><i style="width:34%"></i></span><span class="vl">22</span></div>
+                  <div class="hbar"><span class="lb">158+</span><span class="tr"><i style="width:100%"></i></span><span class="vl">65</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="cbox">
+              <h4>平台占比 <span>按操作系统</span></h4>
+              <div class="canvas">
+                <div class="donut-wrap">
+                  <div class="donut"><div class="ctr"><b>119</b><span>账号</span></div></div>
+                  <div class="legend">
+                    <div><i style="background:var(--mod)"></i>iOS 47.06%</div>
+                    <div><i style="background:#3b82f6"></i>安卓 52.94%</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="cbox full">
+              <h4>价格 × 签到年数 <span>纵轴对数刻度</span></h4>
+              <div class="canvas">
+                <div class="scatter">
+                  <svg viewBox="0 0 1200 200" preserveAspectRatio="none">
+                    <line class="gl" x1="0" y1="30" x2="1200" y2="30" />
+                    <line class="gl" x1="0" y1="80" x2="1200" y2="80" />
+                    <line class="gl" x1="0" y1="130" x2="1200" y2="130" />
+                    <line class="gl" x1="0" y1="175" x2="1200" y2="175" />
+                    <text x="4" y="28">1.9万</text><text x="4" y="78">1万</text>
+                    <text x="4" y="128">1000</text><text x="4" y="173">100</text>
+                    <text x="1180" y="196">10 年</text><text x="4" y="196">0 年</text>
+                    <g>
+                      <circle cx="90" cy="168" r="4"/><circle cx="140" cy="150" r="4"/><circle cx="180" cy="120" r="4"/>
+                      <circle cx="230" cy="140" r="4"/><circle cx="280" cy="95" r="4"/><circle cx="330" cy="118" r="4"/>
+                      <circle cx="380" cy="70" r="4"/><circle cx="430" cy="105" r="4"/><circle cx="480" cy="88" r="4"/>
+                      <circle cx="530" cy="52" r="4"/><circle cx="580" cy="96" r="4"/><circle cx="630" cy="74" r="4"/>
+                      <circle cx="680" cy="60" r="4"/><circle cx="730" cy="90" r="4"/><circle cx="780" cy="44" r="4"/>
+                      <circle cx="830" cy="78" r="4"/><circle cx="880" cy="62" r="4"/><circle cx="930" cy="86" r="4"/>
+                      <circle cx="980" cy="50" r="4"/><circle cx="1030" cy="72" r="4"/><circle cx="1080" cy="58" r="4"/>
+                      <circle cx="1130" cy="80" r="4"/>
+                    </g>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sec">
+          <div class="sec-title"><b>明细</b><span>14 列 · 可排序 · 分页</span></div>
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr>
+                <th>账号</th><th class="th-sort">价格</th><th>服务器 / 大区</th><th class="th-sort">散件一速</th>
+                <th>招财</th><th>头/尾</th><th class="th-sort">签到</th><th>SSR</th><th>六星</th>
+                <th>斗技</th><th>收藏</th><th>状态</th><th>上架时间</th>
+              </tr></thead>
+              <tbody>
+                <tr>
+                  <td>不会晴的阴雨天 <span class="tag">IZX9SATMKE0D</span></td>
+                  <td class="num price">¥1,500</td><td>高天原 · 全平台互通新区</td><td class="num">158.81</td>
+                  <td class="num">157.09</td><td>5头0尾</td><td class="num">1192 天</td><td class="num">170</td>
+                  <td class="num">119</td><td class="num">2420</td><td class="num">3</td>
+                  <td><span class="tag on">在售 剩余 14.0 天</span></td><td>2026-10-17 01:41</td>
+                </tr>
+                <tr>
+                  <td>她说再吃就打死我 <span class="tag">0PFE3FTHM59GT</span></td>
+                  <td class="num price">¥999</td><td>兰之雅 · 中国区-iOS</td><td class="num">158.05</td>
+                  <td class="num">151.20</td><td>3头2尾</td><td class="num">986 天</td><td class="num">142</td>
+                  <td class="num">101</td><td class="num">1980</td><td class="num">7</td>
+                  <td><span class="tag">公示期</span></td><td>2026-10-16 18:03</td>
+                </tr>
+                <tr>
+                  <td>风起时想你 <span class="tag">7GH2KLMNOP3QR</span></td>
+                  <td class="num price">¥1,320</td><td>冬之雪 · 中国-安卓联运</td><td class="num">159.42</td>
+                  <td class="num">155.66</td><td>4头1尾</td><td class="num">1340 天</td><td class="num">156</td>
+                  <td class="num">128</td><td class="num">2210</td><td class="num">1</td>
+                  <td><span class="tag on">在售 剩余 6.5 天</span></td><td>2026-10-17 00:12</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== 模块二：结构与模块一完全一致，只是内容不同 ===== -->
+      <div class="mods m2">
+        <div class="kpi-grid">
+          <div class="kpi"><div class="k-label">命中数量 <span class="q">?</span></div><div class="k-val">48</div><div class="k-sub">模块二的统计口径</div></div>
+          <div class="kpi"><div class="k-label">价格中位数 <span class="q">?</span></div><div class="k-val">¥268</div><div class="k-sub">区间 ¥30 ~ ¥800</div></div>
+          <div class="kpi"><div class="k-label">价格四分位 <span class="q">?</span></div><div class="k-val">¥120 ~ ¥520</div><div class="k-sub">P25 ~ P75</div></div>
+          <div class="kpi"><div class="k-label">指标四 <span class="q">?</span></div><div class="k-val">91.3</div><div class="k-sub">模块二自己定义</div></div>
+          <div class="kpi"><div class="k-label">指标五 <span class="q">?</span></div><div class="k-val">1,024</div><div class="k-sub">同样 8 张卡，两行 4 列</div></div>
+          <div class="kpi"><div class="k-label">指标六 <span class="q">?</span></div><div class="k-val">76 天</div><div class="k-sub">口径由模块决定</div></div>
+          <div class="kpi"><div class="k-label">指标七 <span class="q">?</span></div><div class="k-val">82 / 64</div><div class="k-sub">成对指标</div></div>
+          <div class="kpi"><div class="k-label">指标八 <span class="q">?</span></div><div class="k-val">38.2%</div><div class="k-sub">占比类指标</div></div>
+        </div>
+
+        <div class="sec">
+          <div class="sec-title"><b>数据总览</b><span>换一组图表，版式不变</span></div>
+          <div class="charts">
+            <div class="cbox">
+              <h4>分布图 <span>模块二</span></h4>
+              <div class="canvas">
+                <div class="bars">
+                  <div class="b"><em>6</em><i style="height:15%"></i><u>A</u></div>
+                  <div class="b"><em>14</em><i style="height:35%"></i><u>B</u></div>
+                  <div class="b"><em>28</em><i style="height:70%"></i><u>C</u></div>
+                  <div class="b"><em>40</em><i style="height:100%"></i><u>D</u></div>
+                  <div class="b"><em>19</em><i style="height:48%"></i><u>E</u></div>
+                  <div class="b"><em>7</em><i style="height:18%"></i><u>F</u></div>
+                </div>
+              </div>
+            </div>
+            <div class="cbox">
+              <h4>分段图 <span>同样用外侧标签</span></h4>
+              <div class="canvas">
+                <div class="hbars">
+                  <div class="hbar"><span class="lb">档位一</span><span class="tr"><i style="width:22%"></i></span><span class="vl">9</span></div>
+                  <div class="hbar"><span class="lb">档位二</span><span class="tr"><i style="width:48%"></i></span><span class="vl">21</span></div>
+                  <div class="hbar"><span class="lb">档位三</span><span class="tr"><i style="width:100%"></i></span><span class="vl">44</span></div>
+                  <div class="hbar"><span class="lb">档位四</span><span class="tr"><i style="width:35%"></i></span><span class="vl">15</span></div>
+                  <div class="hbar"><span class="lb">档位五</span><span class="tr"><i style="width:12%"></i></span><span class="vl">5</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="cbox">
+              <h4>占比图 <span>环形</span></h4>
+              <div class="canvas">
+                <div class="donut-wrap">
+                  <div class="donut" style="background:conic-gradient(var(--mod) 0 62%, #8b5cf6 62% 100%)">
+                    <div class="ctr"><b>48</b><span>条目</span></div>
+                  </div>
+                  <div class="legend">
+                    <div><i style="background:var(--mod)"></i>分类甲 62%</div>
+                    <div><i style="background:#8b5cf6"></i>分类乙 38%</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="cbox full">
+              <h4>关联散点 <span>与模块一同一个组件</span></h4>
+              <div class="canvas">
+                <div class="scatter">
+                  <svg viewBox="0 0 1200 200" preserveAspectRatio="none">
+                    <line class="gl" x1="0" y1="40" x2="1200" y2="40" />
+                    <line class="gl" x1="0" y1="90" x2="1200" y2="90" />
+                    <line class="gl" x1="0" y1="140" x2="1200" y2="140" />
+                    <text x="4" y="38">1000</text><text x="4" y="88">100</text><text x="4" y="138">10</text>
+                    <text x="1180" y="196">区间</text>
+                    <g>
+                      <circle cx="120" cy="80" r="4"/><circle cx="220" cy="60" r="4"/><circle cx="320" cy="100" r="4"/>
+                      <circle cx="420" cy="72" r="4"/><circle cx="520" cy="115" r="4"/><circle cx="620" cy="55" r="4"/>
+                      <circle cx="720" cy="92" r="4"/><circle cx="820" cy="68" r="4"/><circle cx="920" cy="108" r="4"/>
+                      <circle cx="1020" cy="78" r="4"/><circle cx="1120" cy="95" r="4"/>
+                    </g>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sec">
+          <div class="sec-title"><b>明细</b><span>列由模块声明，表格组件不变</span></div>
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr>
+                <th>名称</th><th class="th-sort">价格</th><th>所属区服</th><th>部位</th>
+                <th>品质</th><th class="th-sort">等级</th><th>主要属性</th><th>套装</th><th>状态</th>
+              </tr></thead>
+              <tbody>
+                <tr><td>示例条目甲 <span class="tag">SN-0001</span></td><td class="num price">¥520</td><td>携手同心</td><td>头盔</td><td>史诗</td><td class="num">120</td><td>攻击加成 +18%</td><td>破势</td><td><span class="tag on">在售</span></td></tr>
+                <tr><td>示例条目乙 <span class="tag">SN-0002</span></td><td class="num price">¥268</td><td>兰之雅</td><td>鞋子</td><td>稀有</td><td class="num">115</td><td>速度 +12</td><td>心眼</td><td><span class="tag on">在售</span></td></tr>
+                <tr><td>示例条目丙 <span class="tag">SN-0003</span></td><td class="num price">¥96</td><td>冬之雪</td><td>项链</td><td>精良</td><td class="num">98</td><td>暴击 +9%</td><td>—</td><td><span class="tag">公示期</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== 布局说明（静态预览专用，接入真实应用时删掉）===== -->
+      <div class="notes">
+        <h3>这套布局怎么支撑第二个模块</h3>
+        <p class="lead">下面每一条都可以直接沿用，不需要为第二个模块另写一套样式。</p>
+        <div class="grid2">
+          <ol>
+            <li><b>顶部 Tab 切模块</b>：Tab 里带条件项数；每个模块有自己的主色（当前角色是珊瑚红，模块二是青色），切过去色相就变，一眼知道在哪。</li>
+            <li><b>左侧分组由模块自定义</b>：面板外壳（搜索框、展开全部、卡片折叠）是共用组件，里面装哪些分组由模块的 schema 决定。第二个模块可以有完全不同的分组结构。</li>
+            <li><b>模块副标题条</b>：Tab 下面一条细带，写当前模块的口径与统计项数量。觉得多余可以去。</li>
+            <li><b>右侧版式固定</b>：KPI 固定 4 列（8 张正好两行）、图表 3 列 + 一行全宽、表格在下方。第二个模块换内容不换版式，看起来就是同一个产品。</li>
+          </ol>
+          <ol start="5">
+            <li><b>条件与结果按模块隔离</b>：各模块的勾选条件、查询结果、默认条件互不干扰，来回切不会丢。</li>
+            <li><b>底部控制台共用</b>：查询 / 取消查询 / 导出 / 打印这一条不分模块，逻辑只有一份。</li>
+            <li><b>同类元素尺寸必须一致</b>：所有按钮 36px 高（无边框的用 <code>border:1px solid transparent</code> 占位）、所有图表画布同高、所有卡片同高。</li>
+            <li><b>栅格列写 <code>minmax(0,1fr)</code></b>：写 <code>1fr</code> 会被内容撑开而不收缩，窄屏下就溢出被裁——这是实测踩过的坑。</li>
+          </ol>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ============ 底部控制台 ============ -->
+  <footer class="bar">
+    <div class="cnt" id="cnt">已选 <b>3</b> 项 ｜ 命中 <b>119</b> 条<span class="dirty">条件已改，点「查询」更新数据</span></div>
+    <button class="btn">清空</button>
+    <button class="btn">默认条件</button>
+    <button class="btn">导出 Excel</button>
+    <button class="btn">导出 CSV</button>
+    <button class="btn">打印 / PDF</button>
+    <button class="btn btn-primary" id="queryBtn">查询</button>
+  </footer>
+</div>
+
+<script>
+/* 模块切换：只切 data-module，样式与内容全由 CSS 决定 */
+const MODS = {
+  m1: { name:'角色', desc:'账号交易 · 13 组条件 / 73 项', picked:3, hit:119 },
+  m2: { name:'模块二', desc:'第二模块的口径说明 · 6 组条件 / 48 项', picked:4, hit:48 },
+};
+document.getElementById('modtabs').addEventListener('click', (e) => {
+  const btn = e.target.closest('.modtab');
+  if (!btn) return;
+  document.querySelectorAll('.modtab').forEach((b) => b.classList.toggle('on', b === btn));
+  const m = btn.dataset.m;
+  document.body.dataset.module = m;
+  document.getElementById('barName').textContent = MODS[m].name;
+  document.getElementById('barDesc').textContent = MODS[m].desc;
+  document.getElementById('cnt').innerHTML =
+    `已选 <b>${MODS[m].picked}</b> 项 ｜ 命中 <b>${MODS[m].hit}</b> 条<span class="dirty">条件已改，点「查询」更新数据</span>`;
+});
+
+/* 深浅色切换：与真实应用同一套 data-theme 约定 */
+const themeBtn = document.getElementById('themeBtn');
+const applyTheme = (t) => {
+  document.documentElement.dataset.theme = t;
+  themeBtn.textContent = t === 'dark' ? '☀' : '🌙';
+};
+applyTheme(localStorage.getItem('cbg-theme') || 'dark');
+themeBtn.addEventListener('click', () => {
+  const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+  localStorage.setItem('cbg-theme', next);
+  applyTheme(next);
+});
+
+/* 条件胶囊 / 勾选的点选反馈（纯视觉，仅用于看状态样式） */
+document.addEventListener('click', (e) => {
+  const opt = e.target.closest('.opt');
+  if (opt) { opt.classList.toggle('on'); return; }
+  const chk = e.target.closest('.check');
+  if (chk) chk.classList.toggle('on');
+});
+
+/* 演示「查询中 → 取消查询」的按钮状态切换 */
+let busy = false;
+document.getElementById('queryBtn').addEventListener('click', () => {
+  const b = document.getElementById('queryBtn');
+  busy = !busy;
+  if (busy) {
+    b.className = 'btn btn-danger';
+    b.textContent = '取消查询';
+    document.getElementById('cnt').innerHTML = '查询中：第 3 页，已取回 45 条 / 站点共 10000 条　可随时点「取消查询」';
+  } else {
+    b.className = 'btn btn-primary';
+    b.textContent = '查询';
+    document.getElementById('cnt').innerHTML = '已选 <b>3</b> 项 ｜ 命中 <b>45</b> 条';
+  }
+});
+</script>
+</body>
+</html>

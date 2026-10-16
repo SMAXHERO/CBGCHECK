@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>设计示例 · 藏宝阁数据面板</title>
+<style>
+:root, :root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg:#0e1014; --surface:#161920; --surface-2:#1c2029; --surface-3:#232833;
+  --border:#272c37; --border-soft:#1e222b; --border-soft-2:#39414f;
+  --text:#e9ecf2; --dim:#8f99ab; --faint:#626c7e; --text-mid:#c8cfdb;
+  --accent:#ff5a45; --accent-soft:rgba(255,90,69,.14);
+  --link:#6aa9ff; --radius:12px; --radius-sm:9px;
+}
+:root[data-theme='light'] {
+  color-scheme: light;
+  --bg:#f5f7fa; --surface:#fff; --surface-2:#f7f8fa; --surface-3:#eef1f5;
+  --border:#e5e7eb; --border-soft:#f0f0f0; --border-soft-2:#d9dde3;
+  --text:#1f2329; --dim:#6b7280; --faint:#9aa3b0; --text-mid:#4b5563;
+  --accent:#ff5a45; --accent-soft:rgba(255,90,69,.08);
+  --link:#1677ff;
+}
+* { box-sizing:border-box; }
+body {
+  margin:0; min-height:100vh; background:var(--bg); color:var(--text);
+  font:14px/1.6 -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+  padding:40px 20px;
+}
+.wrap { max-width:760px; margin:0 auto; }
+h1 { font-size:20px; margin:0 0 6px; }
+p.lead { color:var(--dim); font-size:13px; margin:0 0 26px; }
+a.card {
+  display:block; text-decoration:none; color:inherit;
+  background:var(--surface); border:1px solid var(--border-soft); border-radius:var(--radius);
+  padding:16px 18px; margin-bottom:12px; transition:border-color .12s, transform .12s;
+}
+a.card:hover { border-color:var(--border-soft-2); transform:translateY(-1px); }
+a.card b { display:block; font-size:14.5px; margin-bottom:4px; }
+a.card b .badge {
+  margin-left:8px; padding:1px 8px; border-radius:99px; font-size:11px; font-weight:600;
+  background:var(--accent-soft); color:var(--accent); vertical-align:1px;
+}
+a.card span { color:var(--dim); font-size:12.5px; }
+a.card code { background:var(--surface-3); padding:1px 6px; border-radius:5px; font-size:12px; color:var(--text-mid); }
+.foot { margin-top:26px; font-size:12px; color:var(--faint); }
+.foot code { background:var(--surface-3); padding:1px 6px; border-radius:5px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>设计示例</h1>
+  <p class="lead">这些是纯静态页面，用来看界面长什么样、布局怎么摆。不连服务、不查数据。</p>
+
+  <a class="card" href="./modules-preview.html">
+    <b>多模块布局预览<span class="badge">新</span></b>
+    <span>
+      顶部模块 Tab 切换两个模块；左侧条件分组由模块自定义；右侧 KPI / 图表 / 表格版式固定。
+      含深浅色切换、条件点选反馈、以及「查询 → 取消查询」的按钮状态演示。
+    </span>
+  </a>
+
+  <a class="card" href="./style-preview.html">
+    <b>第一模块界面示例</b>
+    <span>
+      角色模块的完整静态还原：条件面板全部分组、KPI、四类图表、明细表。
+      部署到 GitHub Pages 后可在 <code>/design/style-preview.html</code> 直接打开。
+    </span>
+  </a>
+
+  <p class="foot">
+    本机开发时地址是 <code>http://127.0.0.1:5173/design/</code>。
+  </p>
+</div>
+<script>
+const t = localStorage.getItem('cbg-theme') || 'dark';
+document.documentElement.dataset.theme = t;
+</script>
+</body>
+</html>
