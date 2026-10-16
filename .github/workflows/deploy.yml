@@ -1,0 +1,78 @@
+name: Deploy to GitHub Pages
+
+# 触发条件：
+#   push 到 main —— 代码或数据更新后自动重新发布
+#   手动触发     —— 在 Actions 页面点 “Run workflow”
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# GITHUB_TOKEN 的最小权限：读代码 + 写 Pages + 用 OIDC 校验部署来源
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 同一时间只允许一个部署；新的 push 不取消进行中的部署（避免线上出现半成品）
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置 Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: cbg-web/package-lock.json
+
+      - name: 安装依赖
+        working-directory: cbg-web
+        run: npm ci --no-audit --no-fund
+
+      - name: 类型检查 + 构建
+        working-directory: cbg-web
+        run: npm run build
+
+      - name: 检查数据文件是否就位
+        working-directory: cbg-web
+        run: |
+          missing=0
+          for f in public/data/listings.json public/data/filters.json public/data/servers.json; do
+            if [ ! -f "$f" ]; then echo "::error::缺少数据文件 $f"; missing=1; fi
+          done
+          if [ "$missing" = "1" ]; then
+            echo "先在本地执行 python tools/cbg/seed_web_data.py 生成数据并提交，再重新部署。"
+            exit 1
+          fi
+          echo "数据文件齐备："
+          ls -lh public/data/
+
+      # GitHub Pages 默认用 Jekyll 处理静态资源，会忽略下划线开头的文件；
+      # 放一个 .nojekyll 一劳永逸（Vite 产物里带下划线的文件名并不少见）
+      - name: 关闭 Jekyll 处理
+        working-directory: cbg-web
+        run: touch dist/.nojekyll
+
+      - name: 上传构建产物
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: cbg-web/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: 发布到 GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

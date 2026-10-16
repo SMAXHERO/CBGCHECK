@@ -1,0 +1,25 @@
+# 依赖与构建产物
+node_modules/
+*/node_modules/
+cbg-web/dist/
+.vite/
+**/.vite/
+
+# 伴随服务的浏览器用户目录：含登录态 Cookie 与保存的密码，
+# 一旦提交就等于把账号会话公开出去。绝对不要放开这条。
+tools/cbg/scraper-service/profile/
+
+# 抓取归档
+tools/cbg/raw/
+
+# 日志与临时文件
+*.log
+npm-debug.log*
+*.tmp
+**/.*.tmpdir/
+
+# 系统与编辑器
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

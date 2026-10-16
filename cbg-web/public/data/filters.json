@@ -1,0 +1,6873 @@
+{
+ "searchType": "role",
+ "name": "角色",
+ "totalFields": 72,
+ "sections": [
+  {
+   "label": "区服",
+   "fields": [
+    {
+     "kind": "field",
+     "trail": [],
+     "label": "区服",
+     "innerLabel": "",
+     "key": "serverid",
+     "type": "custom_component",
+     "displayType": "select_server",
+     "opType": "",
+     "symbol": "",
+     "hint": "",
+     "min": null,
+     "max": null,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": true,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    }
+   ]
+  },
+  {
+   "label": "公示期",
+   "fields": [
+    {
+     "kind": "field",
+     "trail": [],
+     "label": "公示期",
+     "innerLabel": "公示期",
+     "key": "pass_fair_show",
+     "type": "multiple_select",
+     "displayType": "multiple_select",
+     "opType": "and",
+     "symbol": "",
+     "hint": "",
+     "min": null,
+     "max": null,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": false,
+     "maxChecked": 1,
+     "checkboxValue": null,
+     "options": [
+      {
+       "value": "0",
+       "label": "只显示公示期"
+      },
+      {
+       "value": "1",
+       "label": "不显示公示期"
+      }
+     ],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    }
+   ]
+  },
+  {
+   "label": "价格(元)",
+   "fields": [
+    {
+     "kind": "field",
+     "trail": [],
+     "label": "价格(元)",
+     "innerLabel": "价格",
+     "key": "price",
+     "type": "range_input_with_select",
+     "displayType": "range_input_with_select",
+     "opType": "",
+     "symbol": "",
+     "hint": "",
+     "hintMin": "最低",
+     "hintMax": "最高",
+     "min": 100,
+     "max": 1000000,
+     "digits": null,
+     "valueMultiply": 100,
+     "multiple": false,
+     "maxChecked": 1,
+     "checkboxValue": null,
+     "options": [
+      {
+       "value": null,
+       "label": "100～499",
+       "min": 100,
+       "max": 499
+      },
+      {
+       "value": null,
+       "label": "500~1999",
+       "min": 500,
+       "max": 1999
+      },
+      {
+       "value": null,
+       "label": "2000~4999",
+       "min": 2000,
+       "max": 4999
+      },
+      {
+       "value": null,
+       "label": "5000以上",
+       "min": 5000,
+       "max": 1000000
+      }
+     ],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    }
+   ]
+  },
+  {
+   "label": "操作系统",
+   "fields": [
+    {
+     "kind": "field",
+     "trail": [],
+     "label": "操作系统",
+     "innerLabel": "操作系统",
+     "key": "platform_type",
+     "type": "multiple_select",
+     "displayType": "multiple_select",
+     "opType": "or",
+     "symbol": "",
+     "hint": "",
+     "min": null,
+     "max": null,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [
+      {
+       "value": "1",
+       "label": "iOS（苹果手机）"
+      },
+      {
+       "value": "2",
+       "label": "Android（安卓手机）"
+      }
+     ],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": {
+      "serverid": ""
+     }
+    }
+   ]
+  },
+  {
+   "label": "图鉴",
+   "fields": [
+    {
+     "kind": "field",
+     "trail": [
+      "图鉴",
+      "组"
+     ],
+     "label": "SSR全图鉴",
+     "innerLabel": "满ssr",
+     "key": "full_ssr",
+     "type": "checkbox",
+     "displayType": "checkbox",
+     "opType": "",
+     "symbol": "",
+     "hint": "",
+     "min": null,
+     "max": null,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": "1",
+     "options": [],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "图鉴",
+      "组"
+     ],
+     "label": "SP全图鉴",
+     "innerLabel": "满sp",
+     "key": "full_sp",
+     "type": "checkbox",
+     "displayType": "checkbox",
+     "opType": "",
+     "symbol": "",
+     "hint": "",
+     "min": null,
+     "max": null,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": "1",
+     "options": [],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "图鉴",
+      "组"
+     ],
+     "label": "UR全图鉴",
+     "innerLabel": "满ur",
+     "key": "full_ur",
+     "type": "checkbox",
+     "displayType": "checkbox",
+     "opType": "",
+     "symbol": "",
+     "hint": "",
+     "min": null,
+     "max": null,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": "1",
+     "options": [],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "图鉴",
+      "组"
+     ],
+     "label": "联动全图鉴",
+     "innerLabel": "满联动",
+     "key": "full_x",
+     "type": "checkbox",
+     "displayType": "checkbox",
+     "opType": "",
+     "symbol": "",
+     "hint": "",
+     "min": null,
+     "max": null,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": "1",
+     "options": [],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    }
+   ]
+  },
+  {
+   "label": "式神",
+   "fields": [
+    {
+     "kind": "field",
+     "trail": [
+      "式神"
+     ],
+     "label": "式神",
+     "innerLabel": "",
+     "key": "hero_id",
+     "type": "custom_component",
+     "displayType": "yys_select_hero",
+     "opType": "",
+     "symbol": "",
+     "hint": "",
+     "min": null,
+     "max": null,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": true,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [
+      {
+       "value": "200",
+       "label": "桃花妖",
+       "extra": 3,
+       "pinyin": "taohuayao"
+      },
+      {
+       "value": "201",
+       "label": "雪女",
+       "extra": 3,
+       "pinyin": "xuenv"
+      },
+      {
+       "value": "202",
+       "label": "三尾狐",
+       "extra": 2,
+       "pinyin": "sanweihu"
+      },
+      {
+       "value": "203",
+       "label": "灯笼鬼",
+       "extra": 1,
+       "pinyin": "denglonggui"
+      },
+      {
+       "value": "205",
+       "label": "座敷童子",
+       "extra": 2,
+       "pinyin": "zuofutongzi"
+      },
+      {
+       "value": "206",
+       "label": "鲤鱼精",
+       "extra": 2,
+       "pinyin": "liyujing"
+      },
+      {
+       "value": "207",
+       "label": "九命猫",
+       "extra": 2,
+       "pinyin": "jiumingmao"
+      },
+      {
+       "value": "208",
+       "label": "狸猫",
+       "extra": 2,
+       "pinyin": "limao"
+      },
+      {
+       "value": "209",
+       "label": "河童",
+       "extra": 2,
+       "pinyin": "hetong"
+      },
+      {
+       "value": "210",
+       "label": "鬼使白",
+       "extra": 3,
+       "pinyin": "guishibai"
+      },
+      {
+       "value": "211",
+       "label": "鬼使黑",
+       "extra": 3,
+       "pinyin": "guishihei"
+      },
+      {
+       "value": "212",
+       "label": "童男",
+       "extra": 2,
+       "pinyin": "tongnan"
+      },
+      {
+       "value": "213",
+       "label": "童女",
+       "extra": 2,
+       "pinyin": "tongnv"
+      },
+      {
+       "value": "214",
+       "label": "饿鬼",
+       "extra": 2,
+       "pinyin": "egui"
+      },
+      {
+       "value": "215",
+       "label": "孟婆",
+       "extra": 3,
+       "pinyin": "mengpo"
+      },
+      {
+       "value": "216",
+       "label": "巫蛊师",
+       "extra": 2,
+       "pinyin": "wugushi"
+      },
+      {
+       "value": "217",
+       "label": "大天狗",
+       "extra": 4,
+       "pinyin": "datiangou"
+      },
+      {
+       "value": "218",
+       "label": "鸦天狗",
+       "extra": 2,
+       "pinyin": "yatiangou"
+      },
+      {
+       "value": "219",
+       "label": "酒吞童子",
+       "extra": 4,
+       "pinyin": "jiutuntongzi"
+      },
+      {
+       "value": "220",
+       "label": "犬神",
+       "extra": 3,
+       "pinyin": "quanshen"
+      },
+      {
+       "value": "221",
+       "label": "食发鬼",
+       "extra": 2,
+       "pinyin": "shifagui"
+      },
+      {
+       "value": "222",
+       "label": "武士之灵",
+       "extra": 2,
+       "pinyin": "wushizhiling"
+      },
+      {
+       "value": "223",
+       "label": "骨女",
+       "extra": 3,
+       "pinyin": "gunv"
+      },
+      {
+       "value": "224",
+       "label": "雨女",
+       "extra": 2,
+       "pinyin": "yunv"
+      },
+      {
+       "value": "225",
+       "label": "跳跳弟弟",
+       "extra": 2,
+       "pinyin": "tiaotiaodidi"
+      },
+      {
+       "value": "226",
+       "label": "跳跳妹妹",
+       "extra": 2,
+       "pinyin": "tiaotiaomeimei"
+      },
+      {
+       "value": "227",
+       "label": "兵俑",
+       "extra": 2,
+       "pinyin": "bingyong"
+      },
+      {
+       "value": "228",
+       "label": "丑时之女",
+       "extra": 2,
+       "pinyin": "choushizhinv"
+      },
+      {
+       "value": "230",
+       "label": "独眼小僧",
+       "extra": 2,
+       "pinyin": "duyanxiaoseng"
+      },
+      {
+       "value": "231",
+       "label": "鬼女红叶",
+       "extra": 3,
+       "pinyin": "guinvhongye"
+      },
+      {
+       "value": "232",
+       "label": "铁鼠",
+       "extra": 2,
+       "pinyin": "tieshu"
+      },
+      {
+       "value": "233",
+       "label": "跳跳哥哥",
+       "extra": 3,
+       "pinyin": "tiaotiaogege"
+      },
+      {
+       "value": "234",
+       "label": "椒图",
+       "extra": 2,
+       "pinyin": "jiaotu"
+      },
+      {
+       "value": "236",
+       "label": "管狐",
+       "extra": 2,
+       "pinyin": "guanhu"
+      },
+      {
+       "value": "237",
+       "label": "山兔",
+       "extra": 2,
+       "pinyin": "shantu"
+      },
+      {
+       "value": "238",
+       "label": "萤草",
+       "extra": 2,
+       "pinyin": "yingcao"
+      },
+      {
+       "value": "241",
+       "label": "蝴蝶精",
+       "extra": 2,
+       "pinyin": "hudiejing"
+      },
+      {
+       "value": "242",
+       "label": "傀儡师",
+       "extra": 3,
+       "pinyin": "kuileishi"
+      },
+      {
+       "value": "243",
+       "label": "山童",
+       "extra": 2,
+       "pinyin": "shantong"
+      },
+      {
+       "value": "244",
+       "label": "首无",
+       "extra": 2,
+       "pinyin": "shouwu"
+      },
+      {
+       "value": "245",
+       "label": "提灯小僧",
+       "extra": 1,
+       "pinyin": "tidengxiaoseng"
+      },
+      {
+       "value": "246",
+       "label": "赤舌",
+       "extra": 1,
+       "pinyin": "chishe"
+      },
+      {
+       "value": "247",
+       "label": "海坊主",
+       "extra": 3,
+       "pinyin": "haifangzhu"
+      },
+      {
+       "value": "248",
+       "label": "荒川之主",
+       "extra": 4,
+       "pinyin": "huangchuanzhizhu"
+      },
+      {
+       "value": "249",
+       "label": "觉",
+       "extra": 2,
+       "pinyin": "jiao"
+      },
+      {
+       "value": "250",
+       "label": "青蛙瓷器",
+       "extra": 2,
+       "pinyin": "qingwaciqi"
+      },
+      {
+       "value": "251",
+       "label": "判官",
+       "extra": 3,
+       "pinyin": "panguan"
+      },
+      {
+       "value": "252",
+       "label": "凤凰火",
+       "extra": 3,
+       "pinyin": "fenghuanghuo"
+      },
+      {
+       "value": "253",
+       "label": "吸血姬",
+       "extra": 3,
+       "pinyin": "xixueji"
+      },
+      {
+       "value": "254",
+       "label": "妖狐",
+       "extra": 3,
+       "pinyin": "yaohu"
+      },
+      {
+       "value": "255",
+       "label": "阎魔",
+       "extra": 4,
+       "pinyin": "yanmo"
+      },
+      {
+       "value": "256",
+       "label": "妖琴师",
+       "extra": 3,
+       "pinyin": "yaoqinshi"
+      },
+      {
+       "value": "257",
+       "label": "食梦貘",
+       "extra": 3,
+       "pinyin": "shimengmo"
+      },
+      {
+       "value": "258",
+       "label": "两面佛",
+       "extra": 4,
+       "pinyin": "liangmianfo"
+      },
+      {
+       "value": "259",
+       "label": "小鹿男",
+       "extra": 4,
+       "pinyin": "xiaolunan"
+      },
+      {
+       "value": "260",
+       "label": "清姬",
+       "extra": 3,
+       "pinyin": "qingji"
+      },
+      {
+       "value": "261",
+       "label": "镰鼬",
+       "extra": 3,
+       "pinyin": "lianyou"
+      },
+      {
+       "value": "262",
+       "label": "姑获鸟",
+       "extra": 3,
+       "pinyin": "guhuoniao"
+      },
+      {
+       "value": "263",
+       "label": "二口女",
+       "extra": 3,
+       "pinyin": "erkounv"
+      },
+      {
+       "value": "264",
+       "label": "白狼",
+       "extra": 3,
+       "pinyin": "bailang"
+      },
+      {
+       "value": "265",
+       "label": "茨木童子",
+       "extra": 4,
+       "pinyin": "cimutongzi"
+      },
+      {
+       "value": "266",
+       "label": "青行灯",
+       "extra": 4,
+       "pinyin": "qinghangdeng"
+      },
+      {
+       "value": "267",
+       "label": "樱花妖",
+       "extra": 3,
+       "pinyin": "yinghuayao"
+      },
+      {
+       "value": "268",
+       "label": "惠比寿",
+       "extra": 3,
+       "pinyin": "huibishou"
+      },
+      {
+       "value": "269",
+       "label": "妖刀姬",
+       "extra": 4,
+       "pinyin": "yaodaoji"
+      },
+      {
+       "value": "270",
+       "label": "络新妇",
+       "extra": 3,
+       "pinyin": "luoxinfu"
+      },
+      {
+       "value": "271",
+       "label": "般若",
+       "extra": 3,
+       "pinyin": "bore"
+      },
+      {
+       "value": "272",
+       "label": "一目连",
+       "extra": 4,
+       "pinyin": "yimulian"
+      },
+      {
+       "value": "273",
+       "label": "青坊主",
+       "extra": 3,
+       "pinyin": "qingfangzhu"
+      },
+      {
+       "value": "274",
+       "label": "古笼火",
+       "extra": 2,
+       "pinyin": "gulonghuo"
+      },
+      {
+       "value": "275",
+       "label": "万年竹",
+       "extra": 3,
+       "pinyin": "wannianzhu"
+      },
+      {
+       "value": "276",
+       "label": "夜叉",
+       "extra": 3,
+       "pinyin": "yecha"
+      },
+      {
+       "value": "277",
+       "label": "黑童子",
+       "extra": 3,
+       "pinyin": "heitongzi"
+      },
+      {
+       "value": "278",
+       "label": "白童子",
+       "extra": 3,
+       "pinyin": "baitongzi"
+      },
+      {
+       "value": "279",
+       "label": "花鸟卷",
+       "extra": 4,
+       "pinyin": "huaniaojuan"
+      },
+      {
+       "value": "280",
+       "label": "辉夜姬",
+       "extra": 4,
+       "pinyin": "huiyeji"
+      },
+      {
+       "value": "281",
+       "label": "烟烟罗",
+       "extra": 3,
+       "pinyin": "yanyanluo"
+      },
+      {
+       "value": "282",
+       "label": "金鱼姬",
+       "extra": 3,
+       "pinyin": "jinyuji"
+      },
+      {
+       "value": "283",
+       "label": "荒",
+       "extra": 4,
+       "pinyin": "huang"
+      },
+      {
+       "value": "285",
+       "label": "鸩",
+       "extra": 3,
+       "pinyin": "zhen"
+      },
+      {
+       "value": "286",
+       "label": "以津真天",
+       "extra": 3,
+       "pinyin": "yijinzhentian"
+      },
+      {
+       "value": "287",
+       "label": "匣中少女",
+       "extra": 3,
+       "pinyin": "xiazhongshaonv"
+      },
+      {
+       "value": "288",
+       "label": "彼岸花",
+       "extra": 4,
+       "pinyin": "bianhua"
+      },
+      {
+       "value": "289",
+       "label": "兔丸",
+       "extra": 2,
+       "pinyin": "tuwan"
+      },
+      {
+       "value": "290",
+       "label": "小松丸",
+       "extra": 3,
+       "pinyin": "xiaosongwan"
+      },
+      {
+       "value": "291",
+       "label": "书翁",
+       "extra": 3,
+       "pinyin": "shuweng"
+      },
+      {
+       "value": "292",
+       "label": "雪童子",
+       "extra": 4,
+       "pinyin": "xuetongzi"
+      },
+      {
+       "value": "293",
+       "label": "百目鬼",
+       "extra": 3,
+       "pinyin": "baimugui"
+      },
+      {
+       "value": "294",
+       "label": "奴良陆生",
+       "extra": 4,
+       "pinyin": "nulianglusheng"
+      },
+      {
+       "value": "295",
+       "label": "追月神",
+       "extra": 3,
+       "pinyin": "zhuiyueshen"
+      },
+      {
+       "value": "296",
+       "label": "山风",
+       "extra": 4,
+       "pinyin": "shanfeng"
+      },
+      {
+       "value": "297",
+       "label": "日和坊",
+       "extra": 3,
+       "pinyin": "rihefang"
+      },
+      {
+       "value": "298",
+       "label": "薰",
+       "extra": 3,
+       "pinyin": "xun"
+      },
+      {
+       "value": "300",
+       "label": "玉藻前",
+       "extra": 4,
+       "pinyin": "yuzaoqian"
+      },
+      {
+       "value": "301",
+       "label": "数珠",
+       "extra": 2,
+       "pinyin": "shuzhu"
+      },
+      {
+       "value": "302",
+       "label": "小袖之手",
+       "extra": 2,
+       "pinyin": "xiaoxiuzhishou"
+      },
+      {
+       "value": "303",
+       "label": "弈",
+       "extra": 3,
+       "pinyin": "yi"
+      },
+      {
+       "value": "304",
+       "label": "御馔津",
+       "extra": 4,
+       "pinyin": "yuxuanjin"
+      },
+      {
+       "value": "305",
+       "label": "卖药郎",
+       "extra": 4,
+       "pinyin": "maiyaolang"
+      },
+      {
+       "value": "306",
+       "label": "虫师",
+       "extra": 2,
+       "pinyin": "chongshi"
+      },
+      {
+       "value": "307",
+       "label": "猫掌柜",
+       "extra": 3,
+       "pinyin": "maozhanggui"
+      },
+      {
+       "value": "308",
+       "label": "鬼灯",
+       "extra": 4,
+       "pinyin": "guideng"
+      },
+      {
+       "value": "309",
+       "label": "阿香",
+       "extra": 3,
+       "pinyin": "axiang"
+      },
+      {
+       "value": "310",
+       "label": "蜜桃&芥子",
+       "extra": 2,
+       "pinyin": "mitaojiezi"
+      },
+      {
+       "value": "311",
+       "label": "面灵气",
+       "extra": 4,
+       "pinyin": "mianlingqi"
+      },
+      {
+       "value": "312",
+       "label": "鬼切",
+       "extra": 4,
+       "pinyin": "guiqie"
+      },
+      {
+       "value": "313",
+       "label": "犬夜叉",
+       "extra": 4,
+       "pinyin": "quanyecha"
+      },
+      {
+       "value": "314",
+       "label": "杀生丸",
+       "extra": 4,
+       "pinyin": "shashengwan"
+      },
+      {
+       "value": "315",
+       "label": "少羽大天狗",
+       "extra": 5,
+       "pinyin": "shaoyudatiangou"
+      },
+      {
+       "value": "316",
+       "label": "白藏主",
+       "extra": 4,
+       "pinyin": "baizangzhu"
+      },
+      {
+       "value": "317",
+       "label": "人面树",
+       "extra": 3,
+       "pinyin": "renmianshu"
+      },
+      {
+       "value": "318",
+       "label": "於菊虫",
+       "extra": 3,
+       "pinyin": "yujuchong"
+      },
+      {
+       "value": "319",
+       "label": "桔梗",
+       "extra": 4,
+       "pinyin": "jiegeng"
+      },
+      {
+       "value": "320",
+       "label": "一反木绵",
+       "extra": 3,
+       "pinyin": "yifanmumian"
+      },
+      {
+       "value": "321",
+       "label": "入殓师",
+       "extra": 3,
+       "pinyin": "rulianshi"
+      },
+      {
+       "value": "322",
+       "label": "炼狱茨木童子",
+       "extra": 5,
+       "pinyin": "lianyucimutongzi"
+      },
+      {
+       "value": "323",
+       "label": "天井下",
+       "extra": 2,
+       "pinyin": "tianjingxia"
+      },
+      {
+       "value": "324",
+       "label": "化鲸",
+       "extra": 3,
+       "pinyin": "huajing"
+      },
+      {
+       "value": "325",
+       "label": "八岐大蛇",
+       "extra": 4,
+       "pinyin": "baqidashe"
+      },
+      {
+       "value": "326",
+       "label": "稻荷神御馔津",
+       "extra": 5,
+       "pinyin": "daoheshenyuxuanjin"
+      },
+      {
+       "value": "327",
+       "label": "苍风一目连",
+       "extra": 5,
+       "pinyin": "cangfengyimulian"
+      },
+      {
+       "value": "328",
+       "label": "赤影妖刀姬",
+       "extra": 5,
+       "pinyin": "chiyingyaodaoji"
+      },
+      {
+       "value": "329",
+       "label": "海忍",
+       "extra": 3,
+       "pinyin": "hairen"
+      },
+      {
+       "value": "330",
+       "label": "不知火",
+       "extra": 4,
+       "pinyin": "buzhihuo"
+      },
+      {
+       "value": "331",
+       "label": "御怨般若",
+       "extra": 5,
+       "pinyin": "yuyuanbore"
+      },
+      {
+       "value": "332",
+       "label": "久次良",
+       "extra": 3,
+       "pinyin": "jiuciliang"
+      },
+      {
+       "value": "333",
+       "label": "大岳丸",
+       "extra": 4,
+       "pinyin": "dayuewan"
+      },
+      {
+       "value": "334",
+       "label": "骁浪荒川之主",
+       "extra": 5,
+       "pinyin": "xiaolanghuangchuanzhizhu"
+      },
+      {
+       "value": "335",
+       "label": "蟹姬",
+       "extra": 3,
+       "pinyin": "xieji"
+      },
+      {
+       "value": "336",
+       "label": "朽木露琪亚",
+       "extra": 3,
+       "pinyin": "xiumulouqiya"
+      },
+      {
+       "value": "337",
+       "label": "黑崎一护",
+       "extra": 4,
+       "pinyin": "heiqiyihu"
+      },
+      {
+       "value": "338",
+       "label": "泷夜叉姬",
+       "extra": 4,
+       "pinyin": "longyechaji"
+      },
+      {
+       "value": "339",
+       "label": "烬天玉藻前",
+       "extra": 5,
+       "pinyin": "jintianyuzaoqian"
+      },
+      {
+       "value": "340",
+       "label": "纸舞",
+       "extra": 3,
+       "pinyin": "zhiwu"
+      },
+      {
+       "value": "341",
+       "label": "鬼王酒吞童子",
+       "extra": 5,
+       "pinyin": "guiwangjiutuntongzi"
+      },
+      {
+       "value": "342",
+       "label": "星熊童子",
+       "extra": 3,
+       "pinyin": "xingxiongtongzi"
+      },
+      {
+       "value": "343",
+       "label": "天剑韧心鬼切",
+       "extra": 5,
+       "pinyin": "tianjianrenxinguiqie"
+      },
+      {
+       "value": "344",
+       "label": "云外镜",
+       "extra": 4,
+       "pinyin": "yunwaijing"
+      },
+      {
+       "value": "345",
+       "label": "鬼童丸",
+       "extra": 4,
+       "pinyin": "guitongwan"
+      },
+      {
+       "value": "346",
+       "label": "聆海金鱼姬",
+       "extra": 5,
+       "pinyin": "linghaijinyuji"
+      },
+      {
+       "value": "347",
+       "label": "缘结神",
+       "extra": 4,
+       "pinyin": "yuanjieshen"
+      },
+      {
+       "value": "348",
+       "label": "浮世青行灯",
+       "extra": 5,
+       "pinyin": "fushiqinghangdeng"
+      },
+      {
+       "value": "349",
+       "label": "风狸",
+       "extra": 3,
+       "pinyin": "fengli"
+      },
+      {
+       "value": "350",
+       "label": "蝎女",
+       "extra": 3,
+       "pinyin": "xienv"
+      },
+      {
+       "value": "351",
+       "label": "铃鹿御前",
+       "extra": 4,
+       "pinyin": "lingluyuqian"
+      },
+      {
+       "value": "352",
+       "label": "缚骨清姬",
+       "extra": 5,
+       "pinyin": "fuguqingji"
+      },
+      {
+       "value": "353",
+       "label": "紧那罗",
+       "extra": 4,
+       "pinyin": "jinneiluo"
+      },
+      {
+       "value": "354",
+       "label": "待宵姑获鸟",
+       "extra": 5,
+       "pinyin": "daixiaoguhuoniao"
+      },
+      {
+       "value": "355",
+       "label": "麓铭大岳丸",
+       "extra": 5,
+       "pinyin": "lumingdayuewan"
+      },
+      {
+       "value": "356",
+       "label": "千姬",
+       "extra": 4,
+       "pinyin": "qianji"
+      },
+      {
+       "value": "357",
+       "label": "初翎山风",
+       "extra": 5,
+       "pinyin": "chulingshanfeng"
+      },
+      {
+       "value": "358",
+       "label": "夜溟彼岸花",
+       "extra": 5,
+       "pinyin": "yemibianhua"
+      },
+      {
+       "value": "359",
+       "label": "灶门炭治郎",
+       "extra": 4,
+       "pinyin": "zaomentanzhilang"
+      },
+      {
+       "value": "360",
+       "label": "灶门祢豆子",
+       "extra": 4,
+       "pinyin": "zaomennidouzi"
+      },
+      {
+       "value": "361",
+       "label": "垢尝",
+       "extra": 2,
+       "pinyin": "gouchang"
+      },
+      {
+       "value": "362",
+       "label": "蝉冰雪女",
+       "extra": 5,
+       "pinyin": "chanbingxuenv"
+      },
+      {
+       "value": "363",
+       "label": "帝释天",
+       "extra": 4,
+       "pinyin": "dishitian"
+      },
+      {
+       "value": "364",
+       "label": "阿修罗",
+       "extra": 4,
+       "pinyin": "axiuluo"
+      },
+      {
+       "value": "365",
+       "label": "入内雀",
+       "extra": 3,
+       "pinyin": "runeique"
+      },
+      {
+       "value": "366",
+       "label": "空相面灵气",
+       "extra": 5,
+       "pinyin": "kongxiangmianlingqi"
+      },
+      {
+       "value": "367",
+       "label": "绘世花鸟卷",
+       "extra": 5,
+       "pinyin": "huishihuaniaojuan"
+      },
+      {
+       "value": "368",
+       "label": "饴细工",
+       "extra": 3,
+       "pinyin": "yixigong"
+      },
+      {
+       "value": "369",
+       "label": "食灵",
+       "extra": 4,
+       "pinyin": "shiling"
+      },
+      {
+       "value": "370",
+       "label": "饭笥",
+       "extra": 4,
+       "pinyin": "fansi"
+      },
+      {
+       "value": "371",
+       "label": "川猿",
+       "extra": 3,
+       "pinyin": "chuanyuan"
+      },
+      {
+       "value": "372",
+       "label": "因幡辉夜姬",
+       "extra": 5,
+       "pinyin": "yinfanhuiyeji"
+      },
+      {
+       "value": "373",
+       "label": "夜刀神",
+       "extra": 4,
+       "pinyin": "yedaoshen"
+      },
+      {
+       "value": "375",
+       "label": "影鳄",
+       "extra": 2,
+       "pinyin": "yinge"
+      },
+      {
+       "value": "376",
+       "label": "铃彦姬",
+       "extra": 4,
+       "pinyin": "lingyanji"
+      },
+      {
+       "value": "377",
+       "label": "梦寻山兔",
+       "extra": 5,
+       "pinyin": "mengxunshantu"
+      },
+      {
+       "value": "378",
+       "label": "迦楼罗",
+       "extra": 3,
+       "pinyin": "jialouluo"
+      },
+      {
+       "value": "379",
+       "label": "不见岳",
+       "extra": 4,
+       "pinyin": "bujianyue"
+      },
+      {
+       "value": "382",
+       "label": "灵海蝶",
+       "extra": 3,
+       "pinyin": "linghaidie"
+      },
+      {
+       "value": "383",
+       "label": "神堕八岐大蛇",
+       "extra": 5,
+       "pinyin": "shenduobaqidashe"
+      },
+      {
+       "value": "384",
+       "label": "粉婆婆",
+       "extra": 3,
+       "pinyin": "fenpopo"
+      },
+      {
+       "value": "385",
+       "label": "大夜摩天阎魔",
+       "extra": 5,
+       "pinyin": "dayemotianyanmo"
+      },
+      {
+       "value": "386",
+       "label": "我妻善逸",
+       "extra": 4,
+       "pinyin": "woqishanyi"
+      },
+      {
+       "value": "387",
+       "label": "嘴平伊之助",
+       "extra": 4,
+       "pinyin": "zuipingyizhizhu"
+      },
+      {
+       "value": "388",
+       "label": "心狩鬼女红叶",
+       "extra": 5,
+       "pinyin": "xinshouguinvhongye"
+      },
+      {
+       "value": "389",
+       "label": "须佐之男",
+       "extra": 4,
+       "pinyin": "xuzuozhinan"
+      },
+      {
+       "value": "390",
+       "label": "神启荒",
+       "extra": 5,
+       "pinyin": "shenqihuang"
+      },
+      {
+       "value": "391",
+       "label": "寻香行",
+       "extra": 4,
+       "pinyin": "xunxianghang"
+      },
+      {
+       "value": "392",
+       "label": "季",
+       "extra": 4,
+       "pinyin": "ji"
+      },
+      {
+       "value": "393",
+       "label": "禅心云外镜",
+       "extra": 5,
+       "pinyin": "chanxinyunwaijing"
+      },
+      {
+       "value": "394",
+       "label": "月读",
+       "extra": 4,
+       "pinyin": "yuedu"
+      },
+      {
+       "value": "395",
+       "label": "流光追月神",
+       "extra": 5,
+       "pinyin": "liuguangzhuiyueshen"
+      },
+      {
+       "value": "396",
+       "label": "修罗鬼童丸",
+       "extra": 5,
+       "pinyin": "xiuluoguitongwan"
+      },
+      {
+       "value": "397",
+       "label": "坂田银时",
+       "extra": 4,
+       "pinyin": "bantianyinshi"
+      },
+      {
+       "value": "398",
+       "label": "天逆每",
+       "extra": 3,
+       "pinyin": "tiannimei"
+      },
+      {
+       "value": "399",
+       "label": "言灵",
+       "extra": 4,
+       "pinyin": "yanling"
+      },
+      {
+       "value": "400",
+       "label": "盗墓小鬼",
+       "extra": 1,
+       "pinyin": "daomuxiaogui"
+      },
+      {
+       "value": "401",
+       "label": "寄生魂",
+       "extra": 1,
+       "pinyin": "jishenghun"
+      },
+      {
+       "value": "403",
+       "label": "唐纸伞妖",
+       "extra": 1,
+       "pinyin": "tangzhisanyao"
+      },
+      {
+       "value": "404",
+       "label": "天邪鬼绿",
+       "extra": 1,
+       "pinyin": "tianxieguilu"
+      },
+      {
+       "value": "405",
+       "label": "天邪鬼赤",
+       "extra": 1,
+       "pinyin": "tianxieguichi"
+      },
+      {
+       "value": "406",
+       "label": "天邪鬼黄",
+       "extra": 1,
+       "pinyin": "tianxieguihuang"
+      },
+      {
+       "value": "407",
+       "label": "天邪鬼青",
+       "extra": 1,
+       "pinyin": "tianxieguiqing"
+      },
+      {
+       "value": "408",
+       "label": "帚神",
+       "extra": 1,
+       "pinyin": "zhoushen"
+      },
+      {
+       "value": "409",
+       "label": "涂壁",
+       "extra": 1,
+       "pinyin": "tubi"
+      },
+      {
+       "value": "410",
+       "label": "招福达摩",
+       "extra": 1,
+       "pinyin": "zhaofudamo"
+      },
+      {
+       "value": "411",
+       "label": "御行达摩",
+       "extra": 1,
+       "pinyin": "yuhangdamo"
+      },
+      {
+       "value": "412",
+       "label": "奉为达摩",
+       "extra": 1,
+       "pinyin": "fengweidamo"
+      },
+      {
+       "value": "413",
+       "label": "大吉达摩",
+       "extra": 1,
+       "pinyin": "dajidamo"
+      },
+      {
+       "value": "414",
+       "label": "大天狗呱",
+       "extra": 1,
+       "pinyin": "datiangougua"
+      },
+      {
+       "value": "415",
+       "label": "酒吞呱",
+       "extra": 1,
+       "pinyin": "jiutungua"
+      },
+      {
+       "value": "416",
+       "label": "荒川呱",
+       "extra": 1,
+       "pinyin": "huangchuangua"
+      },
+      {
+       "value": "417",
+       "label": "阎魔呱",
+       "extra": 1,
+       "pinyin": "yanmogua"
+      },
+      {
+       "value": "418",
+       "label": "两面佛呱",
+       "extra": 1,
+       "pinyin": "liangmianfogua"
+      },
+      {
+       "value": "419",
+       "label": "小鹿男呱",
+       "extra": 1,
+       "pinyin": "xiaolunangua"
+      },
+      {
+       "value": "420",
+       "label": "茨木呱",
+       "extra": 1,
+       "pinyin": "cimugua"
+      },
+      {
+       "value": "421",
+       "label": "青行灯呱",
+       "extra": 1,
+       "pinyin": "qinghangdenggua"
+      },
+      {
+       "value": "422",
+       "label": "妖刀姬呱",
+       "extra": 1,
+       "pinyin": "yaodaojigua"
+      },
+      {
+       "value": "423",
+       "label": "一目连呱",
+       "extra": 1,
+       "pinyin": "yimuliangua"
+      },
+      {
+       "value": "424",
+       "label": "花鸟卷呱",
+       "extra": 1,
+       "pinyin": "huaniaojuangua"
+      },
+      {
+       "value": "425",
+       "label": "辉夜姬呱",
+       "extra": 1,
+       "pinyin": "huiyejigua"
+      },
+      {
+       "value": "426",
+       "label": "荒呱",
+       "extra": 1,
+       "pinyin": "huanggua"
+      },
+      {
+       "value": "427",
+       "label": "彼岸花呱",
+       "extra": 1,
+       "pinyin": "bianhuagua"
+      },
+      {
+       "value": "428",
+       "label": "雪童子呱",
+       "extra": 1,
+       "pinyin": "xuetongzigua"
+      },
+      {
+       "value": "429",
+       "label": "玉藻前呱",
+       "extra": 1,
+       "pinyin": "yuzaoqiangua"
+      },
+      {
+       "value": "430",
+       "label": "御馔津呱",
+       "extra": 1,
+       "pinyin": "yuxuanjingua"
+      },
+      {
+       "value": "433",
+       "label": "生剥鬼",
+       "extra": 1,
+       "pinyin": "shengbogui"
+      },
+      {
+       "value": "499",
+       "label": "鬼武达摩",
+       "extra": 1,
+       "pinyin": "guiwudamo"
+      },
+      {
+       "value": "500",
+       "label": "神乐&定春",
+       "extra": 4,
+       "pinyin": "shenyuedingchun"
+      },
+      {
+       "value": "550",
+       "label": "孔雀明王",
+       "extra": 4,
+       "pinyin": "kongquemingwang"
+      },
+      {
+       "value": "551",
+       "label": "寻森小鹿男",
+       "extra": 5,
+       "pinyin": "xunsenxiaolunan"
+      },
+      {
+       "value": "552",
+       "label": "慧明灯",
+       "extra": 3,
+       "pinyin": "huimingdeng"
+      },
+      {
+       "value": "553",
+       "label": "闻人翊悬",
+       "extra": 4,
+       "pinyin": "wenrenyixuan"
+      },
+      {
+       "value": "554",
+       "label": "纺愿缘结神",
+       "extra": 5,
+       "pinyin": "fangyuanyuanjieshen"
+      },
+      {
+       "value": "555",
+       "label": "渺念萤草",
+       "extra": 5,
+       "pinyin": "miaonianyingcao"
+      },
+      {
+       "value": "556",
+       "label": "天照",
+       "extra": 4,
+       "pinyin": "tianzhao"
+      },
+      {
+       "value": "557",
+       "label": "伊邪那美",
+       "extra": 4,
+       "pinyin": "yixieneimei"
+      },
+      {
+       "value": "558",
+       "label": "盗人神",
+       "extra": 3,
+       "pinyin": "daorenshen"
+      },
+      {
+       "value": "559",
+       "label": "本真三尾狐",
+       "extra": 5,
+       "pinyin": "benzhensanweihu"
+      },
+      {
+       "value": "561",
+       "label": "泷",
+       "extra": 4,
+       "pinyin": "long"
+      },
+      {
+       "value": "562",
+       "label": "鲸汐千姬",
+       "extra": 5,
+       "pinyin": "jingxiqianji"
+      },
+      {
+       "value": "563",
+       "label": "初音未来",
+       "extra": 4,
+       "pinyin": "chuyinweilai"
+      },
+      {
+       "value": "564",
+       "label": "镜音铃·连",
+       "extra": 4,
+       "pinyin": "jingyinlinglian"
+      },
+      {
+       "value": "565",
+       "label": "福悦座敷童子",
+       "extra": 5,
+       "pinyin": "fuyuezuofutongzi"
+      },
+      {
+       "value": "566",
+       "label": "晨晖惠比寿",
+       "extra": 5,
+       "pinyin": "chenhuihuibishou"
+      },
+      {
+       "value": "567",
+       "label": "申屠子夜",
+       "extra": 4,
+       "pinyin": "shentuziye"
+      },
+      {
+       "value": "568",
+       "label": "龙吟铃鹿御前",
+       "extra": 5,
+       "pinyin": "longyinlingluyuqian"
+      },
+      {
+       "value": "569",
+       "label": "猫川",
+       "extra": 4,
+       "pinyin": "maochuan"
+      },
+      {
+       "value": "570",
+       "label": "祸津神",
+       "extra": 4,
+       "pinyin": "huojinshen"
+      },
+      {
+       "value": "571",
+       "label": "湍津姬",
+       "extra": 3,
+       "pinyin": "tuanjinji"
+      },
+      {
+       "value": "572",
+       "label": "遥念烟烟罗",
+       "extra": 5,
+       "pinyin": "yaonianyanyanluo"
+      },
+      {
+       "value": "573",
+       "label": "龙珏",
+       "extra": 4,
+       "pinyin": "longjue"
+      },
+      {
+       "value": "574",
+       "label": "心友犬神",
+       "extra": 5,
+       "pinyin": "xinyouquanshen"
+      },
+      {
+       "value": "575",
+       "label": "封阳君",
+       "extra": 4,
+       "pinyin": "fengyangjun"
+      },
+      {
+       "value": "576",
+       "label": "夏目&猫老师",
+       "extra": 4,
+       "pinyin": "xiamumaolaoshi"
+      },
+      {
+       "value": "577",
+       "label": "鬼金羊",
+       "extra": 4,
+       "pinyin": "guijinyang"
+      },
+      {
+       "value": "578",
+       "label": "神酿星熊童子",
+       "extra": 5,
+       "pinyin": "shenniangxingxiongtongzi"
+      },
+      {
+       "value": "579",
+       "label": "瑶音紧那罗",
+       "extra": 5,
+       "pinyin": "yaoyinjinneiluo"
+      },
+      {
+       "value": "580",
+       "label": "晴思日和坊",
+       "extra": 5,
+       "pinyin": "qingsirihefang"
+      },
+      {
+       "value": "581",
+       "label": "歌留多",
+       "extra": 4,
+       "pinyin": "geliuduo"
+      },
+      {
+       "value": "582",
+       "label": "巡音流歌",
+       "extra": 4,
+       "pinyin": "xunyinliuge"
+      },
+      {
+       "value": "583",
+       "label": "卑弥呼",
+       "extra": 4,
+       "pinyin": "beimihu"
+      },
+      {
+       "value": "584",
+       "label": "时曜泷夜叉姬",
+       "extra": 5,
+       "pinyin": "shiyaolongyechaji"
+      },
+      {
+       "value": "585",
+       "label": "荒骷髅",
+       "extra": 4,
+       "pinyin": "huangkulou"
+      },
+      {
+       "value": "586",
+       "label": "云间不见岳",
+       "extra": 5,
+       "pinyin": "yunjianbujianyue"
+      },
+      {
+       "value": "587",
+       "label": "木之本樱",
+       "extra": 4,
+       "pinyin": "muzhibenying"
+      },
+      {
+       "value": "588",
+       "label": "李小狼",
+       "extra": 4,
+       "pinyin": "lixiaolang"
+      },
+      {
+       "value": "590",
+       "label": "妙主九命猫",
+       "extra": 5,
+       "pinyin": "miaozhujiumingmao"
+      },
+      {
+       "value": "591",
+       "label": "雪御前",
+       "extra": 4,
+       "pinyin": "xueyuqian"
+      },
+      {
+       "value": "592",
+       "label": "平将门",
+       "extra": 4,
+       "pinyin": "pingjiangmen"
+      },
+      {
+       "value": "593",
+       "label": "妖刀姬·绯夜猎刃",
+       "extra": 6,
+       "pinyin": "yaodaojifeiyelieren"
+      },
+      {
+       "value": "594",
+       "label": "梦引蝴蝶精",
+       "extra": 5,
+       "pinyin": "mengyinhudiejing"
+      },
+      {
+       "value": "595",
+       "label": "梦山白藏主",
+       "extra": 5,
+       "pinyin": "mengshanbaizangzhu"
+      },
+      {
+       "value": "596",
+       "label": "神无月",
+       "extra": 4,
+       "pinyin": "shenwuyue"
+      },
+      {
+       "value": "597",
+       "label": "葛叶",
+       "extra": 4,
+       "pinyin": "geye"
+      },
+      {
+       "value": "598",
+       "label": "灼华桃花妖",
+       "extra": 5,
+       "pinyin": "zhuohuataohuayao"
+      },
+      {
+       "value": "599",
+       "label": "蚀月吸血姬",
+       "extra": 5,
+       "pinyin": "shiyuexixueji"
+      },
+      {
+       "value": "600",
+       "label": "市加美",
+       "extra": 4,
+       "pinyin": "shijiamei"
+      },
+      {
+       "value": "601",
+       "label": "思金神",
+       "extra": 4,
+       "pinyin": "sijinshen"
+      },
+      {
+       "value": "602",
+       "label": "天火命铃彦姬",
+       "extra": 5,
+       "pinyin": "tianhuominglingyanji"
+      },
+      {
+       "value": "603",
+       "label": "毗沙门天",
+       "extra": 4,
+       "pinyin": "pishamentian"
+      },
+      {
+       "value": "604",
+       "label": "不相狐禅",
+       "extra": 4,
+       "pinyin": "buxianghuchan"
+      },
+      {
+       "value": "605",
+       "label": "洛天依",
+       "extra": 4,
+       "pinyin": "luotianyi"
+      },
+      {
+       "value": "606",
+       "label": "言和",
+       "extra": 4,
+       "pinyin": "yanhe"
+      },
+      {
+       "value": "607",
+       "label": "百羽凤凰火",
+       "extra": 5,
+       "pinyin": "baiyufenghuanghuo"
+      },
+      {
+       "value": "608",
+       "label": "石长姬",
+       "extra": 4,
+       "pinyin": "shizhangji"
+      },
+      {
+       "value": "609",
+       "label": "咲耶",
+       "extra": 4,
+       "pinyin": "xiaoye"
+      }
+     ],
+     "optionsSource": "@hero_list",
+     "showMore": "更多式神",
+     "defaultLabelList": "封阳君,龙珏,祸津神,心友犬神,遥念烟烟罗",
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null,
+     "resolvedCount": 281
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "式神"
+     ],
+     "label": "以上所选式神为6星",
+     "innerLabel": "六星式神",
+     "key": "is_six_star",
+     "type": "checkbox",
+     "displayType": "checkbox",
+     "opType": "",
+     "symbol": "",
+     "hint": "",
+     "min": null,
+     "max": null,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": "1",
+     "options": [],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "式神"
+     ],
+     "label": "6星式神数量",
+     "innerLabel": "六星式神数量",
+     "key": "six_star_num",
+     "type": "input_integer",
+     "displayType": "input_integer",
+     "opType": "gte",
+     "symbol": "≥",
+     "hint": "",
+     "min": 0,
+     "max": 99999999,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    }
+   ]
+  },
+  {
+   "label": "指定式神属性",
+   "fields": [
+    {
+     "kind": "note",
+     "text": "仅可筛选角色式神穿戴的御魂套装、阵容预设内的御魂套装",
+     "trail": [
+      "指定式神属性"
+     ]
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "指定式神属性"
+     ],
+     "label": "指定式神",
+     "innerLabel": "",
+     "key": "hero_id",
+     "type": "custom_component",
+     "displayType": "custom_component",
+     "opType": "",
+     "symbol": "",
+     "hint": "",
+     "min": null,
+     "max": null,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": true,
+     "maxChecked": 3,
+     "checkboxValue": null,
+     "options": [
+      {
+       "value": "200",
+       "label": "桃花妖",
+       "extra": 3,
+       "pinyin": "taohuayao"
+      },
+      {
+       "value": "201",
+       "label": "雪女",
+       "extra": 3,
+       "pinyin": "xuenv"
+      },
+      {
+       "value": "202",
+       "label": "三尾狐",
+       "extra": 2,
+       "pinyin": "sanweihu"
+      },
+      {
+       "value": "203",
+       "label": "灯笼鬼",
+       "extra": 1,
+       "pinyin": "denglonggui"
+      },
+      {
+       "value": "205",
+       "label": "座敷童子",
+       "extra": 2,
+       "pinyin": "zuofutongzi"
+      },
+      {
+       "value": "206",
+       "label": "鲤鱼精",
+       "extra": 2,
+       "pinyin": "liyujing"
+      },
+      {
+       "value": "207",
+       "label": "九命猫",
+       "extra": 2,
+       "pinyin": "jiumingmao"
+      },
+      {
+       "value": "208",
+       "label": "狸猫",
+       "extra": 2,
+       "pinyin": "limao"
+      },
+      {
+       "value": "209",
+       "label": "河童",
+       "extra": 2,
+       "pinyin": "hetong"
+      },
+      {
+       "value": "210",
+       "label": "鬼使白",
+       "extra": 3,
+       "pinyin": "guishibai"
+      },
+      {
+       "value": "211",
+       "label": "鬼使黑",
+       "extra": 3,
+       "pinyin": "guishihei"
+      },
+      {
+       "value": "212",
+       "label": "童男",
+       "extra": 2,
+       "pinyin": "tongnan"
+      },
+      {
+       "value": "213",
+       "label": "童女",
+       "extra": 2,
+       "pinyin": "tongnv"
+      },
+      {
+       "value": "214",
+       "label": "饿鬼",
+       "extra": 2,
+       "pinyin": "egui"
+      },
+      {
+       "value": "215",
+       "label": "孟婆",
+       "extra": 3,
+       "pinyin": "mengpo"
+      },
+      {
+       "value": "216",
+       "label": "巫蛊师",
+       "extra": 2,
+       "pinyin": "wugushi"
+      },
+      {
+       "value": "217",
+       "label": "大天狗",
+       "extra": 4,
+       "pinyin": "datiangou"
+      },
+      {
+       "value": "218",
+       "label": "鸦天狗",
+       "extra": 2,
+       "pinyin": "yatiangou"
+      },
+      {
+       "value": "219",
+       "label": "酒吞童子",
+       "extra": 4,
+       "pinyin": "jiutuntongzi"
+      },
+      {
+       "value": "220",
+       "label": "犬神",
+       "extra": 3,
+       "pinyin": "quanshen"
+      },
+      {
+       "value": "221",
+       "label": "食发鬼",
+       "extra": 2,
+       "pinyin": "shifagui"
+      },
+      {
+       "value": "222",
+       "label": "武士之灵",
+       "extra": 2,
+       "pinyin": "wushizhiling"
+      },
+      {
+       "value": "223",
+       "label": "骨女",
+       "extra": 3,
+       "pinyin": "gunv"
+      },
+      {
+       "value": "224",
+       "label": "雨女",
+       "extra": 2,
+       "pinyin": "yunv"
+      },
+      {
+       "value": "225",
+       "label": "跳跳弟弟",
+       "extra": 2,
+       "pinyin": "tiaotiaodidi"
+      },
+      {
+       "value": "226",
+       "label": "跳跳妹妹",
+       "extra": 2,
+       "pinyin": "tiaotiaomeimei"
+      },
+      {
+       "value": "227",
+       "label": "兵俑",
+       "extra": 2,
+       "pinyin": "bingyong"
+      },
+      {
+       "value": "228",
+       "label": "丑时之女",
+       "extra": 2,
+       "pinyin": "choushizhinv"
+      },
+      {
+       "value": "230",
+       "label": "独眼小僧",
+       "extra": 2,
+       "pinyin": "duyanxiaoseng"
+      },
+      {
+       "value": "231",
+       "label": "鬼女红叶",
+       "extra": 3,
+       "pinyin": "guinvhongye"
+      },
+      {
+       "value": "232",
+       "label": "铁鼠",
+       "extra": 2,
+       "pinyin": "tieshu"
+      },
+      {
+       "value": "233",
+       "label": "跳跳哥哥",
+       "extra": 3,
+       "pinyin": "tiaotiaogege"
+      },
+      {
+       "value": "234",
+       "label": "椒图",
+       "extra": 2,
+       "pinyin": "jiaotu"
+      },
+      {
+       "value": "236",
+       "label": "管狐",
+       "extra": 2,
+       "pinyin": "guanhu"
+      },
+      {
+       "value": "237",
+       "label": "山兔",
+       "extra": 2,
+       "pinyin": "shantu"
+      },
+      {
+       "value": "238",
+       "label": "萤草",
+       "extra": 2,
+       "pinyin": "yingcao"
+      },
+      {
+       "value": "241",
+       "label": "蝴蝶精",
+       "extra": 2,
+       "pinyin": "hudiejing"
+      },
+      {
+       "value": "242",
+       "label": "傀儡师",
+       "extra": 3,
+       "pinyin": "kuileishi"
+      },
+      {
+       "value": "243",
+       "label": "山童",
+       "extra": 2,
+       "pinyin": "shantong"
+      },
+      {
+       "value": "244",
+       "label": "首无",
+       "extra": 2,
+       "pinyin": "shouwu"
+      },
+      {
+       "value": "245",
+       "label": "提灯小僧",
+       "extra": 1,
+       "pinyin": "tidengxiaoseng"
+      },
+      {
+       "value": "246",
+       "label": "赤舌",
+       "extra": 1,
+       "pinyin": "chishe"
+      },
+      {
+       "value": "247",
+       "label": "海坊主",
+       "extra": 3,
+       "pinyin": "haifangzhu"
+      },
+      {
+       "value": "248",
+       "label": "荒川之主",
+       "extra": 4,
+       "pinyin": "huangchuanzhizhu"
+      },
+      {
+       "value": "249",
+       "label": "觉",
+       "extra": 2,
+       "pinyin": "jiao"
+      },
+      {
+       "value": "250",
+       "label": "青蛙瓷器",
+       "extra": 2,
+       "pinyin": "qingwaciqi"
+      },
+      {
+       "value": "251",
+       "label": "判官",
+       "extra": 3,
+       "pinyin": "panguan"
+      },
+      {
+       "value": "252",
+       "label": "凤凰火",
+       "extra": 3,
+       "pinyin": "fenghuanghuo"
+      },
+      {
+       "value": "253",
+       "label": "吸血姬",
+       "extra": 3,
+       "pinyin": "xixueji"
+      },
+      {
+       "value": "254",
+       "label": "妖狐",
+       "extra": 3,
+       "pinyin": "yaohu"
+      },
+      {
+       "value": "255",
+       "label": "阎魔",
+       "extra": 4,
+       "pinyin": "yanmo"
+      },
+      {
+       "value": "256",
+       "label": "妖琴师",
+       "extra": 3,
+       "pinyin": "yaoqinshi"
+      },
+      {
+       "value": "257",
+       "label": "食梦貘",
+       "extra": 3,
+       "pinyin": "shimengmo"
+      },
+      {
+       "value": "258",
+       "label": "两面佛",
+       "extra": 4,
+       "pinyin": "liangmianfo"
+      },
+      {
+       "value": "259",
+       "label": "小鹿男",
+       "extra": 4,
+       "pinyin": "xiaolunan"
+      },
+      {
+       "value": "260",
+       "label": "清姬",
+       "extra": 3,
+       "pinyin": "qingji"
+      },
+      {
+       "value": "261",
+       "label": "镰鼬",
+       "extra": 3,
+       "pinyin": "lianyou"
+      },
+      {
+       "value": "262",
+       "label": "姑获鸟",
+       "extra": 3,
+       "pinyin": "guhuoniao"
+      },
+      {
+       "value": "263",
+       "label": "二口女",
+       "extra": 3,
+       "pinyin": "erkounv"
+      },
+      {
+       "value": "264",
+       "label": "白狼",
+       "extra": 3,
+       "pinyin": "bailang"
+      },
+      {
+       "value": "265",
+       "label": "茨木童子",
+       "extra": 4,
+       "pinyin": "cimutongzi"
+      },
+      {
+       "value": "266",
+       "label": "青行灯",
+       "extra": 4,
+       "pinyin": "qinghangdeng"
+      },
+      {
+       "value": "267",
+       "label": "樱花妖",
+       "extra": 3,
+       "pinyin": "yinghuayao"
+      },
+      {
+       "value": "268",
+       "label": "惠比寿",
+       "extra": 3,
+       "pinyin": "huibishou"
+      },
+      {
+       "value": "269",
+       "label": "妖刀姬",
+       "extra": 4,
+       "pinyin": "yaodaoji"
+      },
+      {
+       "value": "270",
+       "label": "络新妇",
+       "extra": 3,
+       "pinyin": "luoxinfu"
+      },
+      {
+       "value": "271",
+       "label": "般若",
+       "extra": 3,
+       "pinyin": "bore"
+      },
+      {
+       "value": "272",
+       "label": "一目连",
+       "extra": 4,
+       "pinyin": "yimulian"
+      },
+      {
+       "value": "273",
+       "label": "青坊主",
+       "extra": 3,
+       "pinyin": "qingfangzhu"
+      },
+      {
+       "value": "274",
+       "label": "古笼火",
+       "extra": 2,
+       "pinyin": "gulonghuo"
+      },
+      {
+       "value": "275",
+       "label": "万年竹",
+       "extra": 3,
+       "pinyin": "wannianzhu"
+      },
+      {
+       "value": "276",
+       "label": "夜叉",
+       "extra": 3,
+       "pinyin": "yecha"
+      },
+      {
+       "value": "277",
+       "label": "黑童子",
+       "extra": 3,
+       "pinyin": "heitongzi"
+      },
+      {
+       "value": "278",
+       "label": "白童子",
+       "extra": 3,
+       "pinyin": "baitongzi"
+      },
+      {
+       "value": "279",
+       "label": "花鸟卷",
+       "extra": 4,
+       "pinyin": "huaniaojuan"
+      },
+      {
+       "value": "280",
+       "label": "辉夜姬",
+       "extra": 4,
+       "pinyin": "huiyeji"
+      },
+      {
+       "value": "281",
+       "label": "烟烟罗",
+       "extra": 3,
+       "pinyin": "yanyanluo"
+      },
+      {
+       "value": "282",
+       "label": "金鱼姬",
+       "extra": 3,
+       "pinyin": "jinyuji"
+      },
+      {
+       "value": "283",
+       "label": "荒",
+       "extra": 4,
+       "pinyin": "huang"
+      },
+      {
+       "value": "285",
+       "label": "鸩",
+       "extra": 3,
+       "pinyin": "zhen"
+      },
+      {
+       "value": "286",
+       "label": "以津真天",
+       "extra": 3,
+       "pinyin": "yijinzhentian"
+      },
+      {
+       "value": "287",
+       "label": "匣中少女",
+       "extra": 3,
+       "pinyin": "xiazhongshaonv"
+      },
+      {
+       "value": "288",
+       "label": "彼岸花",
+       "extra": 4,
+       "pinyin": "bianhua"
+      },
+      {
+       "value": "289",
+       "label": "兔丸",
+       "extra": 2,
+       "pinyin": "tuwan"
+      },
+      {
+       "value": "290",
+       "label": "小松丸",
+       "extra": 3,
+       "pinyin": "xiaosongwan"
+      },
+      {
+       "value": "291",
+       "label": "书翁",
+       "extra": 3,
+       "pinyin": "shuweng"
+      },
+      {
+       "value": "292",
+       "label": "雪童子",
+       "extra": 4,
+       "pinyin": "xuetongzi"
+      },
+      {
+       "value": "293",
+       "label": "百目鬼",
+       "extra": 3,
+       "pinyin": "baimugui"
+      },
+      {
+       "value": "294",
+       "label": "奴良陆生",
+       "extra": 4,
+       "pinyin": "nulianglusheng"
+      },
+      {
+       "value": "295",
+       "label": "追月神",
+       "extra": 3,
+       "pinyin": "zhuiyueshen"
+      },
+      {
+       "value": "296",
+       "label": "山风",
+       "extra": 4,
+       "pinyin": "shanfeng"
+      },
+      {
+       "value": "297",
+       "label": "日和坊",
+       "extra": 3,
+       "pinyin": "rihefang"
+      },
+      {
+       "value": "298",
+       "label": "薰",
+       "extra": 3,
+       "pinyin": "xun"
+      },
+      {
+       "value": "300",
+       "label": "玉藻前",
+       "extra": 4,
+       "pinyin": "yuzaoqian"
+      },
+      {
+       "value": "301",
+       "label": "数珠",
+       "extra": 2,
+       "pinyin": "shuzhu"
+      },
+      {
+       "value": "302",
+       "label": "小袖之手",
+       "extra": 2,
+       "pinyin": "xiaoxiuzhishou"
+      },
+      {
+       "value": "303",
+       "label": "弈",
+       "extra": 3,
+       "pinyin": "yi"
+      },
+      {
+       "value": "304",
+       "label": "御馔津",
+       "extra": 4,
+       "pinyin": "yuxuanjin"
+      },
+      {
+       "value": "305",
+       "label": "卖药郎",
+       "extra": 4,
+       "pinyin": "maiyaolang"
+      },
+      {
+       "value": "306",
+       "label": "虫师",
+       "extra": 2,
+       "pinyin": "chongshi"
+      },
+      {
+       "value": "307",
+       "label": "猫掌柜",
+       "extra": 3,
+       "pinyin": "maozhanggui"
+      },
+      {
+       "value": "308",
+       "label": "鬼灯",
+       "extra": 4,
+       "pinyin": "guideng"
+      },
+      {
+       "value": "309",
+       "label": "阿香",
+       "extra": 3,
+       "pinyin": "axiang"
+      },
+      {
+       "value": "310",
+       "label": "蜜桃&芥子",
+       "extra": 2,
+       "pinyin": "mitaojiezi"
+      },
+      {
+       "value": "311",
+       "label": "面灵气",
+       "extra": 4,
+       "pinyin": "mianlingqi"
+      },
+      {
+       "value": "312",
+       "label": "鬼切",
+       "extra": 4,
+       "pinyin": "guiqie"
+      },
+      {
+       "value": "313",
+       "label": "犬夜叉",
+       "extra": 4,
+       "pinyin": "quanyecha"
+      },
+      {
+       "value": "314",
+       "label": "杀生丸",
+       "extra": 4,
+       "pinyin": "shashengwan"
+      },
+      {
+       "value": "315",
+       "label": "少羽大天狗",
+       "extra": 5,
+       "pinyin": "shaoyudatiangou"
+      },
+      {
+       "value": "316",
+       "label": "白藏主",
+       "extra": 4,
+       "pinyin": "baizangzhu"
+      },
+      {
+       "value": "317",
+       "label": "人面树",
+       "extra": 3,
+       "pinyin": "renmianshu"
+      },
+      {
+       "value": "318",
+       "label": "於菊虫",
+       "extra": 3,
+       "pinyin": "yujuchong"
+      },
+      {
+       "value": "319",
+       "label": "桔梗",
+       "extra": 4,
+       "pinyin": "jiegeng"
+      },
+      {
+       "value": "320",
+       "label": "一反木绵",
+       "extra": 3,
+       "pinyin": "yifanmumian"
+      },
+      {
+       "value": "321",
+       "label": "入殓师",
+       "extra": 3,
+       "pinyin": "rulianshi"
+      },
+      {
+       "value": "322",
+       "label": "炼狱茨木童子",
+       "extra": 5,
+       "pinyin": "lianyucimutongzi"
+      },
+      {
+       "value": "323",
+       "label": "天井下",
+       "extra": 2,
+       "pinyin": "tianjingxia"
+      },
+      {
+       "value": "324",
+       "label": "化鲸",
+       "extra": 3,
+       "pinyin": "huajing"
+      },
+      {
+       "value": "325",
+       "label": "八岐大蛇",
+       "extra": 4,
+       "pinyin": "baqidashe"
+      },
+      {
+       "value": "326",
+       "label": "稻荷神御馔津",
+       "extra": 5,
+       "pinyin": "daoheshenyuxuanjin"
+      },
+      {
+       "value": "327",
+       "label": "苍风一目连",
+       "extra": 5,
+       "pinyin": "cangfengyimulian"
+      },
+      {
+       "value": "328",
+       "label": "赤影妖刀姬",
+       "extra": 5,
+       "pinyin": "chiyingyaodaoji"
+      },
+      {
+       "value": "329",
+       "label": "海忍",
+       "extra": 3,
+       "pinyin": "hairen"
+      },
+      {
+       "value": "330",
+       "label": "不知火",
+       "extra": 4,
+       "pinyin": "buzhihuo"
+      },
+      {
+       "value": "331",
+       "label": "御怨般若",
+       "extra": 5,
+       "pinyin": "yuyuanbore"
+      },
+      {
+       "value": "332",
+       "label": "久次良",
+       "extra": 3,
+       "pinyin": "jiuciliang"
+      },
+      {
+       "value": "333",
+       "label": "大岳丸",
+       "extra": 4,
+       "pinyin": "dayuewan"
+      },
+      {
+       "value": "334",
+       "label": "骁浪荒川之主",
+       "extra": 5,
+       "pinyin": "xiaolanghuangchuanzhizhu"
+      },
+      {
+       "value": "335",
+       "label": "蟹姬",
+       "extra": 3,
+       "pinyin": "xieji"
+      },
+      {
+       "value": "336",
+       "label": "朽木露琪亚",
+       "extra": 3,
+       "pinyin": "xiumulouqiya"
+      },
+      {
+       "value": "337",
+       "label": "黑崎一护",
+       "extra": 4,
+       "pinyin": "heiqiyihu"
+      },
+      {
+       "value": "338",
+       "label": "泷夜叉姬",
+       "extra": 4,
+       "pinyin": "longyechaji"
+      },
+      {
+       "value": "339",
+       "label": "烬天玉藻前",
+       "extra": 5,
+       "pinyin": "jintianyuzaoqian"
+      },
+      {
+       "value": "340",
+       "label": "纸舞",
+       "extra": 3,
+       "pinyin": "zhiwu"
+      },
+      {
+       "value": "341",
+       "label": "鬼王酒吞童子",
+       "extra": 5,
+       "pinyin": "guiwangjiutuntongzi"
+      },
+      {
+       "value": "342",
+       "label": "星熊童子",
+       "extra": 3,
+       "pinyin": "xingxiongtongzi"
+      },
+      {
+       "value": "343",
+       "label": "天剑韧心鬼切",
+       "extra": 5,
+       "pinyin": "tianjianrenxinguiqie"
+      },
+      {
+       "value": "344",
+       "label": "云外镜",
+       "extra": 4,
+       "pinyin": "yunwaijing"
+      },
+      {
+       "value": "345",
+       "label": "鬼童丸",
+       "extra": 4,
+       "pinyin": "guitongwan"
+      },
+      {
+       "value": "346",
+       "label": "聆海金鱼姬",
+       "extra": 5,
+       "pinyin": "linghaijinyuji"
+      },
+      {
+       "value": "347",
+       "label": "缘结神",
+       "extra": 4,
+       "pinyin": "yuanjieshen"
+      },
+      {
+       "value": "348",
+       "label": "浮世青行灯",
+       "extra": 5,
+       "pinyin": "fushiqinghangdeng"
+      },
+      {
+       "value": "349",
+       "label": "风狸",
+       "extra": 3,
+       "pinyin": "fengli"
+      },
+      {
+       "value": "350",
+       "label": "蝎女",
+       "extra": 3,
+       "pinyin": "xienv"
+      },
+      {
+       "value": "351",
+       "label": "铃鹿御前",
+       "extra": 4,
+       "pinyin": "lingluyuqian"
+      },
+      {
+       "value": "352",
+       "label": "缚骨清姬",
+       "extra": 5,
+       "pinyin": "fuguqingji"
+      },
+      {
+       "value": "353",
+       "label": "紧那罗",
+       "extra": 4,
+       "pinyin": "jinneiluo"
+      },
+      {
+       "value": "354",
+       "label": "待宵姑获鸟",
+       "extra": 5,
+       "pinyin": "daixiaoguhuoniao"
+      },
+      {
+       "value": "355",
+       "label": "麓铭大岳丸",
+       "extra": 5,
+       "pinyin": "lumingdayuewan"
+      },
+      {
+       "value": "356",
+       "label": "千姬",
+       "extra": 4,
+       "pinyin": "qianji"
+      },
+      {
+       "value": "357",
+       "label": "初翎山风",
+       "extra": 5,
+       "pinyin": "chulingshanfeng"
+      },
+      {
+       "value": "358",
+       "label": "夜溟彼岸花",
+       "extra": 5,
+       "pinyin": "yemibianhua"
+      },
+      {
+       "value": "359",
+       "label": "灶门炭治郎",
+       "extra": 4,
+       "pinyin": "zaomentanzhilang"
+      },
+      {
+       "value": "360",
+       "label": "灶门祢豆子",
+       "extra": 4,
+       "pinyin": "zaomennidouzi"
+      },
+      {
+       "value": "361",
+       "label": "垢尝",
+       "extra": 2,
+       "pinyin": "gouchang"
+      },
+      {
+       "value": "362",
+       "label": "蝉冰雪女",
+       "extra": 5,
+       "pinyin": "chanbingxuenv"
+      },
+      {
+       "value": "363",
+       "label": "帝释天",
+       "extra": 4,
+       "pinyin": "dishitian"
+      },
+      {
+       "value": "364",
+       "label": "阿修罗",
+       "extra": 4,
+       "pinyin": "axiuluo"
+      },
+      {
+       "value": "365",
+       "label": "入内雀",
+       "extra": 3,
+       "pinyin": "runeique"
+      },
+      {
+       "value": "366",
+       "label": "空相面灵气",
+       "extra": 5,
+       "pinyin": "kongxiangmianlingqi"
+      },
+      {
+       "value": "367",
+       "label": "绘世花鸟卷",
+       "extra": 5,
+       "pinyin": "huishihuaniaojuan"
+      },
+      {
+       "value": "368",
+       "label": "饴细工",
+       "extra": 3,
+       "pinyin": "yixigong"
+      },
+      {
+       "value": "369",
+       "label": "食灵",
+       "extra": 4,
+       "pinyin": "shiling"
+      },
+      {
+       "value": "370",
+       "label": "饭笥",
+       "extra": 4,
+       "pinyin": "fansi"
+      },
+      {
+       "value": "371",
+       "label": "川猿",
+       "extra": 3,
+       "pinyin": "chuanyuan"
+      },
+      {
+       "value": "372",
+       "label": "因幡辉夜姬",
+       "extra": 5,
+       "pinyin": "yinfanhuiyeji"
+      },
+      {
+       "value": "373",
+       "label": "夜刀神",
+       "extra": 4,
+       "pinyin": "yedaoshen"
+      },
+      {
+       "value": "375",
+       "label": "影鳄",
+       "extra": 2,
+       "pinyin": "yinge"
+      },
+      {
+       "value": "376",
+       "label": "铃彦姬",
+       "extra": 4,
+       "pinyin": "lingyanji"
+      },
+      {
+       "value": "377",
+       "label": "梦寻山兔",
+       "extra": 5,
+       "pinyin": "mengxunshantu"
+      },
+      {
+       "value": "378",
+       "label": "迦楼罗",
+       "extra": 3,
+       "pinyin": "jialouluo"
+      },
+      {
+       "value": "379",
+       "label": "不见岳",
+       "extra": 4,
+       "pinyin": "bujianyue"
+      },
+      {
+       "value": "382",
+       "label": "灵海蝶",
+       "extra": 3,
+       "pinyin": "linghaidie"
+      },
+      {
+       "value": "383",
+       "label": "神堕八岐大蛇",
+       "extra": 5,
+       "pinyin": "shenduobaqidashe"
+      },
+      {
+       "value": "384",
+       "label": "粉婆婆",
+       "extra": 3,
+       "pinyin": "fenpopo"
+      },
+      {
+       "value": "385",
+       "label": "大夜摩天阎魔",
+       "extra": 5,
+       "pinyin": "dayemotianyanmo"
+      },
+      {
+       "value": "386",
+       "label": "我妻善逸",
+       "extra": 4,
+       "pinyin": "woqishanyi"
+      },
+      {
+       "value": "387",
+       "label": "嘴平伊之助",
+       "extra": 4,
+       "pinyin": "zuipingyizhizhu"
+      },
+      {
+       "value": "388",
+       "label": "心狩鬼女红叶",
+       "extra": 5,
+       "pinyin": "xinshouguinvhongye"
+      },
+      {
+       "value": "389",
+       "label": "须佐之男",
+       "extra": 4,
+       "pinyin": "xuzuozhinan"
+      },
+      {
+       "value": "390",
+       "label": "神启荒",
+       "extra": 5,
+       "pinyin": "shenqihuang"
+      },
+      {
+       "value": "391",
+       "label": "寻香行",
+       "extra": 4,
+       "pinyin": "xunxianghang"
+      },
+      {
+       "value": "392",
+       "label": "季",
+       "extra": 4,
+       "pinyin": "ji"
+      },
+      {
+       "value": "393",
+       "label": "禅心云外镜",
+       "extra": 5,
+       "pinyin": "chanxinyunwaijing"
+      },
+      {
+       "value": "394",
+       "label": "月读",
+       "extra": 4,
+       "pinyin": "yuedu"
+      },
+      {
+       "value": "395",
+       "label": "流光追月神",
+       "extra": 5,
+       "pinyin": "liuguangzhuiyueshen"
+      },
+      {
+       "value": "396",
+       "label": "修罗鬼童丸",
+       "extra": 5,
+       "pinyin": "xiuluoguitongwan"
+      },
+      {
+       "value": "397",
+       "label": "坂田银时",
+       "extra": 4,
+       "pinyin": "bantianyinshi"
+      },
+      {
+       "value": "398",
+       "label": "天逆每",
+       "extra": 3,
+       "pinyin": "tiannimei"
+      },
+      {
+       "value": "399",
+       "label": "言灵",
+       "extra": 4,
+       "pinyin": "yanling"
+      },
+      {
+       "value": "400",
+       "label": "盗墓小鬼",
+       "extra": 1,
+       "pinyin": "daomuxiaogui"
+      },
+      {
+       "value": "401",
+       "label": "寄生魂",
+       "extra": 1,
+       "pinyin": "jishenghun"
+      },
+      {
+       "value": "403",
+       "label": "唐纸伞妖",
+       "extra": 1,
+       "pinyin": "tangzhisanyao"
+      },
+      {
+       "value": "404",
+       "label": "天邪鬼绿",
+       "extra": 1,
+       "pinyin": "tianxieguilu"
+      },
+      {
+       "value": "405",
+       "label": "天邪鬼赤",
+       "extra": 1,
+       "pinyin": "tianxieguichi"
+      },
+      {
+       "value": "406",
+       "label": "天邪鬼黄",
+       "extra": 1,
+       "pinyin": "tianxieguihuang"
+      },
+      {
+       "value": "407",
+       "label": "天邪鬼青",
+       "extra": 1,
+       "pinyin": "tianxieguiqing"
+      },
+      {
+       "value": "408",
+       "label": "帚神",
+       "extra": 1,
+       "pinyin": "zhoushen"
+      },
+      {
+       "value": "409",
+       "label": "涂壁",
+       "extra": 1,
+       "pinyin": "tubi"
+      },
+      {
+       "value": "410",
+       "label": "招福达摩",
+       "extra": 1,
+       "pinyin": "zhaofudamo"
+      },
+      {
+       "value": "411",
+       "label": "御行达摩",
+       "extra": 1,
+       "pinyin": "yuhangdamo"
+      },
+      {
+       "value": "412",
+       "label": "奉为达摩",
+       "extra": 1,
+       "pinyin": "fengweidamo"
+      },
+      {
+       "value": "413",
+       "label": "大吉达摩",
+       "extra": 1,
+       "pinyin": "dajidamo"
+      },
+      {
+       "value": "414",
+       "label": "大天狗呱",
+       "extra": 1,
+       "pinyin": "datiangougua"
+      },
+      {
+       "value": "415",
+       "label": "酒吞呱",
+       "extra": 1,
+       "pinyin": "jiutungua"
+      },
+      {
+       "value": "416",
+       "label": "荒川呱",
+       "extra": 1,
+       "pinyin": "huangchuangua"
+      },
+      {
+       "value": "417",
+       "label": "阎魔呱",
+       "extra": 1,
+       "pinyin": "yanmogua"
+      },
+      {
+       "value": "418",
+       "label": "两面佛呱",
+       "extra": 1,
+       "pinyin": "liangmianfogua"
+      },
+      {
+       "value": "419",
+       "label": "小鹿男呱",
+       "extra": 1,
+       "pinyin": "xiaolunangua"
+      },
+      {
+       "value": "420",
+       "label": "茨木呱",
+       "extra": 1,
+       "pinyin": "cimugua"
+      },
+      {
+       "value": "421",
+       "label": "青行灯呱",
+       "extra": 1,
+       "pinyin": "qinghangdenggua"
+      },
+      {
+       "value": "422",
+       "label": "妖刀姬呱",
+       "extra": 1,
+       "pinyin": "yaodaojigua"
+      },
+      {
+       "value": "423",
+       "label": "一目连呱",
+       "extra": 1,
+       "pinyin": "yimuliangua"
+      },
+      {
+       "value": "424",
+       "label": "花鸟卷呱",
+       "extra": 1,
+       "pinyin": "huaniaojuangua"
+      },
+      {
+       "value": "425",
+       "label": "辉夜姬呱",
+       "extra": 1,
+       "pinyin": "huiyejigua"
+      },
+      {
+       "value": "426",
+       "label": "荒呱",
+       "extra": 1,
+       "pinyin": "huanggua"
+      },
+      {
+       "value": "427",
+       "label": "彼岸花呱",
+       "extra": 1,
+       "pinyin": "bianhuagua"
+      },
+      {
+       "value": "428",
+       "label": "雪童子呱",
+       "extra": 1,
+       "pinyin": "xuetongzigua"
+      },
+      {
+       "value": "429",
+       "label": "玉藻前呱",
+       "extra": 1,
+       "pinyin": "yuzaoqiangua"
+      },
+      {
+       "value": "430",
+       "label": "御馔津呱",
+       "extra": 1,
+       "pinyin": "yuxuanjingua"
+      },
+      {
+       "value": "433",
+       "label": "生剥鬼",
+       "extra": 1,
+       "pinyin": "shengbogui"
+      },
+      {
+       "value": "499",
+       "label": "鬼武达摩",
+       "extra": 1,
+       "pinyin": "guiwudamo"
+      },
+      {
+       "value": "500",
+       "label": "神乐&定春",
+       "extra": 4,
+       "pinyin": "shenyuedingchun"
+      },
+      {
+       "value": "550",
+       "label": "孔雀明王",
+       "extra": 4,
+       "pinyin": "kongquemingwang"
+      },
+      {
+       "value": "551",
+       "label": "寻森小鹿男",
+       "extra": 5,
+       "pinyin": "xunsenxiaolunan"
+      },
+      {
+       "value": "552",
+       "label": "慧明灯",
+       "extra": 3,
+       "pinyin": "huimingdeng"
+      },
+      {
+       "value": "553",
+       "label": "闻人翊悬",
+       "extra": 4,
+       "pinyin": "wenrenyixuan"
+      },
+      {
+       "value": "554",
+       "label": "纺愿缘结神",
+       "extra": 5,
+       "pinyin": "fangyuanyuanjieshen"
+      },
+      {
+       "value": "555",
+       "label": "渺念萤草",
+       "extra": 5,
+       "pinyin": "miaonianyingcao"
+      },
+      {
+       "value": "556",
+       "label": "天照",
+       "extra": 4,
+       "pinyin": "tianzhao"
+      },
+      {
+       "value": "557",
+       "label": "伊邪那美",
+       "extra": 4,
+       "pinyin": "yixieneimei"
+      },
+      {
+       "value": "558",
+       "label": "盗人神",
+       "extra": 3,
+       "pinyin": "daorenshen"
+      },
+      {
+       "value": "559",
+       "label": "本真三尾狐",
+       "extra": 5,
+       "pinyin": "benzhensanweihu"
+      },
+      {
+       "value": "561",
+       "label": "泷",
+       "extra": 4,
+       "pinyin": "long"
+      },
+      {
+       "value": "562",
+       "label": "鲸汐千姬",
+       "extra": 5,
+       "pinyin": "jingxiqianji"
+      },
+      {
+       "value": "563",
+       "label": "初音未来",
+       "extra": 4,
+       "pinyin": "chuyinweilai"
+      },
+      {
+       "value": "564",
+       "label": "镜音铃·连",
+       "extra": 4,
+       "pinyin": "jingyinlinglian"
+      },
+      {
+       "value": "565",
+       "label": "福悦座敷童子",
+       "extra": 5,
+       "pinyin": "fuyuezuofutongzi"
+      },
+      {
+       "value": "566",
+       "label": "晨晖惠比寿",
+       "extra": 5,
+       "pinyin": "chenhuihuibishou"
+      },
+      {
+       "value": "567",
+       "label": "申屠子夜",
+       "extra": 4,
+       "pinyin": "shentuziye"
+      },
+      {
+       "value": "568",
+       "label": "龙吟铃鹿御前",
+       "extra": 5,
+       "pinyin": "longyinlingluyuqian"
+      },
+      {
+       "value": "569",
+       "label": "猫川",
+       "extra": 4,
+       "pinyin": "maochuan"
+      },
+      {
+       "value": "570",
+       "label": "祸津神",
+       "extra": 4,
+       "pinyin": "huojinshen"
+      },
+      {
+       "value": "571",
+       "label": "湍津姬",
+       "extra": 3,
+       "pinyin": "tuanjinji"
+      },
+      {
+       "value": "572",
+       "label": "遥念烟烟罗",
+       "extra": 5,
+       "pinyin": "yaonianyanyanluo"
+      },
+      {
+       "value": "573",
+       "label": "龙珏",
+       "extra": 4,
+       "pinyin": "longjue"
+      },
+      {
+       "value": "574",
+       "label": "心友犬神",
+       "extra": 5,
+       "pinyin": "xinyouquanshen"
+      },
+      {
+       "value": "575",
+       "label": "封阳君",
+       "extra": 4,
+       "pinyin": "fengyangjun"
+      },
+      {
+       "value": "576",
+       "label": "夏目&猫老师",
+       "extra": 4,
+       "pinyin": "xiamumaolaoshi"
+      },
+      {
+       "value": "577",
+       "label": "鬼金羊",
+       "extra": 4,
+       "pinyin": "guijinyang"
+      },
+      {
+       "value": "578",
+       "label": "神酿星熊童子",
+       "extra": 5,
+       "pinyin": "shenniangxingxiongtongzi"
+      },
+      {
+       "value": "579",
+       "label": "瑶音紧那罗",
+       "extra": 5,
+       "pinyin": "yaoyinjinneiluo"
+      },
+      {
+       "value": "580",
+       "label": "晴思日和坊",
+       "extra": 5,
+       "pinyin": "qingsirihefang"
+      },
+      {
+       "value": "581",
+       "label": "歌留多",
+       "extra": 4,
+       "pinyin": "geliuduo"
+      },
+      {
+       "value": "582",
+       "label": "巡音流歌",
+       "extra": 4,
+       "pinyin": "xunyinliuge"
+      },
+      {
+       "value": "583",
+       "label": "卑弥呼",
+       "extra": 4,
+       "pinyin": "beimihu"
+      },
+      {
+       "value": "584",
+       "label": "时曜泷夜叉姬",
+       "extra": 5,
+       "pinyin": "shiyaolongyechaji"
+      },
+      {
+       "value": "585",
+       "label": "荒骷髅",
+       "extra": 4,
+       "pinyin": "huangkulou"
+      },
+      {
+       "value": "586",
+       "label": "云间不见岳",
+       "extra": 5,
+       "pinyin": "yunjianbujianyue"
+      },
+      {
+       "value": "587",
+       "label": "木之本樱",
+       "extra": 4,
+       "pinyin": "muzhibenying"
+      },
+      {
+       "value": "588",
+       "label": "李小狼",
+       "extra": 4,
+       "pinyin": "lixiaolang"
+      },
+      {
+       "value": "590",
+       "label": "妙主九命猫",
+       "extra": 5,
+       "pinyin": "miaozhujiumingmao"
+      },
+      {
+       "value": "591",
+       "label": "雪御前",
+       "extra": 4,
+       "pinyin": "xueyuqian"
+      },
+      {
+       "value": "592",
+       "label": "平将门",
+       "extra": 4,
+       "pinyin": "pingjiangmen"
+      },
+      {
+       "value": "593",
+       "label": "妖刀姬·绯夜猎刃",
+       "extra": 6,
+       "pinyin": "yaodaojifeiyelieren"
+      },
+      {
+       "value": "594",
+       "label": "梦引蝴蝶精",
+       "extra": 5,
+       "pinyin": "mengyinhudiejing"
+      },
+      {
+       "value": "595",
+       "label": "梦山白藏主",
+       "extra": 5,
+       "pinyin": "mengshanbaizangzhu"
+      },
+      {
+       "value": "596",
+       "label": "神无月",
+       "extra": 4,
+       "pinyin": "shenwuyue"
+      },
+      {
+       "value": "597",
+       "label": "葛叶",
+       "extra": 4,
+       "pinyin": "geye"
+      },
+      {
+       "value": "598",
+       "label": "灼华桃花妖",
+       "extra": 5,
+       "pinyin": "zhuohuataohuayao"
+      },
+      {
+       "value": "599",
+       "label": "蚀月吸血姬",
+       "extra": 5,
+       "pinyin": "shiyuexixueji"
+      },
+      {
+       "value": "600",
+       "label": "市加美",
+       "extra": 4,
+       "pinyin": "shijiamei"
+      },
+      {
+       "value": "601",
+       "label": "思金神",
+       "extra": 4,
+       "pinyin": "sijinshen"
+      },
+      {
+       "value": "602",
+       "label": "天火命铃彦姬",
+       "extra": 5,
+       "pinyin": "tianhuominglingyanji"
+      },
+      {
+       "value": "603",
+       "label": "毗沙门天",
+       "extra": 4,
+       "pinyin": "pishamentian"
+      },
+      {
+       "value": "604",
+       "label": "不相狐禅",
+       "extra": 4,
+       "pinyin": "buxianghuchan"
+      },
+      {
+       "value": "605",
+       "label": "洛天依",
+       "extra": 4,
+       "pinyin": "luotianyi"
+      },
+      {
+       "value": "606",
+       "label": "言和",
+       "extra": 4,
+       "pinyin": "yanhe"
+      },
+      {
+       "value": "607",
+       "label": "百羽凤凰火",
+       "extra": 5,
+       "pinyin": "baiyufenghuanghuo"
+      },
+      {
+       "value": "608",
+       "label": "石长姬",
+       "extra": 4,
+       "pinyin": "shizhangji"
+      },
+      {
+       "value": "609",
+       "label": "咲耶",
+       "extra": 4,
+       "pinyin": "xiaoye"
+      }
+     ],
+     "optionsSource": "@hero_list",
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null,
+     "resolvedCount": 281
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "指定式神属性"
+     ],
+     "label": "指定御魂",
+     "innerLabel": "",
+     "key": "yuhun",
+     "type": "custom_component",
+     "displayType": "custom_component",
+     "opType": "",
+     "symbol": "",
+     "hint": "",
+     "min": null,
+     "max": null,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": false,
+     "maxChecked": 3,
+     "checkboxValue": null,
+     "options": [
+      {
+       "value": "300032",
+       "label": "珍珠",
+       "extra": "zhenzhu",
+       "pinyin": "防御加成30%"
+      },
+      {
+       "value": "300033",
+       "label": "骰子鬼",
+       "extra": "touzigui",
+       "pinyin": "效果抵抗15%"
+      },
+      {
+       "value": "300034",
+       "label": "蚌精",
+       "extra": "bengjing",
+       "pinyin": "效果命中15%"
+      },
+      {
+       "value": "300035",
+       "label": "魅妖",
+       "extra": "meiyao",
+       "pinyin": "防御加成30%"
+      },
+      {
+       "value": "300036",
+       "label": "针女",
+       "extra": "zhennv",
+       "pinyin": "暴击15%"
+      },
+      {
+       "value": "300039",
+       "label": "返魂香",
+       "extra": "fanhunxiang",
+       "pinyin": "效果抵抗15%"
+      },
+      {
+       "value": "300048",
+       "label": "狂骨",
+       "extra": "kuanggu",
+       "pinyin": "攻击加成15%"
+      },
+      {
+       "value": "300049",
+       "label": "幽谷响",
+       "extra": "youguxiang",
+       "pinyin": "效果抵抗15%"
+      },
+      {
+       "value": "300050",
+       "label": "土蜘蛛",
+       "extra": "tuzhizhu",
+       "pinyin": "唯一被动，对怪物造成伤害时，为其附加1层土蜘蛛印记，降低10%速度，并造成10%间接伤害，持续1回合。上限3层。"
+      },
+      {
+       "value": "300051",
+       "label": "胧车",
+       "extra": "longche",
+       "pinyin": "唯一被动，受到怪物攻击时，有50%概率增加30%行动条，单次攻击内最多触发1次。"
+      },
+      {
+       "value": "300052",
+       "label": "荒骷髅",
+       "extra": "huangkulou",
+       "pinyin": "唯一被动，提升10%对怪物伤害，若受到怪物攻击，提升伤害效果改为25%，持续1回合"
+      },
+      {
+       "value": "300053",
+       "label": "地震鲶",
+       "extra": "dizhennian",
+       "pinyin": "唯一被动，与怪物的战斗开始时，获得60%减伤；每次受到伤害，将6%减伤转化为提升1.5%伤害，单次攻击内最多触发1次。"
+      },
+      {
+       "value": "300054",
+       "label": "蜃气楼",
+       "extra": "shenqilou",
+       "pinyin": "唯一被动，与怪物的战斗开始时，获得庇护。庇护会在消失后5回合重新获得。"
+      },
+      {
+       "value": "300055",
+       "label": "片叶之苇",
+       "extra": "pianyezhiwei",
+       "pinyin": "暴击15%"
+      },
+      {
+       "value": "300056",
+       "label": "尘冢",
+       "extra": "chenzhong",
+       "pinyin": "攻击加成15%"
+      },
+      {
+       "value": "300057",
+       "label": "油赤子",
+       "extra": "youchizi",
+       "pinyin": "效果命中15%"
+      },
+      {
+       "value": "300058",
+       "label": "夜啼石",
+       "extra": "yetishi",
+       "pinyin": "生命加成15%"
+      },
+      {
+       "value": "300059",
+       "label": "夜送犬",
+       "extra": "yesongquan",
+       "pinyin": "效果抵抗15%"
+      },
+      {
+       "value": "300060",
+       "label": "雨降",
+       "extra": "yujiang",
+       "pinyin": "防御加成30%"
+      },
+      {
+       "value": "300073",
+       "label": "飞缘魔",
+       "extra": "feiyuanmo",
+       "pinyin": "效果命中15%"
+      },
+      {
+       "value": "300074",
+       "label": "兵主部",
+       "extra": "bingzhubu",
+       "pinyin": "攻击加成15%"
+      },
+      {
+       "value": "300075",
+       "label": "青女房",
+       "extra": "qingnvfang",
+       "pinyin": "暴击15%"
+      },
+      {
+       "value": "300076",
+       "label": "涂佛",
+       "extra": "tufo",
+       "pinyin": "生命加成15%"
+      },
+      {
+       "value": "300077",
+       "label": "鬼灵歌伎",
+       "extra": "guilinggeji",
+       "pinyin": "唯一被动，每对怪物造成5次伤害后，下一次对怪物造成伤害将会对其造成生命上限20%的无视防御伤害，最高不超过攻击的255%。"
+      },
+      {
+       "value": "300079",
+       "label": "遗念火",
+       "extra": "yinianhuo",
+       "pinyin": "效果命中15%"
+      },
+      {
+       "value": "300080",
+       "label": "共潜",
+       "extra": "gongqian",
+       "pinyin": "效果抵抗15%"
+      },
+      {
+       "value": "300081",
+       "label": "恶楼",
+       "extra": "elou",
+       "pinyin": "生命加成15%"
+      },
+      {
+       "value": "300082",
+       "label": "贝吹坊",
+       "extra": "beichuifang",
+       "pinyin": "攻击加成15%"
+      },
+      {
+       "value": "300083",
+       "label": "海月火玉",
+       "extra": "haiyuehuoyu",
+       "pinyin": "暴击15%"
+      },
+      {
+       "value": "300084",
+       "label": "出世螺",
+       "extra": "chushiluo",
+       "pinyin": "防御加成30%"
+      },
+      {
+       "value": "300085",
+       "label": "火之车",
+       "extra": "huozhiche",
+       "pinyin": "防御加成30%"
+      },
+      {
+       "value": "300086",
+       "label": "隐念",
+       "extra": "yinnian",
+       "pinyin": "攻击加成15%"
+      },
+      {
+       "value": "300087",
+       "label": "叠叩",
+       "extra": "diekou",
+       "pinyin": "生命加成15%"
+      },
+      {
+       "value": "300088",
+       "label": "应声虫",
+       "extra": "yingshengchong",
+       "pinyin": "暴击15%"
+      },
+      {
+       "value": "300089",
+       "label": "元兴寺",
+       "extra": "yuanxingsi",
+       "pinyin": "效果命中15%"
+      },
+      {
+       "value": "300090",
+       "label": "钓瓶火",
+       "extra": "diaopinghuo",
+       "pinyin": "效果抵抗15%"
+      },
+      {
+       "value": "300091",
+       "label": "夜荒魂",
+       "extra": "yehuanghun",
+       "pinyin": "唯一被动，携带者回合内对怪物造成控制效果或放逐时，每命中1个目标，使全体非召唤物友方提升15点速度（单次控制重复命中同目标时，仅生效1次），最多提升90点，维持1回合。"
+      },
+      {
+       "value": "300092",
+       "label": "无刀取",
+       "extra": "wudaoqu",
+       "pinyin": "暴击伤害20%"
+      },
+      {
+       "value": "300093",
+       "label": "奉海图",
+       "extra": "fenghaitu",
+       "pinyin": "防御加成30%"
+      },
+      {
+       "value": "300094",
+       "label": "八咫镜",
+       "extra": "bazhijing",
+       "pinyin": "唯一效果。与怪物战斗时，造成伤害施加光灼，再次施加光灼时移除并提升20%伤害。"
+      },
+      {
+       "value": "300095",
+       "label": "天羽羽斩",
+       "extra": "tianyuyuzhan",
+       "pinyin": "与怪物战斗时，战斗开始获得50点无视防御。"
+      },
+      {
+       "value": "300096",
+       "label": "预言星盘",
+       "extra": "yuyanxingpan",
+       "pinyin": "唯一效果。与怪物战斗时施放妖术技能，提升阴阳师暴击，提升值为自身暴击的15%。"
+      },
+      {
+       "value": "300097",
+       "label": "月之石",
+       "extra": "yuezhishi",
+       "pinyin": "唯一效果。友方召唤物存在时，敌方怪物总效果抵抗降低30%（不超过自身初始效果抵抗的50%）。"
+      },
+      {
+       "value": "300098",
+       "label": "纺缘锤",
+       "extra": "fangyuanchui",
+       "pinyin": "战斗开始与自身每个回合开始时获得缘守。缘守：受到怪物攻击后格挡500点伤害，格挡初始防御300%的伤害后移除。"
+      },
+      {
+       "value": "300099",
+       "label": "稻荷穗箭",
+       "extra": "daohesuijian",
+       "pinyin": "唯一效果。与怪物战斗时，回合结束后提升阴阳师10%行动条（阴阳师回合开始前限1次）。"
+      },
+      {
+       "value": "300002",
+       "label": "雪幽魂",
+       "extra": "xueyouhun",
+       "pinyin": "防御加成30%"
+      },
+      {
+       "value": "300003",
+       "label": "地藏像",
+       "extra": "dizangxiang",
+       "pinyin": "生命加成15%"
+      },
+      {
+       "value": "300004",
+       "label": "蝠翼",
+       "extra": "fuyi",
+       "pinyin": "攻击加成15%"
+      },
+      {
+       "value": "300006",
+       "label": "涅槃之火",
+       "extra": "niepanzhihuo",
+       "pinyin": "生命加成15%"
+      },
+      {
+       "value": "300007",
+       "label": "三味",
+       "extra": "sanwei",
+       "pinyin": "暴击15%"
+      },
+      {
+       "value": "300008",
+       "label": "魍魉之匣",
+       "extra": "wangliangzhixia",
+       "pinyin": "效果抵抗15%"
+      },
+      {
+       "value": "300009",
+       "label": "被服",
+       "extra": "beifu",
+       "pinyin": "生命加成15%"
+      },
+      {
+       "value": "300010",
+       "label": "招财猫",
+       "extra": "zhaocaimao",
+       "pinyin": "防御加成30%"
+      },
+      {
+       "value": "300011",
+       "label": "反枕",
+       "extra": "fanzhen",
+       "pinyin": "防御加成30%"
+      },
+      {
+       "value": "300012",
+       "label": "轮入道",
+       "extra": "lunrudao",
+       "pinyin": "攻击加成15%"
+      },
+      {
+       "value": "300013",
+       "label": "日女巳时",
+       "extra": "rinvyishi",
+       "pinyin": "防御加成30%"
+      },
+      {
+       "value": "300014",
+       "label": "镜姬",
+       "extra": "jingji",
+       "pinyin": "生命加成15%"
+      },
+      {
+       "value": "300015",
+       "label": "钟灵",
+       "extra": "zhongling",
+       "pinyin": "生命加成15%"
+      },
+      {
+       "value": "300018",
+       "label": "狰",
+       "extra": "zheng",
+       "pinyin": "攻击加成15%"
+      },
+      {
+       "value": "300019",
+       "label": "火灵",
+       "extra": "huoling",
+       "pinyin": "效果命中15%"
+      },
+      {
+       "value": "300020",
+       "label": "鸣屋",
+       "extra": "mingwu",
+       "pinyin": "攻击加成15%"
+      },
+      {
+       "value": "300021",
+       "label": "薙魂",
+       "extra": "zhihun",
+       "pinyin": "生命加成15%"
+      },
+      {
+       "value": "300022",
+       "label": "心眼",
+       "extra": "xinyan",
+       "pinyin": "攻击加成15%"
+      },
+      {
+       "value": "300023",
+       "label": "木魅",
+       "extra": "mumei",
+       "pinyin": "防御加成30%"
+      },
+      {
+       "value": "300024",
+       "label": "树妖",
+       "extra": "shuyao",
+       "pinyin": "生命加成15%"
+      },
+      {
+       "value": "300026",
+       "label": "网切",
+       "extra": "wangqie",
+       "pinyin": "暴击15%"
+      },
+      {
+       "value": "300027",
+       "label": "阴摩罗",
+       "extra": "yinmoluo",
+       "pinyin": "攻击加成15%"
+      },
+      {
+       "value": "300029",
+       "label": "伤魂鸟",
+       "extra": "shanghunniao",
+       "pinyin": "暴击15%"
+      },
+      {
+       "value": "300030",
+       "label": "破势",
+       "extra": "poshi",
+       "pinyin": "暴击15%"
+      },
+      {
+       "value": "300031",
+       "label": "镇墓兽",
+       "extra": "zhenmushou",
+       "pinyin": "暴击15%"
+      }
+     ],
+     "optionsSource": "@yuhun_list",
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null,
+     "resolvedCount": 70
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "指定式神属性",
+      "式神属性"
+     ],
+     "label": "输出",
+     "innerLabel": "",
+     "key": "output_damage",
+     "type": "input_integer",
+     "displayType": "input_integer",
+     "opType": "gte",
+     "symbol": "≥",
+     "hint": "",
+     "min": 0,
+     "max": 99999,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "指定式神属性",
+      "式神属性"
+     ],
+     "label": "攻击",
+     "innerLabel": "式神.攻击",
+     "key": "attack",
+     "type": "input_integer",
+     "displayType": "input_integer",
+     "opType": "",
+     "symbol": "",
+     "hint": "",
+     "min": 0,
+     "max": 99999,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "指定式神属性",
+      "式神属性"
+     ],
+     "label": "生命",
+     "innerLabel": "式神.生命",
+     "key": "life",
+     "type": "input_integer",
+     "displayType": "input_integer",
+     "opType": "",
+     "symbol": "",
+     "hint": "",
+     "min": 0,
+     "max": 99999,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "指定式神属性",
+      "式神属性"
+     ],
+     "label": "防御",
+     "innerLabel": "式神.防御",
+     "key": "defense",
+     "type": "input_integer",
+     "displayType": "input_integer",
+     "opType": "",
+     "symbol": "",
+     "hint": "",
+     "min": 0,
+     "max": 99999,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "指定式神属性",
+      "式神属性"
+     ],
+     "label": "速度",
+     "innerLabel": "式神.速度",
+     "key": "speed",
+     "type": "input_integer",
+     "displayType": "input_integer",
+     "opType": "",
+     "symbol": "",
+     "hint": "",
+     "min": 0,
+     "max": 99999,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "指定式神属性",
+      "式神属性"
+     ],
+     "label": "暴击",
+     "innerLabel": "式神.暴击",
+     "key": "strike",
+     "type": "input_integer",
+     "displayType": "input_integer",
+     "opType": "",
+     "symbol": "",
+     "hint": "",
+     "min": 0,
+     "max": 99999,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "指定式神属性",
+      "式神属性"
+     ],
+     "label": "暴击伤害",
+     "innerLabel": "式神.暴击伤害",
+     "key": "strike_damage",
+     "type": "input_integer",
+     "displayType": "input_integer",
+     "opType": "",
+     "symbol": "",
+     "hint": "",
+     "min": 0,
+     "max": 99999,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "指定式神属性",
+      "式神属性"
+     ],
+     "label": "效果命中",
+     "innerLabel": "式神.效果命中",
+     "key": "attack_effect",
+     "type": "input_integer",
+     "displayType": "input_integer",
+     "opType": "",
+     "symbol": "",
+     "hint": "",
+     "min": 0,
+     "max": 99999,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "指定式神属性",
+      "式神属性"
+     ],
+     "label": "效果抵抗",
+     "innerLabel": "式神.效果抵抗",
+     "key": "anti_effect",
+     "type": "input_integer",
+     "displayType": "input_integer",
+     "opType": "",
+     "symbol": "",
+     "hint": "",
+     "min": 0,
+     "max": 99999,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    }
+   ]
+  },
+  {
+   "label": "个人斗技",
+   "fields": [
+    {
+     "kind": "field",
+     "trail": [
+      "个人斗技"
+     ],
+     "label": "段位",
+     "innerLabel": "斗技段位",
+     "key": "pvp_stage",
+     "type": "input_integer",
+     "displayType": "input_integer",
+     "opType": "gte",
+     "symbol": "≥",
+     "hint": "",
+     "min": 0,
+     "max": 99999999,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "个人斗技"
+     ],
+     "label": "积分",
+     "innerLabel": "斗技积分",
+     "key": "pvp_score",
+     "type": "input_integer",
+     "displayType": "input_integer",
+     "opType": "gte",
+     "symbol": "≥",
+     "hint": "",
+     "min": 0,
+     "max": 99999999,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "个人斗技"
+     ],
+     "label": "个满速御魂速度",
+     "innerLabel": "",
+     "key": "",
+     "type": "single_select_and_input",
+     "displayType": "single_select_and_input",
+     "opType": "",
+     "symbol": "",
+     "hint": "",
+     "min": null,
+     "max": null,
+     "digits": null,
+     "valueMultiply": 100,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [
+      {
+       "value": "1",
+       "label": "1"
+      },
+      {
+       "value": "2",
+       "label": "2"
+      },
+      {
+       "value": "3",
+       "label": "3"
+      },
+      {
+       "value": "4",
+       "label": "4"
+      },
+      {
+       "value": "5",
+       "label": "5"
+      },
+      {
+       "value": "6",
+       "label": "6"
+      },
+      {
+       "value": "7",
+       "label": "7"
+      }
+     ],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": "个满速御魂速度",
+     "selectKey": "full_speed_inventory_num",
+     "inputKey": "full_speed_inventory_speed",
+     "dependOn": null
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "个人斗技"
+     ],
+     "label": "散件一速",
+     "innerLabel": "最大散件一速",
+     "key": "max_sanjian_speed",
+     "type": "input_float",
+     "displayType": "input_float",
+     "opType": "gte",
+     "symbol": "≥",
+     "hint": "0-162",
+     "min": 0,
+     "max": 162,
+     "digits": 2,
+     "valueMultiply": 100,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "个人斗技"
+     ],
+     "label": "招财一速",
+     "innerLabel": "最大招财一速",
+     "key": "max_zhaocai_speed",
+     "type": "input_float",
+     "displayType": "input_float",
+     "opType": "gte",
+     "symbol": "≥",
+     "hint": "0-162",
+     "min": 0,
+     "max": 162,
+     "digits": 2,
+     "valueMultiply": 100,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "个人斗技"
+     ],
+     "label": "头个数",
+     "innerLabel": "",
+     "key": "tou_counts",
+     "type": "input_integer",
+     "displayType": "input_integer",
+     "opType": "gte",
+     "symbol": "≥",
+     "hint": "",
+     "min": 0,
+     "max": 1000000,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "个人斗技"
+     ],
+     "label": "头速度",
+     "innerLabel": "",
+     "key": "tou_speed",
+     "type": "input_float",
+     "displayType": "input_float",
+     "opType": "gte",
+     "symbol": "≥",
+     "hint": "0-17.5",
+     "min": 0,
+     "max": 17.5,
+     "digits": 2,
+     "valueMultiply": "100",
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "个人斗技"
+     ],
+     "label": "尾个数",
+     "innerLabel": "",
+     "key": "wei_counts",
+     "type": "input_integer",
+     "displayType": "input_integer",
+     "opType": "gte",
+     "symbol": "≥",
+     "hint": "",
+     "min": 0,
+     "max": 1000000,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "个人斗技"
+     ],
+     "label": "尾速度",
+     "innerLabel": "",
+     "key": "wei_speed",
+     "type": "input_float",
+     "displayType": "input_float",
+     "opType": "gte",
+     "symbol": "≥",
+     "hint": "0-17.5",
+     "min": 0,
+     "max": 17.5,
+     "digits": 2,
+     "valueMultiply": "100",
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "个人斗技"
+     ],
+     "label": "招财头个数",
+     "innerLabel": "",
+     "key": "zhaocai_tou_counts",
+     "type": "input_integer",
+     "displayType": "input_integer",
+     "opType": "gte",
+     "symbol": "≥",
+     "hint": "",
+     "min": 0,
+     "max": 1000000,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "个人斗技"
+     ],
+     "label": "招财头速度",
+     "innerLabel": "",
+     "key": "zhaocai_tou_speed",
+     "type": "input_float",
+     "displayType": "input_float",
+     "opType": "gte",
+     "symbol": "≥",
+     "hint": "0-17.5",
+     "min": 0,
+     "max": 17.5,
+     "digits": 2,
+     "valueMultiply": "100",
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "个人斗技"
+     ],
+     "label": "满速御魂数",
+     "innerLabel": "",
+     "key": "full_speed_yuhun",
+     "type": "input_integer",
+     "displayType": "input_integer",
+     "opType": "gte",
+     "symbol": "≥",
+     "hint": "",
+     "min": 0,
+     "max": 1000000,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    }
+   ]
+  },
+  {
+   "label": "资产",
+   "fields": [
+    {
+     "kind": "field",
+     "trail": [
+      "资产",
+      "条件组"
+     ],
+     "label": "勾玉",
+     "innerLabel": "勾玉",
+     "key": "goyu",
+     "type": "input_integer",
+     "displayType": "input_integer",
+     "opType": "gte",
+     "symbol": "≥",
+     "hint": "",
+     "min": 0,
+     "max": 99999999,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "资产",
+      "条件组"
+     ],
+     "label": "神秘符咒",
+     "innerLabel": "神秘符咒",
+     "key": "gameble_card",
+     "type": "input_integer",
+     "displayType": "input_integer",
+     "opType": "gte",
+     "symbol": "≥",
+     "hint": "",
+     "min": 0,
+     "max": 999999,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "资产",
+      "条件组"
+     ],
+     "label": "体力",
+     "innerLabel": "体力",
+     "key": "strength",
+     "type": "input_integer",
+     "displayType": "input_integer",
+     "opType": "gte",
+     "symbol": "≥",
+     "hint": "",
+     "min": 0,
+     "max": 99999999,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "资产",
+      "条件组"
+     ],
+     "label": "金币(万)",
+     "innerLabel": "金币",
+     "key": "money",
+     "type": "input_integer",
+     "displayType": "input_integer",
+     "opType": "gte",
+     "symbol": "≥",
+     "hint": "",
+     "min": 0,
+     "max": 99999999,
+     "digits": null,
+     "valueMultiply": "10000",
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "资产",
+      "条件组"
+     ],
+     "label": "金御札",
+     "innerLabel": "金御札",
+     "key": "currency_900188",
+     "type": "input_integer",
+     "displayType": "input_integer",
+     "opType": "gte",
+     "symbol": "≥",
+     "hint": "",
+     "min": 0,
+     "max": 999999,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "资产",
+      "条件组"
+     ],
+     "label": "魂玉",
+     "innerLabel": "魂玉",
+     "key": "hunyu",
+     "type": "input_integer",
+     "displayType": "input_integer",
+     "opType": "gte",
+     "symbol": "≥",
+     "hint": "",
+     "min": 0,
+     "max": 99999999,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "资产",
+      "条件组"
+     ],
+     "label": "御札",
+     "innerLabel": "御礼",
+     "key": "soul_jade",
+     "type": "input_integer",
+     "displayType": "input_integer",
+     "opType": "gte",
+     "symbol": "≥",
+     "hint": "",
+     "min": 0,
+     "max": 999999,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "资产",
+      "条件组"
+     ],
+     "label": "逢魔之魂",
+     "innerLabel": "逢魔之魂",
+     "key": "currency_900218",
+     "type": "input_integer",
+     "displayType": "input_integer",
+     "opType": "gte",
+     "symbol": "≥",
+     "hint": "",
+     "min": 0,
+     "max": 999999,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "资产",
+      "条件组"
+     ],
+     "label": "大蛇的逆鳞",
+     "innerLabel": "大蛇的逆鳞",
+     "key": "currency_900217",
+     "type": "input_integer",
+     "displayType": "input_integer",
+     "opType": "gte",
+     "symbol": "≥",
+     "hint": "",
+     "min": 0,
+     "max": 999999,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "资产",
+      "条件组"
+     ],
+     "label": "御行达摩",
+     "innerLabel": "黑达摩数量",
+     "key": "black_egg_num",
+     "type": "input_integer",
+     "displayType": "input_integer",
+     "opType": "gte",
+     "symbol": "≥",
+     "hint": "",
+     "min": 0,
+     "max": 99999999,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "资产",
+      "条件组"
+     ],
+     "label": "皮肤券",
+     "innerLabel": "皮肤券",
+     "key": "skin_coupon",
+     "type": "input_integer",
+     "displayType": "input_integer",
+     "opType": "gte",
+     "symbol": "≥",
+     "hint": "",
+     "min": 0,
+     "max": 99999999,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "资产",
+      "条件组"
+     ],
+     "label": "勋章",
+     "innerLabel": "勋章",
+     "key": "medal",
+     "type": "input_integer",
+     "displayType": "input_integer",
+     "opType": "gte",
+     "symbol": "≥",
+     "hint": "",
+     "min": 0,
+     "max": 99999999,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "资产",
+      "条件组"
+     ],
+     "label": "六星结界卡",
+     "innerLabel": "六星结界卡数量",
+     "key": "six_lbscard_num",
+     "type": "input_integer",
+     "displayType": "input_integer",
+     "opType": "gte",
+     "symbol": "≥",
+     "hint": "",
+     "min": 0,
+     "max": 999999,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "资产",
+      "条件组"
+     ],
+     "label": "满级御魂",
+     "innerLabel": "强化御魂数量",
+     "key": "qianghua_yuhun_num",
+     "type": "input_integer",
+     "displayType": "input_integer",
+     "opType": "gte",
+     "symbol": "≥",
+     "hint": "",
+     "min": 0,
+     "max": 99999999,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "资产",
+      "条件组"
+     ],
+     "label": "曜之阁开启",
+     "innerLabel": "曜之阁开启",
+     "key": "yzg_open",
+     "type": "checkbox",
+     "displayType": "checkbox",
+     "opType": "",
+     "symbol": "",
+     "hint": "",
+     "min": null,
+     "max": null,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": "1",
+     "options": [],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "资产",
+      "条件组"
+     ],
+     "label": "永久勾玉卡",
+     "innerLabel": "永久勾玉卡",
+     "key": "gouyu_card",
+     "type": "checkbox",
+     "displayType": "checkbox",
+     "opType": "",
+     "symbol": "",
+     "hint": "",
+     "min": null,
+     "max": null,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": "1",
+     "options": [],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "资产",
+      "条件组"
+     ],
+     "label": "心易徽记",
+     "innerLabel": "心易会员",
+     "key": "is_xinyi_vip",
+     "type": "checkbox",
+     "displayType": "checkbox",
+     "opType": "",
+     "symbol": "",
+     "hint": "",
+     "min": null,
+     "max": null,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": "1",
+     "options": [],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    }
+   ]
+  },
+  {
+   "label": "皮肤",
+   "fields": [
+    {
+     "kind": "field",
+     "trail": [
+      "皮肤"
+     ],
+     "label": "式神皮肤总数",
+     "innerLabel": "式神皮肤数量",
+     "key": "ss_skin_num",
+     "type": "input_integer",
+     "displayType": "input_integer",
+     "opType": "gte",
+     "symbol": "",
+     "hint": "",
+     "min": 0,
+     "max": 999999,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "皮肤"
+     ],
+     "label": "皮肤",
+     "innerLabel": "皮肤id",
+     "key": "skin_id",
+     "type": "indexer_list_check",
+     "displayType": "indexer_list_check",
+     "opType": "and",
+     "symbol": "",
+     "hint": "",
+     "min": null,
+     "max": null,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [
+      {
+       "value": "410102",
+       "label": "黑晴明"
+      },
+      {
+       "value": "410301",
+       "label": "赤之流火"
+      },
+      {
+       "value": "410206",
+       "label": "花颜骁姬"
+      },
+      {
+       "value": "410207",
+       "label": "稚子之忆"
+      },
+      {
+       "value": "901301",
+       "label": "青莲蜕梦"
+      },
+      {
+       "value": "901346",
+       "label": "花引冥烛"
+      },
+      {
+       "value": "413123",
+       "label": "龙胆霖心"
+      }
+     ],
+     "optionsSource": "@full_skin_list",
+     "showMore": "更多皮肤",
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null,
+     "resolvedCount": 0,
+     "resolveNote": "配置中不存在"
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "皮肤"
+     ],
+     "label": "典藏皮肤总数",
+     "innerLabel": "",
+     "key": "collection_skin_num",
+     "type": "input_integer",
+     "displayType": "input_integer",
+     "opType": "gte",
+     "symbol": "≥",
+     "hint": "",
+     "min": 0,
+     "max": 99999999,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "皮肤"
+     ],
+     "label": "典藏皮肤",
+     "innerLabel": "皮肤id",
+     "key": "skin_id",
+     "type": "indexer_list_check",
+     "displayType": "indexer_list_check",
+     "opType": "and",
+     "symbol": "",
+     "hint": "",
+     "min": null,
+     "max": null,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": true,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [
+      {
+       "value": "412195",
+       "label": "响魂醉曲"
+      },
+      {
+       "value": "412344",
+       "label": "古桥水巷"
+      },
+      {
+       "value": "412603",
+       "label": "化烟"
+      },
+      {
+       "value": "412626",
+       "label": "紫藤花烬"
+      },
+      {
+       "value": "412657",
+       "label": "炽焱百炼"
+      },
+      {
+       "value": "412697",
+       "label": "蛉魂梦使"
+      },
+      {
+       "value": "412724",
+       "label": "风宵耀火"
+      },
+      {
+       "value": "412804",
+       "label": "胧月"
+      },
+      {
+       "value": "412833",
+       "label": "神宫金社"
+      },
+      {
+       "value": "412853",
+       "label": "青鸾华影"
+      },
+      {
+       "value": "412885",
+       "label": "花引冥烛"
+      },
+      {
+       "value": "412954",
+       "label": "睦月神祈"
+      },
+      {
+       "value": "412975",
+       "label": "晴雨伴虹"
+      },
+      {
+       "value": "413002",
+       "label": "青莲蜕梦"
+      },
+      {
+       "value": "413047",
+       "label": "丰穰穗祝"
+      },
+      {
+       "value": "413118",
+       "label": "手鞠戏"
+      },
+      {
+       "value": "413126",
+       "label": "华光赤堇"
+      },
+      {
+       "value": "413153",
+       "label": "锦羽金鹏"
+      },
+      {
+       "value": "413167",
+       "label": "梦山如烟"
+      },
+      {
+       "value": "413223",
+       "label": "炎义丹襟"
+      },
+      {
+       "value": "413301",
+       "label": "蝶步韶华"
+      },
+      {
+       "value": "413312",
+       "label": "侍怨神婚"
+      },
+      {
+       "value": "413332",
+       "label": "琥珀龙魂"
+      },
+      {
+       "value": "413381",
+       "label": "永夜无眠"
+      },
+      {
+       "value": "413392",
+       "label": "百鬼夜行"
+      },
+      {
+       "value": "413412",
+       "label": "灭道殉神"
+      },
+      {
+       "value": "413442",
+       "label": "浮生若梦"
+      },
+      {
+       "value": "413462",
+       "label": "晴海千花"
+      },
+      {
+       "value": "413473",
+       "label": "福鲤霓裳"
+      },
+      {
+       "value": "413512",
+       "label": "金鳞航梦"
+      },
+      {
+       "value": "413524",
+       "label": "焚情余烬"
+      },
+      {
+       "value": "413534",
+       "label": "千鸟晓光"
+      },
+      {
+       "value": "413554",
+       "label": "渊蛟归海"
+      },
+      {
+       "value": "413564",
+       "label": "海原藏心"
+      },
+      {
+       "value": "413565",
+       "label": "海原藏心·臻藏"
+      },
+      {
+       "value": "413621",
+       "label": "永凝珀心"
+      },
+      {
+       "value": "413631",
+       "label": "莲华一梦"
+      },
+      {
+       "value": "413641",
+       "label": "天曜神行"
+      },
+      {
+       "value": "413662",
+       "label": "双栖蝶"
+      },
+      {
+       "value": "413675",
+       "label": "鹤栖遥夕"
+      },
+      {
+       "value": "413722",
+       "label": "镜生万华"
+      },
+      {
+       "value": "413762",
+       "label": "焰心踏冰"
+      },
+      {
+       "value": "413794",
+       "label": "云上景明"
+      },
+      {
+       "value": "413834",
+       "label": "终焉神主"
+      },
+      {
+       "value": "413835",
+       "label": "终焉神主·臻藏"
+      },
+      {
+       "value": "413838",
+       "label": "终焉神主"
+      },
+      {
+       "value": "413839",
+       "label": "终焉神主·臻藏"
+      },
+      {
+       "value": "413853",
+       "label": "业华冥主"
+      },
+      {
+       "value": "413882",
+       "label": "枫燃未烬"
+      },
+      {
+       "value": "413891",
+       "label": "耀世神武"
+      },
+      {
+       "value": "413892",
+       "label": "耀世神武·臻藏"
+      },
+      {
+       "value": "413904",
+       "label": "星轨命契"
+      },
+      {
+       "value": "413905",
+       "label": "星轨命契·臻藏"
+      },
+      {
+       "value": "413906",
+       "label": "龙仪星引"
+      },
+      {
+       "value": "413921",
+       "label": "染"
+      },
+      {
+       "value": "413934",
+       "label": "渡世三千"
+      },
+      {
+       "value": "413953",
+       "label": "银阙极光"
+      },
+      {
+       "value": "413994",
+       "label": "真言圣谕"
+      },
+      {
+       "value": "415501",
+       "label": "青鸾誓约"
+      },
+      {
+       "value": "415502",
+       "label": "青鸾誓约·臻藏"
+      },
+      {
+       "value": "415543",
+       "label": "神祈良缘"
+      },
+      {
+       "value": "415544",
+       "label": "神祈良缘·臻藏"
+      },
+      {
+       "value": "415552",
+       "label": "循夏之声"
+      },
+      {
+       "value": "415562",
+       "label": "启世恒光"
+      },
+      {
+       "value": "415563",
+       "label": "启世恒光·臻藏"
+      },
+      {
+       "value": "415572",
+       "label": "亘古事记"
+      },
+      {
+       "value": "415573",
+       "label": "亘古事记·臻藏"
+      },
+      {
+       "value": "415592",
+       "label": "绽樱华梦"
+      },
+      {
+       "value": "415622",
+       "label": "汐澜珠冕"
+      },
+      {
+       "value": "415681",
+       "label": "麓海征溟"
+      },
+      {
+       "value": "415682",
+       "label": "麓海征溟·臻藏"
+      },
+      {
+       "value": "415701",
+       "label": "双生·梦"
+      },
+      {
+       "value": "415722",
+       "label": "泼黛烟蓝"
+      },
+      {
+       "value": "415731",
+       "label": "司霖天青"
+      },
+      {
+       "value": "415732",
+       "label": "司霖天青·臻藏"
+      },
+      {
+       "value": "415751",
+       "label": "朔野·芒"
+      },
+      {
+       "value": "415832",
+       "label": "熙梦长晖"
+      },
+      {
+       "value": "415833",
+       "label": "熙梦长晖·臻藏"
+      },
+      {
+       "value": "415842",
+       "label": "白羽飞光"
+      },
+      {
+       "value": "415843",
+       "label": "白羽飞光·臻藏"
+      },
+      {
+       "value": "415851",
+       "label": "煌铠狮心"
+      },
+      {
+       "value": "415862",
+       "label": "浮世之守"
+      },
+      {
+       "value": "415911",
+       "label": "雪祈无祷"
+      },
+      {
+       "value": "415912",
+       "label": "雪祈无祷·臻藏"
+      },
+      {
+       "value": "415922",
+       "label": "永昼金阶"
+      },
+      {
+       "value": "415923",
+       "label": "永昼金阶·臻藏"
+      },
+      {
+       "value": "4121710",
+       "label": "星坠之风"
+      },
+      {
+       "value": "4136310",
+       "label": "净谕朱华"
+      }
+     ],
+     "optionsSource": "@collection_skin_data",
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null,
+     "resolvedCount": 88
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "皮肤"
+     ],
+     "label": "庭院皮肤总数",
+     "innerLabel": "庭院皮肤数量",
+     "key": "yard_skin_num",
+     "type": "input_integer",
+     "displayType": "input_integer",
+     "opType": "gte",
+     "symbol": "≥",
+     "hint": "",
+     "min": null,
+     "max": 99999999,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "皮肤"
+     ],
+     "label": "庭院皮肤",
+     "innerLabel": "皮肤id",
+     "key": "skin_id",
+     "type": "indexer_list_check",
+     "displayType": "indexer_list_check",
+     "opType": "",
+     "symbol": "",
+     "hint": "",
+     "min": null,
+     "max": null,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [
+      {
+       "value": "900025",
+       "label": "雪月华庭"
+      },
+      {
+       "value": "900192",
+       "label": "暖春翠庭"
+      },
+      {
+       "value": "900196",
+       "label": "盛夏幽庭"
+      },
+      {
+       "value": "900255",
+       "label": "枫色秋庭"
+      },
+      {
+       "value": "900256",
+       "label": "暖池青苑"
+      },
+      {
+       "value": "1001341",
+       "label": "远海航船"
+      },
+      {
+       "value": "1005001",
+       "label": "烬夜韶阁"
+      },
+      {
+       "value": "1005002",
+       "label": "织梦莲庭"
+      },
+      {
+       "value": "1005003",
+       "label": "天穹之境"
+      },
+      {
+       "value": "1005004",
+       "label": "琼夜淬光"
+      },
+      {
+       "value": "1005005",
+       "label": "笔墨山河"
+      },
+      {
+       "value": "1005006",
+       "label": "绘世洞天"
+      },
+      {
+       "value": "1005007",
+       "label": "结缘神社"
+      },
+      {
+       "value": "1005008",
+       "label": "缘结之庭"
+      },
+      {
+       "value": "1005009",
+       "label": "望月幽庭"
+      },
+      {
+       "value": "1005010",
+       "label": "琼月华宫"
+      },
+      {
+       "value": "1005011",
+       "label": "冶武兵道"
+      },
+      {
+       "value": "1005012",
+       "label": "鏖刀禁府"
+      },
+      {
+       "value": "1005013",
+       "label": "云景阆苑"
+      },
+      {
+       "value": "1005014",
+       "label": "龙吟漱玉"
+      },
+      {
+       "value": "1005016",
+       "label": "茨心乐园"
+      },
+      {
+       "value": "1005017",
+       "label": "绮梦茨庭"
+      },
+      {
+       "value": "1005018",
+       "label": "狐栖归处"
+      },
+      {
+       "value": "1005019",
+       "label": "玉岚狐庭"
+      }
+     ],
+     "optionsSource": "@yard_skin",
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null,
+     "resolvedCount": 24
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "皮肤"
+     ],
+     "label": "召唤屋皮肤总数",
+     "innerLabel": "",
+     "key": "gamble_skin_num",
+     "type": "input_integer",
+     "displayType": "input_integer",
+     "opType": "gte",
+     "symbol": "≥",
+     "hint": "",
+     "min": 0,
+     "max": 1000000,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "皮肤"
+     ],
+     "label": "召唤屋皮肤",
+     "innerLabel": "皮肤id",
+     "key": "skin_id",
+     "type": "indexer_list_check",
+     "displayType": "indexer_list_check",
+     "opType": "",
+     "symbol": "",
+     "hint": "",
+     "min": null,
+     "max": null,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": true,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [
+      {
+       "value": "1101404",
+       "label": "四时雅苑"
+      },
+      {
+       "value": "1470001",
+       "label": "故梦雅苑"
+      },
+      {
+       "value": "1470003",
+       "label": "食之味"
+      },
+      {
+       "value": "1470004",
+       "label": "弦之律"
+      },
+      {
+       "value": "1470005",
+       "label": "走影之灯"
+      },
+      {
+       "value": "1470006",
+       "label": "天机幕行"
+      },
+      {
+       "value": "1470007",
+       "label": "万事皆灵"
+      },
+      {
+       "value": "1470008",
+       "label": "寒居神祈"
+      },
+      {
+       "value": "1470009",
+       "label": "鱼影金荷"
+      },
+      {
+       "value": "1470010",
+       "label": "幽行百鬼"
+      },
+      {
+       "value": "1470011",
+       "label": "离岛之夜"
+      },
+      {
+       "value": "1470012",
+       "label": "幽月秘境"
+      },
+      {
+       "value": "1470013",
+       "label": "缘牵之阁"
+      },
+      {
+       "value": "1470014",
+       "label": "奇迹之扉"
+      },
+      {
+       "value": "1470015",
+       "label": "童心妙趣"
+      },
+      {
+       "value": "1470016",
+       "label": "净善天阙"
+      },
+      {
+       "value": "1470017",
+       "label": "花歌雅筑"
+      }
+     ],
+     "optionsSource": "@gamble_skin",
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null,
+     "resolvedCount": 17
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "皮肤"
+     ],
+     "label": "幕间皮肤总数",
+     "innerLabel": "",
+     "key": "shishenlu_skin_num",
+     "type": "input_integer",
+     "displayType": "input_integer",
+     "opType": "gte",
+     "symbol": "≥",
+     "hint": "",
+     "min": null,
+     "max": null,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "皮肤"
+     ],
+     "label": "幕间皮肤",
+     "innerLabel": "皮肤id",
+     "key": "skin_id",
+     "type": "multiple_select",
+     "displayType": "multiple_select",
+     "opType": "and",
+     "symbol": "",
+     "hint": "",
+     "min": null,
+     "max": null,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": true,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [
+      {
+       "value": "1500000",
+       "label": "静栖回廊"
+      },
+      {
+       "value": "1500001",
+       "label": "契光水境"
+      },
+      {
+       "value": "1500002",
+       "label": "穹宇垂帘"
+      },
+      {
+       "value": "1500003",
+       "label": "雪意晴峦"
+      },
+      {
+       "value": "1500004",
+       "label": "霞染游鱼"
+      },
+      {
+       "value": "1500005",
+       "label": "冥夜游火"
+      },
+      {
+       "value": "1500006",
+       "label": "月下火舞"
+      },
+      {
+       "value": "1500007",
+       "label": "今宵胧明"
+      },
+      {
+       "value": "1500008",
+       "label": "缘台樱垂"
+      },
+      {
+       "value": "1500009",
+       "label": "妙音空境"
+      },
+      {
+       "value": "1500010",
+       "label": "启程之刻"
+      },
+      {
+       "value": "1500011",
+       "label": "赤溟幽界"
+      },
+      {
+       "value": "1500012",
+       "label": "童梦基地"
+      },
+      {
+       "value": "1500013",
+       "label": "眠鹿之森"
+      },
+      {
+       "value": "1500014",
+       "label": "花札幕台"
+      },
+      {
+       "value": "1500015",
+       "label": "拾光之窗"
+      }
+     ],
+     "optionsSource": "@shishenlu_skin",
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null,
+     "resolvedCount": 16
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "皮肤"
+     ],
+     "label": "战斗主题总数",
+     "innerLabel": "",
+     "key": "battle_skin_num",
+     "type": "input_integer",
+     "displayType": "input_integer",
+     "opType": "gte",
+     "symbol": "≥",
+     "hint": "",
+     "min": null,
+     "max": null,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "皮肤"
+     ],
+     "label": "战斗主题",
+     "innerLabel": "皮肤id",
+     "key": "skin_id",
+     "type": "indexer_list_check",
+     "displayType": "indexer_list_check",
+     "opType": "",
+     "symbol": "",
+     "hint": "",
+     "min": null,
+     "max": null,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": true,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [
+      {
+       "value": "1510000",
+       "label": "简约主题"
+      },
+      {
+       "value": "1510001",
+       "label": "凛霜寒雪"
+      },
+      {
+       "value": "1510002",
+       "label": "怀旧主题"
+      },
+      {
+       "value": "1510003",
+       "label": "春缕含青"
+      },
+      {
+       "value": "1510004",
+       "label": "祥夜幽芳"
+      },
+      {
+       "value": "1510005",
+       "label": "桂馥金秋"
+      },
+      {
+       "value": "1510006",
+       "label": "蝶寻花踪"
+      },
+      {
+       "value": "1510007",
+       "label": "雅乐之邦"
+      },
+      {
+       "value": "1510008",
+       "label": "笼梦之境"
+      },
+      {
+       "value": "1510009",
+       "label": "藏金台阁"
+      },
+      {
+       "value": "1510010",
+       "label": "莲华圣域"
+      },
+      {
+       "value": "1510011",
+       "label": "流焰蝶舞"
+      },
+      {
+       "value": "1510012",
+       "label": "登云问翠"
+      },
+      {
+       "value": "1510013",
+       "label": "辰烁奇夜"
+      },
+      {
+       "value": "1510014",
+       "label": "招财纳福"
+      },
+      {
+       "value": "1510015",
+       "label": "茸茨跃动"
+      },
+      {
+       "value": "1510016",
+       "label": "灵狐寄愿"
+      }
+     ],
+     "optionsSource": "@battle_skin",
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null,
+     "resolvedCount": 17
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "皮肤"
+     ],
+     "label": "阴阳术皮肤总数",
+     "innerLabel": "",
+     "key": "yinyangshu_skin_num",
+     "type": "input_integer",
+     "displayType": "input_integer",
+     "opType": "gte",
+     "symbol": "≥",
+     "hint": "",
+     "min": null,
+     "max": null,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "皮肤"
+     ],
+     "label": "阴阳术皮肤",
+     "innerLabel": "皮肤id",
+     "key": "skin_id",
+     "type": "multiple_select",
+     "displayType": "multiple_select",
+     "opType": "and",
+     "symbol": "",
+     "hint": "",
+     "min": null,
+     "max": null,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": true,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [
+      {
+       "value": "1600000",
+       "label": "茶室小憩"
+      },
+      {
+       "value": "1600001",
+       "label": "跃灯明阁"
+      },
+      {
+       "value": "1600002",
+       "label": "森罗谧境"
+      }
+     ],
+     "optionsSource": "@yinyangshu_skin",
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null,
+     "resolvedCount": 3
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "皮肤"
+     ],
+     "label": "风姿度",
+     "innerLabel": "",
+     "key": "fengzidu",
+     "type": "input_integer",
+     "displayType": "input_integer",
+     "opType": "gte",
+     "symbol": "≥",
+     "hint": "",
+     "min": 0,
+     "max": 1000000,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    }
+   ]
+  },
+  {
+   "label": "头像框",
+   "fields": [
+    {
+     "kind": "field",
+     "trail": [
+      "头像框"
+     ],
+     "label": "头像框",
+     "innerLabel": "头像框id",
+     "key": "head_skin_id",
+     "type": "multiple_select",
+     "displayType": "multiple_select",
+     "opType": "and",
+     "symbol": "",
+     "hint": "",
+     "min": null,
+     "max": null,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [
+      {
+       "value": "901154",
+       "label": "百鬼之主"
+      },
+      {
+       "value": "901153",
+       "label": "大阴阳师"
+      },
+      {
+       "value": "901152",
+       "label": "京都名士"
+      },
+      {
+       "value": "901224",
+       "label": "战·百鬼之主"
+      },
+      {
+       "value": "901225",
+       "label": "战·大阴阳师"
+      },
+      {
+       "value": "901226",
+       "label": "战·京都名士"
+      },
+      {
+       "value": "901240",
+       "label": "鲤跃金松"
+      },
+      {
+       "value": "901130",
+       "label": "京都之主"
+      },
+      {
+       "value": "901289",
+       "label": "久相伴"
+      },
+      {
+       "value": "901173",
+       "label": "日月同辉"
+      },
+      {
+       "value": "901132",
+       "label": "大触觉醒"
+      },
+      {
+       "value": "901204",
+       "label": "笔墨意"
+      },
+      {
+       "value": "901106",
+       "label": "月见黑"
+      },
+      {
+       "value": "901348",
+       "label": "晴帆渡·初空"
+      },
+      {
+       "value": "901268",
+       "label": "月姬之眷"
+      },
+      {
+       "value": "901747",
+       "label": "穹月之蚀"
+      },
+      {
+       "value": "901339",
+       "label": "屡变星霜·长相伴"
+      },
+      {
+       "value": "9011219",
+       "label": "巅峰翘楚"
+      }
+     ],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "头像框"
+     ],
+     "label": "京都之主(金达摩)",
+     "innerLabel": "有金达摩",
+     "key": "has_jindamo",
+     "type": "checkbox",
+     "displayType": "checkbox",
+     "opType": "",
+     "symbol": "",
+     "hint": "",
+     "min": null,
+     "max": null,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": "1",
+     "options": [],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    }
+   ]
+  },
+  {
+   "label": "徽章",
+   "fields": [
+    {
+     "kind": "field",
+     "trail": [
+      "徽章"
+     ],
+     "label": "徽章",
+     "innerLabel": "徽章id",
+     "key": "honor_id",
+     "type": "multiple_select",
+     "displayType": "multiple_select",
+     "opType": "and",
+     "symbol": "",
+     "hint": "",
+     "min": null,
+     "max": null,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [
+      {
+       "value": "950013",
+       "label": "秘闻·天下一"
+      },
+      {
+       "value": "950007",
+       "label": "地域·天下一"
+      },
+      {
+       "value": "900414",
+       "label": "馆主·博"
+      },
+      {
+       "value": "950060",
+       "label": "终极之巅"
+      }
+     ],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    }
+   ]
+  },
+  {
+   "label": "成就/签到",
+   "fields": [
+    {
+     "kind": "field",
+     "trail": [
+      "成就/签到"
+     ],
+     "label": "成就",
+     "innerLabel": "成就id",
+     "key": "achieve_ids",
+     "type": "multiple_select",
+     "displayType": "multiple_select",
+     "opType": "and",
+     "symbol": "",
+     "hint": "",
+     "min": null,
+     "max": null,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [
+      {
+       "value": "289",
+       "label": "征服世界"
+      },
+      {
+       "value": "239",
+       "label": "非洲·大阴阳师"
+      },
+      {
+       "value": "10100",
+       "label": "阴阳师·大神"
+      },
+      {
+       "value": "306645",
+       "label": "对弈竞猜·卓见"
+      }
+     ],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "成就/签到"
+     ],
+     "label": "签到天数",
+     "innerLabel": "签到天数",
+     "key": "sign_days",
+     "type": "input_integer",
+     "displayType": "input_integer",
+     "opType": "gte",
+     "symbol": "≥",
+     "hint": "",
+     "min": 0,
+     "max": 999999,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    },
+    {
+     "kind": "field",
+     "trail": [
+      "成就/签到"
+     ],
+     "label": "等级（小于等于）",
+     "innerLabel": "等级",
+     "key": "equip_level",
+     "type": "input_integer",
+     "displayType": "input_integer",
+     "opType": "lte",
+     "symbol": "≤",
+     "hint": "0-60",
+     "min": 0,
+     "max": 60,
+     "digits": null,
+     "valueMultiply": null,
+     "multiple": false,
+     "maxChecked": null,
+     "checkboxValue": null,
+     "options": [],
+     "optionsSource": null,
+     "showMore": null,
+     "defaultLabelList": null,
+     "note": null,
+     "selectKey": null,
+     "inputKey": null,
+     "dependOn": null
+    }
+   ]
+  }
+ ]
+}
