@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { EChartsCoreOption } from 'echarts/core';
 import { EChart } from './EChart';
-import { axisLabelStyle, baseGrid, emptyOption, useChartTheme } from './theme';
+import { axisLabelStyle, baseGrid, CHART_HEIGHT, emptyOption, useChartTheme } from './theme';
 import type { ScatterPoint } from '@/utils/analytics';
 
 interface Props {
@@ -36,7 +36,7 @@ const logTicks = (lo: number, hi: number): number[] => {
  * 同一列纵向分布能直接看出「同样签到天数下，价格跨度有多大」。
  * 价格轴用 log 是因为几千到十几万的跨度在线性轴上会把低价区压成一条线。
  */
-export const PriceSignScatterChart = ({ points, height = 230 }: Props) => {
+export const PriceSignScatterChart = ({ points, height = CHART_HEIGHT }: Props) => {
   const t = useChartTheme();
 
   const option = useMemo<EChartsCoreOption>(() => {
@@ -51,7 +51,9 @@ export const PriceSignScatterChart = ({ points, height = 230 }: Props) => {
     const ticks = logTicks(loPrice, hiPrice);
 
     return {
-      grid: baseGrid({ left: 46, right: 24, bottom: 36, top: 20 }),
+            // bottom 要同时放下「刻度标签」和「距标签 24px 的轴名(签到年数)」，
+      // 36 会不够导致轴名下边缘被裁；44 是实测够用的值
+      grid: baseGrid({ left: 46, right: 24, bottom: 44, top: 20 }),
       tooltip: {
         trigger: 'item',
         ...t.tooltip,

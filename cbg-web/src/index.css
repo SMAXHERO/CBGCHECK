@@ -5,6 +5,21 @@
    浅色值是同色系在浅底上的对应版本。所有组件只使用这些变量，
    不允许再写死颜色——否则切换主题会「切一半」。
    ========================================================================= */
+
+/* -------------------------------------------------------------------------
+   新增模块时必须遵守的几条约定（都是踩过坑总结的）
+   -------------------------------------------------------------------------
+   1. 颜色只用 var(--xxx)，不写死。切主题时哪块没变，就是漏了变量。
+   2. 栅格列一律写 minmax(0, 1fr)，不要写 1fr。1fr 的最小尺寸是 auto，
+      会被内容（如图表画布的固定宽度）撑开而不收缩，窄屏下就会溢出被裁掉。
+   3. 允许被压缩的容器加 min-width: 0，否则内部固定宽度的元素会反向撑大它。
+   4. 同类卡片的高度要一致：图表画布统一用 charts/theme.ts 的 CHART_HEIGHT，
+      不要在各组件里写 210 / 230 这类数字。
+   5. 并排元素的高度不能差 1~2px（典型来源：一个元素有边框、另一个用 border:0）。
+      需要无边框时写成 border: 1px solid transparent。
+   6. 图表上的数据标签不要放在条形内部（insideLeft 之类）——占比低的档位
+      条形只有几像素宽，标签会被裁切并和相邻标签挤在一起。放外侧。
+   ========================================================================= */
 :root,
 :root[data-theme='dark'] {
   color-scheme: dark;
@@ -880,10 +895,29 @@ body {
   color: var(--warn);
 }
 
+/**
+ * KPI 卡：固定 4 列，8 个指标正好两行，不会因为视口变宽而变成 5+3 这种参差排布。
+ * 窄屏逐级降为 2 列 / 1 列。
+ */
 .kpi-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
+}
+@media (max-width: 1400px) {
+  .kpi-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 1000px) {
+  .kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 620px) {
+  .kpi-grid {
+    grid-template-columns: 1fr;
+  }
 }
 .kpi {
   background: var(--surface-2);
@@ -916,16 +950,20 @@ body {
 }
 
 .charts {
+  /* 关键：网格列必须用 minmax(0, 1fr)，不能写 1fr。
+     1fr 的最小尺寸是 auto —— 会被内容（ECharts 画布的固定宽度）撑开而不收缩，
+     表现为窄屏下图表卡比容器宽、右侧被 overflow:hidden 裁掉。 */
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
+  min-width: 0;
 }
 .charts .full {
   grid-column: 1 / -1;
 }
 @media (max-width: 900px) {
   .charts {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 .cbox {
@@ -933,6 +971,9 @@ body {
   border: 1px solid var(--border-soft);
   border-radius: 10px;
   padding: 10px 12px;
+  /* 同上：允许在网格里被压缩，否则画布宽度会反过来撑大卡片 */
+  min-width: 0;
+  overflow: hidden;
 }
 .cbox h4 {
   margin: 0 0 10px;
@@ -1011,7 +1052,8 @@ body {
 .btn-primary {
   background: var(--accent);
   color: #fff;
-  border: 0;
+  /* 用透明边框占位，而不是 border:0 —— 否则按钮比 .btn-ghost 矮 2px，底栏会显得参差 */
+  border: 1px solid transparent;
   box-shadow: 0 2px 12px var(--accent-shadow);
 }
 .btn-primary:hover:not(:disabled) {

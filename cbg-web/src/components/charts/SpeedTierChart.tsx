@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { EChartsCoreOption } from 'echarts/core';
 import { EChart } from './EChart';
-import { axisLabelStyle, emptyOption, useChartTheme } from './theme';
+import { axisLabelStyle, CHART_HEIGHT, emptyOption, useChartTheme } from './theme';
 import type { TierStat } from '@/utils/analytics';
 
 interface Props {
@@ -17,7 +17,7 @@ const TIER_COLORS_LIGHT = ['#d9d9d9', '#bfc4cc', '#a3aab5', '#8892a0', '#6b7688'
  * 散件一速分段 —— 用横向条形而不是柱状：
  * 档位标签较长（156~158），横着放不用旋转，并且计数直接写在条内。
  */
-export const SpeedTierChart = ({ tiers, height = 210 }: Props) => {
+export const SpeedTierChart = ({ tiers, height = CHART_HEIGHT }: Props) => {
   const t = useChartTheme();
 
   const option = useMemo<EChartsCoreOption>(() => {
@@ -25,7 +25,8 @@ export const SpeedTierChart = ({ tiers, height = 210 }: Props) => {
     const scale = t.isLight ? TIER_COLORS_LIGHT : TIER_COLORS_DARK;
     const top = Math.max(...tiers.map((x) => x.value)) || 1;
     return {
-      grid: { top: 8, bottom: 8, left: 8, right: 40, containLabel: true },
+      // right 留够：数字标签画在条形外侧，需要给它位置
+      grid: { top: 8, bottom: 8, left: 8, right: 46, containLabel: true },
       tooltip: {
         trigger: 'item',
         ...t.tooltip,
@@ -39,7 +40,7 @@ export const SpeedTierChart = ({ tiers, height = 210 }: Props) => {
         type: 'category',
         data: tiers.map((x) => x.name),
         inverse: true,
-        axisLabel: axisLabelStyle(t),
+        axisLabel: { ...axisLabelStyle(t), margin: 10 },
         axisLine: { show: false },
         axisTick: { show: false },
       },
@@ -55,12 +56,14 @@ export const SpeedTierChart = ({ tiers, height = 210 }: Props) => {
           })),
           label: {
             show: true,
-            position: 'insideLeft',
-            distance: 7,
-            fontSize: 10.5,
+            // 关键：画在条形**外侧**而不是内部。
+            // 用 insideLeft 时，占比很低的档位（条形只有几像素宽）会把数字裁掉，
+            // 并和左侧的档位标签挤在一起。靠右固定位置则任何数据量下都可读。
+            position: 'right',
+            distance: 6,
+            fontSize: 11,
             fontWeight: 600,
-            // 深色档位用白字，浅色档位用深字，保证都能看清
-            color: t.text,
+            color: t.label,
             formatter: '{c}',
           },
           barWidth: 16,

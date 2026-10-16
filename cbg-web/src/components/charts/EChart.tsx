@@ -64,33 +64,45 @@ export const EChart = ({
     (el as HTMLElement & { __echarts?: echarts.ECharts }).__echarts = chart;
 
     /**
-     * 反复核对「图表内部尺寸」与「容器实际尺寸」，直到一致或超时。
+     * 反复核对「图表内部尺寸」与「容器实际尺寸」，直到一致或到达重试上限。
      *
-     * 为什么不能直接调一次 resize()：窗口缩放时 CSS 栅格回流可能晚于 resize 事件，
-     * 那一瞬间容器还是旧宽度，resize() 会把 canvas 定在错的值上——
-     * 实测表现是窄屏↔桌面来回切之后，图表宽度错乱一半。
-     * 用 requestAnimationFrame 逐帧复核，成本很低但能根治。
+     * 为什么不能只调一次 resize()：窗口缩放时 CSS 栅格回流可能晚于 resize 事件，
+     * 那一瞬间容器还是旧宽度，resize() 会把 canvas 定在错的值上。
+     * 实测表现：窄屏下图表卡比容器宽出几百像素，被父级的 overflow:hidden 裁掉右侧。
+     *
+     * 用 requestAnimationFrame 逐帧复核 + 延迟重试兜底：
+     * 逐帧负责「布局已经稳了但图表还没跟上」的情况，
+     * 延迟重试负责「容器的最终宽度比当前晚很多才确定」的情况（栅格在多级断点间切换时常见）。
      */
     let raf = 0;
-    let cancelled = false;
+    let retryTimer = 0;
+    let disposed = false;
+    let attempt = 0;
 
-    const sync = (attempt = 0) => {
-      if (cancelled) return;
+    const isSynced = () => chart.getWidth() === el.clientWidth && chart.getHeight() === el.clientHeight;
+
+    const sync = () => {
+      if (disposed) return;
       const w = el.clientWidth;
       const h = el.clientHeight;
       if (w === 0 || h === 0) return; // 还没布局，等下次
-      if (chart.getWidth() !== w || chart.getHeight() !== h) {
-        chart.resize();
-      }
-      // 尺寸仍不一致（容器刚回流、图表还没跟上）就再等一帧，最多约 30 帧
-      if (attempt < 30 && (chart.getWidth() !== el.clientWidth || chart.getHeight() !== el.clientHeight)) {
-        raf = requestAnimationFrame(() => sync(attempt + 1));
+      if (!isSynced()) chart.resize();
+
+      attempt += 1;
+      if (!isSynced() && attempt < 60) {
+        raf = requestAnimationFrame(sync);
+      } else {
+        attempt = 0;
+        // 兜底：布局可能仍在继续变化，过一会儿再核对一次
+        retryTimer = window.setTimeout(sync, 320);
       }
     };
 
     const scheduleSync = () => {
       cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => sync());
+      window.clearTimeout(retryTimer);
+      attempt = 0;
+      raf = requestAnimationFrame(sync);
     };
 
     // 两级触发：ResizeObserver 管容器自身变化，window.resize 管窗口变化
@@ -102,10 +114,11 @@ export const EChart = ({
     scheduleSync();
 
     return () => {
-      cancelled = true;
+      disposed = true;
       ro.disconnect();
       window.removeEventListener('resize', scheduleSync);
       window.clearTimeout(timer);
+      window.clearTimeout(retryTimer);
       cancelAnimationFrame(raf);
       chart.dispose();
       chartRef.current = null;

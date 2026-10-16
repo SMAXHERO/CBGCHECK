@@ -4,6 +4,7 @@ import { EChart } from './EChart';
 import {
   axisLabelStyle,
   baseGrid,
+  CHART_HEIGHT,
   emptyOption,
   tooltipBase,
   useChartTheme,
@@ -19,13 +20,14 @@ interface Props {
 }
 
 /** 价格分布直方图：柱子用强调色做竖向渐变（渐变下端随主题变化） */
-export const PriceHistogramChart = ({ histogram, height = 210 }: Props) => {
+export const PriceHistogramChart = ({ histogram, height = CHART_HEIGHT }: Props) => {
   const t = useChartTheme();
 
   const option = useMemo<EChartsCoreOption>(() => {
     if (!histogram.labels.length) return emptyOption(t);
     return {
-      grid: baseGrid({ bottom: 30, left: 48, right: 12, top: 24 }),
+      // 旋转 30° 的刻度标签较高，给足底部空间（与散点图保持同一套留白尺度）
+      grid: baseGrid({ bottom: 40, left: 48, right: 12, top: 24 }),
       tooltip: {
         ...tooltipBase(t),
         formatter: (params: unknown) => {

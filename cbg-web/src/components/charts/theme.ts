@@ -9,6 +9,18 @@ import { useAppStore } from '@/store/useAppStore';
  * 现在按当前主题返回整套 token，图表用 useMemo 依赖 theme，切换时会重绘。
  */
 
+/**
+ * 图表画布的统一点高度。
+ *
+ * 约定：**所有图表都使用这个值**，不要再在各组件里写 210 / 230 / 260 这类数字。
+ * 原因：同一行里的图表卡如果画布高度不同，卡片就会高低不齐（网格行会拉伸对齐，
+ * 但右下角留白不一致，看着像没对齐）。以后新增图表模块时沿用这个常量即可保持一致。
+ */
+export const CHART_HEIGHT = 230;
+
+/** 紧凑型图表的画布高度（用于将来需要更矮的小图，保持同一套刻度感） */
+export const CHART_HEIGHT_SM = 210;
+
 export interface ChartTheme {
   /** 当前是否浅色主题（个别图表需要按明暗选不同的灰阶） */
   isLight: boolean;

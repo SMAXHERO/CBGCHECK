@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { EChartsCoreOption } from 'echarts/core';
 import { EChart } from './EChart';
-import { emptyOption, useChartTheme } from './theme';
+import { CHART_HEIGHT, emptyOption, useChartTheme } from './theme';
 import type { TierStat } from '@/utils/analytics';
 
 interface Props {
@@ -10,7 +10,7 @@ interface Props {
 }
 
 /** 平台占比 —— 环形图比饼图更省空间，中间放总数 */
-export const PlatformPieChart = ({ data, height = 210 }: Props) => {
+export const PlatformPieChart = ({ data, height = CHART_HEIGHT }: Props) => {
   const t = useChartTheme();
 
   const option = useMemo<EChartsCoreOption>(() => {
