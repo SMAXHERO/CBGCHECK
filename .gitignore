@@ -23,3 +23,8 @@ npm-debug.log*
 Thumbs.db
 .vscode/
 .idea/
+
+# 临时凭据文件绝对不要提交（git 会把 Windows 反斜杠路径解析到仓库根目录）
+*git-cred*
+*credential*
+
