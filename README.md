@@ -4,6 +4,13 @@
 
 数据不是抓下来的静态文件，而是**每次点「查询」时实时拉取**。
 
+> ### 🚀 想直接用？看 **[docs/getting-started.md](docs/getting-started.md)**
+>
+> 从零到能用的完整步骤（装什么、在哪敲、看到什么才算对、出问题怎么查），照着做约 10 分钟。
+>
+> 最短路径：装 Node.js → 下载本项目 → 双击 `start.bat` → 在弹出窗口里登录藏宝阁
+> → 打开 https://smaxhero.github.io/CBGCHECK/ 并点「允许」。
+
 > **✅ 线上地址可以直接用（需要点一次「允许」）**
 >
 > 已部署地址：**https://smaxhero.github.io/CBGCHECK/**
@@ -20,7 +27,7 @@
 > **你自己本机正在运行伴随服务并已登录藏宝阁**——它访问的是本机服务，不是某个云端后端。
 >
 > **别人打开同一个地址**也一样能用，但用的是**他自己机器上**的服务与账号；
-> 没有本机服务的人只会看到引导页。这是浏览器安全策略，不是 bug。
+> 没有本机服务的人只会看到引导页。这是浏览器的权限设计，不是 bug。
 >
 > ⚠️ **安全提醒**：服务当前允许任意来源调用且无口令。若你曾对某个页面点过「允许」，
 > 那个页面就具备调用你本机服务的能力。详见「已知限制」一节的说明与缓解办法。
@@ -117,6 +124,10 @@ npm run dev          # http://127.0.0.1:5173
 ## 目录结构
 
 ```
+├── start.bat                     一键启动器（Windows：检查 Node → 起服务 → 打开界面）
+├── docs/
+│   ├── getting-started.md        ★ 从零到能用的分步手册
+│   └── self-host.md              本机使用 / Fork 部署 / 多人使用的说明
 ├── cbg-web/                      面板（React + Vite + TypeScript + antd + ECharts）
 │   ├── src/
 │   │   ├── api/live.ts           伴随服务客户端
@@ -128,6 +139,7 @@ npm run dev          # http://127.0.0.1:5173
 │   └── README.md                 ← 详细文档在这里（部署、主题、踩过的坑）
 ├── tools/cbg/
 │   ├── scraper-service/server.mjs  伴随服务（浏览器驱动 + HTTP API）
+│   ├── probe-public-pna.mjs        排查用：实测公网页面能否访问本机服务
 │   ├── seed_web_data.py            把接口返回解析成可排序的数值字段
 │   ├── fetch_cbg.py                数据管道入口（dry-run / live / from-file）
 │   ├── check_defaults.py           核对默认条件落到哪些字段

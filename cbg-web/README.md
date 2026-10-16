@@ -46,6 +46,9 @@
 
 ## 二、快速开始
 
+> 第一次用？看 **[../docs/getting-started.md](../docs/getting-started.md)**（从装 Node.js 到能查数据的分步手册）。
+> 最省事的方式是双击仓库根目录的 **`start.bat`**。
+
 前置：Node.js ≥ 20。
 
 **第一步：启动伴随服务**（会弹出一个浏览器窗口）
