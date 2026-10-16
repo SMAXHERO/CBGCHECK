@@ -53,6 +53,12 @@ for f in $files; do
     continue
   fi
 
+  # 文档与钩子自身会举例说明规则，不去解析这类文件，避免误报。
+  # 相应地，仓库里不要写「真实形态的凭据示例」——这个约定写在 SECURITY.md 里。
+  case "$f" in
+    *.md|.githooks/*) continue ;;
+  esac
+
   if grep -qE 'gh[pousr]_[A-Za-z0-9]{20,}' "$f" 2>/dev/null; then
     report "$f" "检测到 GitHub token（ghp_/gho_/ghu_/ghs_/ghr_ ...）"
   fi
@@ -65,7 +71,8 @@ for f in $files; do
   if grep -qiE '(password|passwd|app[_-]?secret|api[_-]?key|access[_-]?token)[[:space:]]*[:=][[:space:]]*["'"'"'][^"'"'"']{8,}' "$f" 2>/dev/null; then
     report "$f" "检测到形如 password=/api_key= 的赋值"
   fi
-  if grep -qE 'Cookie:[[:space:]]*[A-Za-z0-9_]+=' "$f" 2>/dev/null; then
+  # 真实 Cookie 值通常很长（base64/十六进制），要求 20 位以上，避免误判占位符示例
+  if grep -qE 'Cookie:[[:space:]]*[A-Za-z0-9_.-]+=[A-Za-z0-9%_./+-]{20,}' "$f" 2>/dev/null; then
     report "$f" "检测到 Cookie 头内容"
   fi
 done
