@@ -92,38 +92,54 @@ git config core.hooksPath
 
 ---
 
-## 四、已知的暴露项：提交者邮箱
+## 四、提交者邮箱（已处理）
 
-目前所有提交的作者与提交者都是：
+提交历史里的作者与提交者现在统一为：
 
 ```
-maxsalt <smh0103@163.com>
+SMAXHERO <74545638+SMAXHERO@users.noreply.github.com>
 ```
 
-这是**公开可见**的（GitHub 的提交列表、`git log` 都能看到）。
+这是 GitHub 的 **noreply 地址**格式（`<数字ID>+<用户名>@users.noreply.github.com`），
+对外不暴露真实邮箱，同时仍能正确归属到账号。
 
-- 属于**隐私**问题，不是**安全**问题：邮箱本身不能用来登录任何东西
-- 如果不想暴露，两个选择：
+### 之前是什么情况
 
-  **A. 只影响以后的提交**（简单，历史里仍能查到）
+仓库建立初期，提交者用的是真实邮箱（`smh0103@163.com`），公开可见。
+已通过重写历史清除：
 
-  ```bash
-  git config --global user.email "<你的数字ID>+SMAXHERO@users.noreply.github.com"
-  ```
+```bash
+git filter-branch -f --env-filter '
+  if [ "$GIT_AUTHOR_EMAIL" = "smh0103@163.com" ]; then
+    export GIT_AUTHOR_EMAIL="74545638+SMAXHERO@users.noreply.github.com"; fi
+  if [ "$GIT_COMMITTER_EMAIL" = "smh0103@163.com" ]; then
+    export GIT_COMMITTER_EMAIL="74545638+SMAXHERO@users.noreply.github.com"; fi
+' -- --all
+# 清理备份引用并强制推送
+rm -rf .git/refs/original
+git reflog expire --expire=now --all && git gc --prune=now
+git push --force origin main
+```
 
-  数字 ID 可在 https://github.com/settings/emails 页面看到。
+验证（远端也应只剩 noreply）：
 
-  **B. 重写历史，把已有提交也改掉**（彻底，但会改变所有 commit 哈希）
+```bash
+git log --format='%ae %ce' | sort -u
+```
 
-  ```bash
-  # 需要 git-filter-repo：pip install git-filter-repo
-  git filter-repo --email-callback '
-      return email.replace(b"smh0103@163.com", b"<数字ID>+SMAXHERO@users.noreply.github.com")
-  '
-  git push --force
-  ```
+> 重写历史会改变所有 commit 哈希。本仓库当时没有协作者、没有 fork，所以是安全的。
+> **如果将来已有别人 fork 或基于旧提交工作，就不要这样做了**——会让他们的仓库分叉。
 
-  本仓库没有协作者、没有 fork，所以重写是安全的。
+### 避免以后再犯
+
+本仓库已在本地配置里固定了提交身份，新提交自动使用 noreply 地址：
+
+```bash
+git config user.email "74545638+SMAXHERO@users.noreply.github.com"
+```
+
+（只改本仓库。你也可以用 `--global` 让这台机器上所有项目都这样，
+但注意会影响其他仓库的提交归属。）
 
 ---
 
