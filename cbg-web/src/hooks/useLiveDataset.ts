@@ -24,6 +24,8 @@ export interface LiveView {
   health: HealthInfo | null;
   /** 是否正在跑查询 */
   running: boolean;
+  /** 取消请求已受理，正在收尾（当前这一页还在返回途中） */
+  cancelling: boolean;
   progress: SearchProgress;
   /** 最近一次查询的结果 */
   result: SearchResult | null;
@@ -33,10 +35,14 @@ export interface LiveView {
   hasQueried: boolean;
   /** 发起查询；不传参数则沿用上一次的条件 */
   query: (values?: SearchParams) => Promise<void>;
+  /** 取消正在进行的查询；已取到的部分结果会保留 */
+  cancel: () => Promise<void>;
   /** 重新探测服务 */
   recheck: () => Promise<void>;
   /** 面向用户的错误提示 */
   errorText: string | null;
+  /** 提示性信息（不是错误），例如「已取消，保留部分结果」 */
+  notice: string | null;
   serviceMessage: string;
 }
 
@@ -46,10 +52,13 @@ export const useLiveDataset = (): LiveView => {
   useRenderCount('useLiveDataset');
   const [health, setHealth] = useState<HealthInfo | null>(null);
   const [running, setRunning] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
   const [progress, setProgress] = useState<SearchProgress>(EMPTY_PROGRESS);
   const [result, setResult] = useState<SearchResult | null>(null);
   const [hasQueried, setHasQueried] = useState(false);
   const [errorText, setErrorText] = useState<string | null>(null);
+  /** 提示性信息（不是错误），例如「已取消，保留部分结果」 */
+  const [notice, setNotice] = useState<string | null>(null);
 
   const lastParams = useRef<SearchParams>({});
   const jobIdRef = useRef<string | null>(null);
@@ -82,11 +91,13 @@ export const useLiveDataset = (): LiveView => {
 
       if (r.progress) setProgress(r.progress);
       if (r.status) setHealth((h) => (h ? { ...h, status: r.status!, message: r.message ?? h.message } : h));
+      setCancelling(Boolean(r.cancelling));
 
       if (r.running) {
         if (Date.now() > pollDeadline.current) {
           stopPolling();
           setRunning(false);
+          setCancelling(false);
           setErrorText('查询超时（超过 3 分钟）。可能页数太多，或站点响应变慢。');
           return;
         }
@@ -97,6 +108,7 @@ export const useLiveDataset = (): LiveView => {
       // 结束
       stopPolling();
       setRunning(false);
+      setCancelling(false);
       setHasQueried(true);
       setResult(r.result);
       if (r.result && !r.result.ok) {
@@ -107,12 +119,20 @@ export const useLiveDataset = (): LiveView => {
               ? '触发了安全验证（滑块）：在那个窗口里随便打开一个商品页，完成滑块后重新查询。'
               : `查询失败：${r.result.error ?? '未知'}${r.result.msg ? ` · ${r.result.msg}` : ''}`,
         );
+      } else if (r.result?.cancelled) {
+        // 取消不是错误，但要让用户知道结果是部分的
+        setErrorText(null);
+        setNotice(
+          `已取消查询，保留已取到的 ${r.result.rows.length} 条（第 ${r.result.meta?.pages ?? '?'} 页）。` +
+            '这是不完整的结果；改好条件后可以重新查询。',
+        );
       } else {
         setErrorText(null);
       }
     } catch (err) {
       stopPolling();
       setRunning(false);
+      setCancelling(false);
       setErrorText(`轮询失败：${(err as Error).message}`);
     }
   }, [stopPolling]);
@@ -124,7 +144,9 @@ export const useLiveDataset = (): LiveView => {
       lastParams.current = params;
 
       setErrorText(null);
+      setNotice(null);
       setRunning(true);
+      setCancelling(false);
       setProgress(EMPTY_PROGRESS);
       pollDeadline.current = Date.now() + POLL_TIMEOUT_MS;
 
@@ -149,6 +171,24 @@ export const useLiveDataset = (): LiveView => {
     },
     [poll, running],
   );
+
+  /**
+   * 取消当前查询。
+   *
+   * 不在这里停轮询——要等服务端真的收尾（它可能还要等当前这一页返回），
+   * 收到 running: false 与 cancelled: true 之后才算结束。
+   * 但先给出「正在停止」的即时反馈，避免用户以为点击没生效。
+   */
+  const cancel = useCallback(async () => {
+    if (!running) return;
+    setCancelling(true);
+    try {
+      await liveApi.cancel();
+    } catch (err) {
+      setCancelling(false);
+      setErrorText(`取消失败：${(err as Error).message}`);
+    }
+  }, [running]);
 
   // 常驻探测：服务没起来时每 5 秒试一次，起来了就放慢到 15 秒（只用于感知下线）
   useEffect(() => {
@@ -179,14 +219,17 @@ export const useLiveDataset = (): LiveView => {
     status: health?.status ?? 'starting',
     health,
     running,
+    cancelling,
     progress,
     result,
     rows,
     analytics,
     hasQueried,
     query,
+    cancel,
     recheck,
     errorText,
+    notice,
     serviceMessage: health?.message ?? '正在探测伴随服务…',
   };
 };

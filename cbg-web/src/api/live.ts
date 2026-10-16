@@ -45,6 +45,8 @@ export interface SearchResult {
   error?: string;
   msg?: string;
   raw?: string;
+  /** 因为用户取消而提前结束：rows 是已取到的部分结果，不完整 */
+  cancelled?: boolean;
   meta?: { total: number | null; pages: number; count: number };
 }
 
@@ -57,6 +59,10 @@ export interface ResultPoll {
   error?: string | null;
   status?: ServiceStatus;
   message?: string;
+  /** 取消请求已受理，但当前这一页还在返回途中 */
+  cancelling?: boolean;
+  /** 本次结果因为取消而不完整 */
+  cancelled?: boolean;
   done?: boolean;
   result: SearchResult | null;
 }
@@ -112,6 +118,18 @@ export const liveApi = {
 
   async result(): Promise<ResultPoll> {
     return request<ResultPoll>('/api/result', undefined, 8000);
+  },
+
+  /**
+   * 取消正在进行的查询。
+   *
+   * 服务端在两处检查取消标志：每页开始前、以及页间 4 秒节流的等待中，
+   * 所以点下去通常不到 1 秒就有反应。已经开始的那一次页面请求无法中断
+   * （请求由页面里的 fetch 发出），最坏情况是「当前这页取完就停」。
+   * 已取到的部分结果会保留并返回，前端会标注它不完整。
+   */
+  async cancel(): Promise<{ ok: boolean; cancelled: boolean; message?: string }> {
+    return request('/api/cancel', { method: 'POST' }, 8000);
   },
 
   async logs(): Promise<{ ok: boolean; logs: string[] }> {

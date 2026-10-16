@@ -97,6 +97,23 @@ const state = {
   logs: [],
 };
 
+/**
+ * 可中断的等待。
+ *
+ * 页间节流是 4 秒——如果取消只能在「两页之间」生效，用户点了取消还要再等 4 秒才看到反应。
+ * 这里把等待切成 100ms 的小片，每片检查一次取消标志，做到近乎即时响应。
+ * 注：已经开始的那一次 HTTP 请求无法中断（请求由页面里的 fetch 发出），
+ * 所以最坏情况是「当前这一页取完就停」，通常不到 1 秒。
+ */
+async function sleepInterruptible(ms, job) {
+  const step = 100;
+  for (let waited = 0; waited < ms; waited += step) {
+    if (job && job.cancelRequested) return false;
+    await sleep(Math.min(step, ms - waited));
+  }
+  return !(job && job.cancelRequested);
+}
+
 function log(text) {
   const line = `${new Date().toLocaleTimeString('zh-CN')}  ${text}`;
   state.logs.push(line);
@@ -165,15 +182,29 @@ let ws;
 let msgId = 0;
 const pending = new Map();
 
-const send = (method, params = {}) =>
-  new Promise((resolve) => {
+/**
+ * 发送一条 CDP 命令。
+ *
+ * 带超时：页面里的 fetch 有可能静默挂住（网络卡住、页面被切到后台节流），
+ * 不设超时的话整个查询会无限期停在这一页——这正是「查询时间太长」的一种成因。
+ * 超时时把 pending 条目清掉，避免 Map 无限增长。
+ */
+const send = (method, params = {}, timeoutMs = 60000) =>
+  new Promise((resolve, reject) => {
     const id = ++msgId;
-    pending.set(id, resolve);
+    const timer = setTimeout(() => {
+      pending.delete(id);
+      reject(new Error(`页面响应超时（${timeoutMs}ms）：${method}`));
+    }, timeoutMs);
+    pending.set(id, (v) => {
+      clearTimeout(timer);
+      resolve(v);
+    });
     ws.send(JSON.stringify({ id, method, params }));
   });
 
-async function evalInPage(expression) {
-  const r = await send('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true });
+async function evalInPage(expression, timeoutMs) {
+  const r = await send('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true }, timeoutMs);
   if (r?.exceptionDetails) {
     throw new Error('页面执行异常：' + JSON.stringify(r.exceptionDetails).slice(0, 200));
   }
@@ -291,9 +322,23 @@ function mapRow(r) {
 
 /**
  * 执行一次查询。逐页拉取，页间节流；每页都更新进度，前端可轮询。
+ *
+ * 支持取消（job.cancelRequested）：在「每页开始前」和「页间等待中」检查，
+ * 命中就立刻收尾，把已取到的部分结果返回（前端会标注这是不完整的结果）。
  */
 async function runSearch(values, maxPages) {
+  const job = state.job;
   await ensureOnHost();
+
+  // 取消后用户可能立刻发起新查询。此时上一个 runSearch 还在收尾
+  // （它得等当前这一页的请求返回），如果它稍后把结果写回 state.job，
+  // 就会覆盖掉新任务的状态。所以这里先等它让位，超时则直接报错。
+  for (let i = 0; i < 50 && state.job !== job; i += 1) {
+    await sleep(200);
+  }
+  if (state.job !== job) {
+    return { ok: false, error: 'SUPERSEDED', msg: '已被更新的查询取代', rows: [] };
+  }
 
   const rows = [];
   const seen = new Set();
@@ -303,6 +348,14 @@ async function runSearch(values, maxPages) {
   const limit = Math.min(Number(maxPages) || CONFIG.maxPages, CONFIG.maxPages);
 
   for (let p = 1; p <= limit; p += 1) {
+    // 上一页与当前页之间可能隔了 4 秒节流，取消请求多半在这期间到达
+    if (job?.cancelRequested) {
+      log(`已取消：第 ${p} 页开始前停止，保留已取到的 ${rows.length} 条`);
+      state.status = 'ready';
+      state.message = '就绪';
+      return { ok: true, cancelled: true, rows, meta: { total, pages, count: rows.length } };
+    }
+
     const params = {
       ...values,
       search_type: values.search_type || 'role',
@@ -312,7 +365,8 @@ async function runSearch(values, maxPages) {
       count: String(CONFIG.pageSize),
     };
 
-    const text = await evalInPage(`
+    const text = await evalInPage(
+      `
       (async () => {
         const r = await fetch('/cgi/api/query', {
           method: 'POST', credentials: 'include',
@@ -321,7 +375,11 @@ async function runSearch(values, maxPages) {
         });
         return await r.text();
       })()
-    `);
+    `,
+      // 单页请求正常在几秒内返回；20 秒还没回来基本是挂住了，
+      // 与其让用户干等，不如报错让他重试或取消
+      20000,
+    );
 
     let json;
     try {
@@ -360,7 +418,15 @@ async function runSearch(values, maxPages) {
     log(`第 ${p} 页：累计 ${rows.length} 条（站点共 ${total} 条）`);
 
     if (batch.length < CONFIG.pageSize || json.paging?.is_last_page) break;
-    await sleep(CONFIG.pageDelayMs);
+
+    // 页间节流（可中断）：用户点取消时立刻返回，不用干等满 4 秒
+    const waited = await sleepInterruptible(CONFIG.pageDelayMs, job);
+    if (!waited) {
+      log(`已取消：取到第 ${p} 页共 ${rows.length} 条后停止`);
+      state.status = 'ready';
+      state.message = '就绪';
+      return { ok: true, cancelled: true, rows, meta: { total, pages, count: rows.length } };
+    }
   }
 
   state.status = 'ready';
@@ -381,6 +447,22 @@ const CORS = {
 function json(res, code, payload) {
   res.writeHead(code, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', ...CORS });
   res.end(JSON.stringify(payload));
+}
+
+/**
+ * 记录请求来源。
+ *
+ * 用途：分辨「请求到底来自哪个页面」——本机 dev(http://127.0.0.1:5173)、
+ * 本机预览(4173)、还是公网那版(https://user.github.io/...)。
+ * 排查「公网版能不能连到本地服务」这类问题时，这是唯一一锤定音的证据。
+ * 顺便也说明：只要服务收到的 origin 是 github.io，就证明浏览器没拦住——
+ * 反之，如果公网页面里显示有数据、而这里始终没有 github.io 的 origin，
+ * 那说明那个页面上显示的数据不是这个服务给的。
+ */
+function logOrigin(req, p) {
+  const origin = req.headers.origin || '(无 Origin 头)';
+  const ua = String(req.headers['user-agent'] || '').slice(0, 40);
+  log(`← ${req.method} ${p}  origin=${origin}  ua=${ua}`);
 }
 
 function readBody(req) {
@@ -440,24 +522,46 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     if (state.job?.running) {
-      json(res, 409, { ok: false, error: 'BUSY', message: '已有查询在进行中', jobId: state.job.id });
-      return;
+      /**
+       * 上一个任务正在取消但还没收尾（它在等当前这一页的请求返回，最长 20 秒）。
+       * 用户的心理预期是「点了取消就能立刻重查」，此时直接回 409 会让他莫名其妙。
+       * 所以这里短暂等一下；等到了就正常开工，等不到才报忙。
+       */
+      if (state.job.cancelRequested) {
+        const deadline = Date.now() + 6000;
+        while (state.job?.running && Date.now() < deadline) {
+          await sleep(100);
+        }
+      }
+      if (state.job?.running) {
+        json(res, 409, { ok: false, error: 'BUSY', message: '已有查询在进行中', jobId: state.job.id });
+        return;
+      }
     }
 
     const body = await readBody(req);
     const values = body.values && typeof body.values === 'object' ? body.values : {};
     const jobId = `job_${Date.now()}`;
-    state.job = { id: jobId, running: true, pages: 0, count: 0, total: null, error: null, startedAt: Date.now() };
+    state.job = { id: jobId, running: true, pages: 0, count: 0, total: null, error: null, startedAt: Date.now(), origin: req.headers.origin || null };
 
-    log(`开始查询，条件 ${Object.keys(values).length} 项`);
+    // 发起查询时记录来源，这是判断「谁在查」的关键证据
+    logOrigin(req, p);
+    log(`开始查询，条件 ${Object.keys(values).length} 项：${JSON.stringify(values).slice(0, 160)}`);
     runSearch(values, body.maxPages)
       .then((result) => {
+        // 只在任务没有被新查询取代时写回，避免覆盖新任务的状态
+        if (state.job?.id !== jobId) return;
         state.job.result = result;
         state.job.running = false;
         state.job.finishedAt = Date.now();
-        if (result.ok) log(`查询完成：${result.rows.length} 条 / 共 ${result.meta.total} 条`);
+        if (result.ok && result.cancelled) {
+          log(`查询已取消：保留 ${result.rows.length} 条（第 ${result.meta.pages} 页）`);
+        } else if (result.ok) {
+          log(`查询完成：${result.rows.length} 条 / 共 ${result.meta.total} 条`);
+        }
       })
       .catch((err) => {
+        if (state.job?.id !== jobId) return;
         state.job.running = false;
         state.job.error = 'EXCEPTION';
         state.status = 'error';
@@ -470,13 +574,26 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // 取消当前查询：设置标志，查询循环会在「每页开始前」或「页间等待中」收尾
+  if (p === '/api/cancel' && req.method === 'POST') {
+    if (!state.job?.running) {
+      json(res, 200, { ok: true, cancelled: false, message: '当前没有正在进行的查询' });
+      return;
+    }
+    state.job.cancelRequested = true;
+    logOrigin(req, p);
+    log('收到取消请求，正在停止…');
+    json(res, 202, { ok: true, cancelled: true, jobId: state.job.id, message: '取消请求已受理' });
+    return;
+  }
+
   // 查询进度与结果
   if (p === '/api/result') {
     if (!state.job) {
       json(res, 200, { ok: true, running: false, empty: true });
       return;
     }
-    const { id, running, pages, count, total, error, result } = state.job;
+    const { id, running, pages, count, total, error, result, cancelRequested } = state.job;
     json(res, 200, {
       ok: true,
       jobId: id,
@@ -485,6 +602,10 @@ const server = http.createServer(async (req, res) => {
       error,
       status: state.status,
       message: state.message,
+      /** 取消请求已受理但循环还在收尾（当前这一页要等它返回） */
+      cancelling: Boolean(cancelRequested && running),
+      /** 本次结果是否因为取消而不完整 */
+      cancelled: Boolean(result?.cancelled),
       done: !running,
       result: running ? null : result,
     });

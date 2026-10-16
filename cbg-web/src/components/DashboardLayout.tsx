@@ -22,12 +22,16 @@ interface Props {
   /** 查询相关 */
   status: ServiceStatus;
   running: boolean;
+  /** 取消已受理，正在等当前这一页返回 */
+  cancelling: boolean;
   hitCount: number;
   /** 查询中显示「已取回 N 条 / 共 M 条」 */
   progressText?: string | null;
   /** 条件改过但还没查询，按钮要显眼提示 */
   dirty: boolean;
   onQuery: () => void;
+  /** 取消正在进行的查询 */
+  onCancel: () => void;
   canQuery: boolean;
 
   onRemoveCondition: (id: string) => void;
@@ -64,10 +68,12 @@ export const DashboardLayout = ({
   children,
   status,
   running,
+  cancelling,
   hitCount,
   progressText,
   dirty,
   onQuery,
+  onCancel,
   canQuery,
   onRemoveCondition,
   onExportExcel,
@@ -163,7 +169,8 @@ export const DashboardLayout = ({
           {running ? (
             <span className="query-progress">
               <span className="mini-spinner" />
-              {progressText ?? '正在查询…'}
+              {cancelling ? '正在停止…' : (progressText ?? '正在查询…')}
+              {!cancelling && <span className="cancel-hint">可随时点「取消查询」</span>}
             </span>
           ) : (
             <>
@@ -178,10 +185,10 @@ export const DashboardLayout = ({
             </>
           )}
         </div>
-        <button className="btn btn-ghost" onClick={bumpReset} disabled={!conditions.length}>
+        <button className="btn btn-ghost" onClick={bumpReset} disabled={!conditions.length || running}>
           清空
         </button>
-        <button className="btn btn-ghost" onClick={onRestoreDefaults}>
+        <button className="btn btn-ghost" onClick={onRestoreDefaults} disabled={running}>
           默认条件
         </button>
         <button className="btn btn-ghost" onClick={onExportExcel} disabled={exportDisabled}>
@@ -193,13 +200,24 @@ export const DashboardLayout = ({
         <button className="btn btn-ghost" onClick={onPrint} disabled={exportDisabled}>
           打印 / PDF
         </button>
-        <button
-          className={`btn btn-primary${dirty && !running ? ' pulse' : ''}`}
-          onClick={onQuery}
-          disabled={!canQuery || running}
-        >
-          {running ? '查询中…' : '查询'}
-        </button>
+        {running ? (
+          <button
+            className="btn btn-danger"
+            onClick={onCancel}
+            disabled={cancelling}
+            title="停止本次查询，保留已取到的部分结果"
+          >
+            {cancelling ? '正在停止…' : '取消查询'}
+          </button>
+        ) : (
+          <button
+            className={`btn btn-primary${dirty ? ' pulse' : ''}`}
+            onClick={onQuery}
+            disabled={!canQuery}
+          >
+            查询
+          </button>
+        )}
       </footer>
     </div>
   );

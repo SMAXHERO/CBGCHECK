@@ -304,6 +304,7 @@ export const Dashboard = () => {
         badge="阴阳师 · 角色"
         status={live.status}
         running={live.running}
+        cancelling={live.cancelling}
         meta={
           live.health?.lastSuccessAt
             ? `站点共 ${live.health.lastTotal ?? '?'} 条 ｜ 上次成功 ${new Date(
@@ -316,6 +317,7 @@ export const Dashboard = () => {
         progressText={progressText}
         dirty={dirty}
         onQuery={handleQuery}
+        onCancel={() => void live.cancel()}
         canQuery={live.status === 'ready' && Boolean(config.schema)}
         onRemoveCondition={(id) =>
           setSelected((prev) => {
@@ -354,11 +356,19 @@ export const Dashboard = () => {
           </div>
         )}
 
+        {live.notice && !live.errorText && (
+          <div className="callout callout-notice">
+            <span>⏹</span>
+            <div>{live.notice}</div>
+          </div>
+        )}
+
         {live.hasQueried && !live.errorText && (
           <div className="callout">
             <span>📡</span>
             <div>
-              实时结果：本次取回 <b>{live.rows.length}</b> 条
+              {live.result?.cancelled ? <>结果不完整（查询已取消，仅含已取到的部分）：</> : <>实时结果：</>}
+              本次取回 <b>{live.rows.length}</b> 条
               {live.result?.meta?.total ? <>（站点符合条件共 <b>{live.result.meta.total}</b> 条）</> : null}
               ，共 {live.result?.meta?.pages ?? 0} 页。
               {live.result?.meta?.total && live.result.meta.total > live.rows.length ? (

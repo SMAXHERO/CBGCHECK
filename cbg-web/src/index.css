@@ -55,6 +55,10 @@
 
   --ok: #34d07f;
   --warn: #e5b567;
+  /* 取消/中断类操作用色：soft 是底、danger 是字与描边 */
+  --danger: #ff6b6b;
+  --danger-soft: rgba(255, 107, 107, 0.14);
+  --danger-border: rgba(255, 107, 107, 0.42);
   --link: #6aa9ff;
   --scroll-thumb: #2b313d;
 
@@ -95,6 +99,10 @@
 
   --ok: #16a34a;
   --warn: #b45309;
+  /* 取消/中断类操作用色：浅底上用更深的红，保证对比度 */
+  --danger: #d4380d;
+  --danger-soft: rgba(212, 56, 13, 0.08);
+  --danger-border: rgba(212, 56, 13, 0.35);
   --link: #1677ff;
   --scroll-thumb: #c9cfd8;
 }
@@ -1055,6 +1063,41 @@ body {
   /* 用透明边框占位，而不是 border:0 —— 否则按钮比 .btn-ghost 矮 2px，底栏会显得参差 */
   border: 1px solid transparent;
   box-shadow: 0 2px 12px var(--accent-shadow);
+}
+
+/**
+ * 取消查询按钮。
+ * 用警示色而不是主色：它的作用是「打断」当前操作，视觉上不该和「查询」抢注意力，
+ * 但又要让用户一眼看到它在哪。同样用透明边框保持与其他按钮等高。
+ */
+.btn-danger {
+  background: var(--danger-soft);
+  color: var(--danger);
+  border: 1px solid var(--danger-border);
+}
+.btn-danger:hover:not(:disabled) {
+  background: var(--danger);
+  color: #fff;
+  border-color: var(--danger);
+}
+.btn-danger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/** 提示性信息（不是错误）：例如「查询已取消，保留部分结果」 */
+.callout-notice {
+  border-left-color: var(--dim);
+}
+.callout-notice > span {
+  color: var(--dim);
+}
+
+/** 查询中提示「可随时取消」，弱化处理，不与进度文案争视线 */
+.cancel-hint {
+  margin-left: 10px;
+  color: var(--faint);
+  font-size: 11.5px;
 }
 .btn-primary:hover:not(:disabled) {
   background: var(--accent-hover);
