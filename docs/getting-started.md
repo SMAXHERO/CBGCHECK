@@ -202,6 +202,60 @@ https://smaxhero.github.io/CBGCHECK/
 
 ---
 
+## 推送更新到 GitHub（可选）
+
+日常使用**不需要**这一步——查询是实时的，不会往仓库写东西。
+只有当你改了默认条件或代码、想同步到线上时才需要推送。
+
+### 首次：配置认证（一次性）
+
+推荐用 **SSH**：一次配置长期有效，不涉及任何会过期的凭据，也不需要每次输密码。
+
+```bash
+# 1) 生成密钥（一路回车即可）
+ssh-keygen -t ed25519 -C "你的备注"
+
+# 2) 如果 22 端口不通（国内常见），让 github.com 走 443：
+#    在 ~/.ssh/config 里加（注意：文件必须是无 BOM 的 UTF-8）
+Host github.com
+  HostName ssh.github.com
+  Port 443
+  User git
+  IdentityFile ~/.ssh/id_ed25519
+```
+
+3) 复制公钥内容（`~/.ssh/id_ed25519.pub`），加到
+   https://github.com/settings/keys → **New SSH key**
+
+4) 验证：
+
+```bash
+ssh -T git@github.com
+# 看到 Hi 你的用户名! You've successfully authenticated 就成了
+```
+
+### 推送
+
+```bash
+cd D:\CBGCHECK
+git add -A
+git commit -m "说明这次改了什么"
+git push
+```
+
+> 如果你是用 **HTTPS** 方式 clone 的（`https://github.com/...`），推送时 Git 会要凭据。
+> 那种方式需要 Personal Access Token 或凭据管理器；换成 SSH 更省事：
+> `git remote set-url origin git@github.com:你的用户名/CBGCHECK.git`
+
+### 推送后会发生什么
+
+仓库里的 `.github/workflows/deploy.yml` 会自动构建并部署到 GitHub Pages（约 1 分半），
+不需要你做任何事。可以去仓库的 **Actions** 标签看进度。
+
+> 只改文档时，可以在提交信息里加 `[skip ci]` 跳过这次部署，省一次构建。
+
+---
+
 ## 遇到问题怎么查
 
 | 现象 | 原因与处理 |
