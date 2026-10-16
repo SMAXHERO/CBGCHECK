@@ -110,7 +110,7 @@ npm run preview      # http://127.0.0.1:4173
 
 | 项 | 说明 |
 |---|---|
-| 接口 | `/api/health` 状态探测、`/api/search` 发起查询、`/api/result` 进度与结果、`/api/logs`、`/api/shutdown` |
+| 接口 | `/api/health` 状态探测、`/api/search` 发起查询、`/api/cancel` 取消查询、`/api/result` 进度与结果、`/api/logs`、`/api/shutdown` |
 | 节流 | 页间固定 **4 秒**，单次最多 **8 页（120 条）**——实测参数见下 |
 | 登录态 | 存在 `tools/cbg/scraper-service/profile/`（独立的浏览器用户目录，不碰你日常浏览器的数据） |
 | 失败分类 | `e12`→需登录；`CAPTCHA_AUTH` / `MOBILE_AUTH`→需滑块验证；非 JSON→按验证处理。前端据此给出**不同**的指引 |
