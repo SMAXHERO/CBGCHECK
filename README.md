@@ -157,6 +157,25 @@ npm run dev          # http://127.0.0.1:5173
 
 ---
 
+## 数据的来源与更新
+
+| 数据 | 来源 | 更新方式 |
+|---|---|---|
+| **查询结果** | 每次点「查询」实时拉取 | 自动，无需维护 |
+| **区服清单**（6 组 / 131 条） | 藏宝阁公开的 `server_list_data*.js` | ✅ 脚本自动同步，开新区后跑一次即可 |
+| **条件定义**（13 组 / 72 项） | 从 `cbg-filter-kit` 一次性导出 | ⚠️ 需手工重新导出 |
+
+```bash
+# 检查有没有新增区服（0=最新，1=有差异）
+python tools/cbg/sync_servers.py --check
+
+# 同步区服（含游戏内通道的额外分组）
+python tools/cbg/sync_servers.py --write --include-ingame
+```
+
+条件定义为什么会过期、怎么更新，详见 **[docs/filter-sources.md](docs/filter-sources.md)**。
+
+---
 ## 已知限制
 
 | 限制 | 说明 |

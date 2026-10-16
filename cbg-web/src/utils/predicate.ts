@@ -218,6 +218,9 @@ export class ServerIndex {
 
   constructor(list: ServerEntry[]) {
     for (const s of list) {
+      // 防御：跳过结构不完整的条目（例如 sync_servers.py 写入的 _meta 元信息条目，
+      // 它的 entry 是空数组）。不跳过会建出 "undefined" 垃圾键和一个空分组。
+      if (!Array.isArray(s.entry) || s.entry.length < 2) continue;
       this.byId.set(String(s.entry[0]), s);
       const arr = this.byGroup.get(s.group) ?? [];
       arr.push(s);

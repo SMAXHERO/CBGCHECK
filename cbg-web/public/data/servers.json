@@ -1903,5 +1903,73 @@
     2
    ]
   ]
+ },
+ {
+  "groupId": "6",
+  "group": "中国-安卓联运",
+  "entry": [
+   51,
+   "冬之雪",
+   "1",
+   "dongzhixue",
+   "dzx",
+   [
+    2
+   ]
+  ]
+ },
+ {
+  "groupId": "6",
+  "group": "中国-安卓联运",
+  "entry": [
+   55,
+   "雨之霁",
+   "2",
+   "yuzhiji",
+   "yzj",
+   [
+    2
+   ]
+  ]
+ },
+ {
+  "groupId": "6",
+  "group": "中国-安卓联运",
+  "entry": [
+   56,
+   "雀之灵",
+   "3",
+   "quezhiling",
+   "qzl",
+   [
+    2
+   ]
+  ]
+ },
+ {
+  "groupId": "6",
+  "group": "中国-安卓联运",
+  "entry": [
+   59,
+   "樱之华",
+   "4",
+   "yingzhihua",
+   "yzh",
+   [
+    2
+   ]
+  ]
+ },
+ {
+  "groupId": "_meta",
+  "group": "_meta",
+  "entry": [],
+  "syncedAt": "2026-10-17 02:29:49 +0800",
+  "source": [
+   "https://cbg-yys.res.netease.com/js/server_list_data.js",
+   "https://cbg-yys.res.netease.com/js/server_list_data2.js"
+  ],
+  "serverCount": 130,
+  "note": "由 tools/cbg/sync_servers.py 生成；_meta 为元信息，不是区服"
  }
 ]

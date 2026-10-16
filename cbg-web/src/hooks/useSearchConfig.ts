@@ -38,7 +38,16 @@ export const useSearchConfig = (): SearchConfig => {
     queryFn: async ({ signal }) => {
       const res = await fetch(SERVERS_URL, { signal, cache: 'no-cache' });
       if (!res.ok) throw new Error(`区服清单加载失败：HTTP ${res.status}`);
-      return (await res.json()) as ServerEntry[];
+      const raw = (await res.json()) as ServerEntry[];
+      /**
+       * 过滤掉元信息条目。
+       *
+       * servers.json 由 tools/cbg/sync_servers.py 生成，最后一个条目的 groupId 是 "_meta"
+       * （记录同步时间与来源，entry 为空数组）。它不是区服：
+       * 不过滤的话，ServerIndex 会把 entry[0] === undefined 当成 id 建出垃圾键，
+       * 并在区服分组列表里多出一个空的 "_meta" 组。
+       */
+      return raw.filter((s) => s.groupId !== '_meta' && Array.isArray(s.entry) && s.entry.length >= 2);
     },
     staleTime: Infinity,
     retry: 1,
