@@ -4,6 +4,29 @@
 
 数据不是抓下来的静态文件，而是**每次点「查询」时实时拉取**。
 
+> **⚠️ 先读这一段：线上地址打开是空的，这是预期行为**
+>
+> 已部署地址：**https://smaxhero.github.io/CBGCHECK/**
+>
+> 直接打开它**看不到数据**，只会看到一个「未探测到本地查询服务」的引导页。原因：
+> 实时查询需要本机运行一个伴随服务（它借用你已登录的浏览器去请求藏宝阁），
+> 而**公网页面访问不了你电脑上的 `127.0.0.1`** —— Chrome 的本地网络访问保护会直接拦掉：
+>
+> ```
+> Access to fetch at 'http://127.0.0.1:8791/api/health' from origin 'https://<user>.github.io'
+> has been blocked by CORS policy: Permission was denied for this request
+> to access the `loopback` address space.
+> ```
+>
+> 这是浏览器安全策略，没有任何配置能绕过。所以：
+>
+> | 你想做什么 | 该怎么做 |
+> |---|---|
+> | **看真正的数据面板** | 把仓库 clone 到本机，按下面「快速开始」跑起来，用 `http://127.0.0.1:5173` |
+> | 先看看界面长什么样 | 看下面两张截图，或打开[界面示例（静态）](https://smaxhero.github.io/CBGCHECK/design/style-preview.html) |
+>
+> 一句话：**这个项目本质是「本机工具」，线上那份只是代码的展示位。**
+
 ![深色主题](cbg-web/public/design/theme-dark.png)
 ![浅色主题](cbg-web/public/design/theme-light.png)
 
