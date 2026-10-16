@@ -125,6 +125,44 @@ export interface PredicateResult {
 }
 
 /**
+ * 把一次查询用到的参数按「我们能做到什么」分成两类，供界面如实说明。
+ *
+ * 为什么不能笼统说「未生效」——实测确认过：
+ * 站点**接受**这些参数并真的用它们筛选（total_num 会变），
+ * 只是列表接口**不返回**对应字段。所以后果不是「没筛」，而是
+ * 「筛过了，但本地看不到这个值、也没法对它二次排序或筛选」。
+ *
+ *   localKeys    有本地判定函数 → 可以在表格里看到、排序、以及本地复筛
+ *   serverOnly   无本地判定函数 → 服务端已筛，本地无该字段
+ *
+ * 实测数据（total_num，基线 10000）：
+ *   full_ssr=1 → 1824   goyu=88888 → 512    six_star_num=80 → 3490
+ *   sign_days=1500 → 2806   ss_skin_num=350 → 2160
+ *   black_egg_num=30 → 1476   gouyu_card=1 → 9901
+ */
+export interface ConditionSupport {
+  /** 有本地字段，可排序可复筛 */
+  localKeys: string[];
+  /** 服务端已筛选，但本地拿不到该字段 */
+  serverOnlyKeys: string[];
+}
+
+export const classifyConditionSupport = (params: SearchParams): ConditionSupport => {
+  const localKeys: string[] = [];
+  const serverOnlyKeys: string[] = [];
+
+  for (const [key, raw] of Object.entries(params)) {
+    if (key === 'search_type') continue;
+    if (raw === '' || raw === null || raw === undefined) continue;
+    // 价格上下限在本地是同一对字段，只报一次
+    const norm = key === 'price_min' || key === 'price_max' ? 'price' : key;
+    const bucket = PREDICATES[key] ? localKeys : serverOnlyKeys;
+    if (!bucket.includes(norm)) bucket.push(norm);
+  }
+  return { localKeys, serverOnlyKeys };
+};
+
+/**
  * 把参数表**编译**成一个过滤函数。
  * 注意：判定函数在编译期就绑定了 raw 值，所以多值参数（区服/平台）不会丢。
  */

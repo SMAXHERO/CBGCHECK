@@ -1093,6 +1093,20 @@ body {
   color: var(--dim);
 }
 
+/** 条件生效情况说明：不是警告也不是错误，是「说清楚我们筛到了什么程度」 */
+.callout-cond {
+  border-left-color: var(--link);
+}
+.callout-cond > span {
+  color: var(--link);
+}
+.callout-cond .hint-sm {
+  display: block;
+  margin-top: 3px;
+  color: var(--dim);
+  font-size: 11.5px;
+}
+
 /** 查询中提示「可随时取消」，弱化处理，不与进度文案争视线 */
 .cancel-hint {
   margin-left: 10px;

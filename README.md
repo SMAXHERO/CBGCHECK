@@ -35,9 +35,10 @@
 ![深色主题](cbg-web/public/design/theme-dark.png)
 ![浅色主题](cbg-web/public/design/theme-light.png)
 
-界面示例（静态页面，不连服务、不查数据）：
+界面示例与工具（静态页面，不连服务、不查数据）：
 
-- **[多模块布局预览](https://smaxhero.github.io/CBGCHECK/design/modules-preview.html)** —— 顶部 Tab 切换两个模块、条件分组由模块自定义、右侧版式固定
+- **[默认条件选择器](https://smaxhero.github.io/CBGCHECK/design/defaults-builder.html)** —— 读真实的 `filters.json`，勾选填值后生成可粘贴的默认条件代码
+- [多模块布局预览](https://smaxhero.github.io/CBGCHECK/design/modules-preview.html) —— 顶部 Tab 切换两个模块、条件分组由模块自定义、右侧版式固定
 - [第一模块界面示例](https://smaxhero.github.io/CBGCHECK/design/style-preview.html) —— 角色模块的完整静态还原
 - 本机开发时用 `http://127.0.0.1:5173/design/index.html` 打开示例索引
 
@@ -124,8 +125,39 @@ npm install
 npm run dev          # http://127.0.0.1:5173
 ```
 
-打开后会自动探测服务并查询一次。默认条件是**价格 500~1500 元 + 散件一速 ≥158 + 勾玉 ≥100000**，
-可在 `cbg-web/src/config/defaults.ts` 里改。
+打开后会自动探测服务并查询一次。
+
+### 默认条件（11 条）
+
+默认条件写在 `cbg-web/src/config/defaults.ts`，用**「分组名 + 条件名」定位**而不是下标——
+藏宝阁加一项条件时下标会整体错位，用名字定位才能在 schema 变化后依然对上。
+
+| 条件 | 接口参数 | 倍率 |
+|---|---|---|
+| 价格 500~1500 元 | `price_min` / `price_max` | ×100 |
+| SSR / SP / UR 全图鉴 | `full_ssr` / `full_sp` / `full_ur` | — |
+| 6 星式神 ≥ 80 | `six_star_num` | — |
+| 散件一速 ≥ 158 | `max_sanjian_speed` | ×100 |
+| 勾玉 ≥ 88888 | `goyu` | — |
+| 御行达摩 ≥ 30 | `black_egg_num` | — |
+| 永久勾玉卡 | `gouyu_card` | — |
+| 式神皮肤总数 ≥ 350 | `ss_skin_num` | — |
+| 签到天数 ≥ 1500 | `sign_days` | — |
+
+> ⚠️ **这 11 条同时生效时，站点目前符合条件的账号为 0 条**（实测叠加：价格区间 2235 条 →
+> 加三图鉴 213 条 → 加 6 星 175 条 → 加一速 66 条 → **加勾玉 ≥88888 后归零**）。
+> 勾玉一项全站只有五百多条，叠加前面几条就没有在售的了。所以看到「命中 0 条」是**真实无结果**，
+> 不是查询失败。想看到结果，最有效的是放宽或去掉勾玉这一条。
+
+**改默认条件**：用内置的选择器页 `cbg-web/public/design/defaults-builder.html`
+（本机地址 `http://127.0.0.1:5173/design/defaults-builder.html`）——
+它读取真实的 `filters.json`，勾选填值后生成可直接粘贴的代码，比手改不容易写错字段名。
+
+改完用这个脚本核对（它会**从 `defaults.ts` 直接解析**，不会抄第二份而过期）：
+
+```bash
+python tools/cbg/check_defaults.py
+```
 
 服务还没起来时，页面会显示启动指引，**不会**显示任何旧数据。
 
@@ -175,14 +207,18 @@ node tools/cbg/scraper-service/server.mjs --max-pages 4 --delay 5000
 │   │   ├── hooks/                实时数据源、条件 schema、主题
 │   │   └── utils/                参数换算、统计、导出
 │   ├── public/data/              条件定义（filters.json）、区服清单（servers.json）
+│   ├── public/design/            界面示例与工具（静态页）
+│   │   ├── defaults-builder.html   ★ 默认条件选择器（改默认条件用它）
+│   │   ├── modules-preview.html    多模块布局预览
+│   │   └── style-preview.html      第一模块界面示例
 │   └── README.md                 ← 详细文档在这里（部署、主题、踩过的坑）
 ├── tools/cbg/
 │   ├── scraper-service/server.mjs  伴随服务（浏览器驱动 + HTTP API + 取消）
 │   ├── sync_servers.py             从藏宝阁官方数据源同步区服清单
+│   ├── check_defaults.py           核对默认条件（从 defaults.ts 直接解析）
 │   ├── probe-public-pna.mjs        排查用：实测公网页面能否访问本机服务
 │   ├── seed_web_data.py            把接口返回解析成可排序的数值字段
 │   ├── fetch_cbg.py                数据管道入口（dry-run / live / from-file）
-│   ├── check_defaults.py           核对默认条件落到哪些字段
 │   └── verify_links.py             核对商品链接拼得对不对
 └── .github/workflows/deploy.yml    构建并部署到 GitHub Pages
 ```
@@ -204,11 +240,37 @@ node tools/cbg/scraper-service/server.mjs --max-pages 4 --delay 5000
 | 公网版需要「允许」授权 | 首次打开公网地址时，浏览器会问是否允许访问本地网络；允许后才能连上你本机的服务。拒绝则显示引导页 |
 | 公网版依赖你的电脑开着 | 它连的是你本机的伴随服务，不是云端后端。电脑关机 / 服务没启动，公网页面就查不了 |
 | 服务无访问口令 | CORS 允许任意来源，任何你点过「允许」的页面都能调用它。见下方「安全提醒」 |
-| 「勾玉」等条件不生效 | 列表接口不返回这些字段（它们属于商品详情数据）。界面会明示「N 项条件未生效」，不会假装筛过 |
+| **部分条件服务端筛了但本地看不到** | 见下方专门一节：勾玉、皮肤数这类字段站点**接受参数并据此筛选**，但列表接口不返回，所以表格里没有这一列。界面会如实说明，不会假装它们不存在 |
 | 抓取速度受限 | 实测累计约 250 条会触发站点安全验证，所以默认 4 秒/页、单次最多 8 页（120 条）。被拦后需在浏览器里手动过验证并等冷却。**中途可用「取消查询」随时停下** |
 | 取消不能中断已发出的那一页请求 | 请求由页面里的 `fetch` 发出，服务发不了 abort 信号。最坏情况是「当前这页取完就停」（通常不到 1 秒，极端 20 秒超时） |
 | 需要手动登录一次 | 登录这一步没法也不该自动化——工具全程不接触、不存储你的账号密码 |
 | 条件定义会过期 | `filters.json` 是手工导出的快照。藏宝阁新增条件时界面不会自动出现，需重新导出。区服清单不受影响（可脚本同步） |
+
+### 「服务端已筛选」和「未生效」是两回事
+
+这一点容易搞错，所以单独说明。实测对照站点返回的符合条数（基线 10000 条）：
+
+| 参数 | 结果 | 含义 |
+|---|---|---|
+| `full_ssr=1` | 1824 | 真的在筛 |
+| `goyu=88888` | 512 | 真的在筛 |
+| `six_star_num=80` | 3490 | 真的在筛 |
+| `sign_days=1500` | 2806 | 真的在筛 |
+| `ss_skin_num=350` | 2160 | 真的在筛 |
+| `black_egg_num=30` | 1476 | 真的在筛 |
+| `gouyu_card=1` | 9901 | 真的在筛 |
+
+但列表接口返回的 49 个顶层字段里，**没有任何一个**承载这些值
+（`other_info` 只有 `top_heros` / `top_skins` / `basic_attrs` 这类展示字段）。
+
+所以后果不是「没筛」，而是**筛过了，但本地拿不到这个值**——表格里看不到勾玉那一列，
+也没法按它对已取回的结果二次排序。界面为此把条件分成两类并明示：
+
+- **服务端已筛选、本地无法核对**：勾玉、御行达摩、永久勾玉卡、式神皮肤总数、SSR/SP/UR 全图鉴……
+- **可在本地核对**：价格、散件一速、6 星式神数量、签到天数（表格里有这些列，能排序、能复筛）
+
+这个区分由 `src/utils/predicate.ts` 的 `classifyConditionSupport()` 判断：
+参数在 `PREDICATES` 表里有判定函数 = 本地可核对，否则 = 仅服务端筛选。
 
 ### 安全提醒：关于「本地网络访问」权限
 

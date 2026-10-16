@@ -1,0 +1,672 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>默认条件选择器 · 藏宝阁数据面板</title>
+<style>
+/* =========================================================================
+   默认条件选择器
+   -------------------------------------------------------------------------
+   读取真实的 cbg-web/public/data/filters.json，把你勾的条件生成成
+   可直接粘贴回 src/config/defaults.ts 的代码。
+   纯静态页，不连服务、不发请求（除了读同目录下的 filters.json）。
+   ========================================================================= */
+:root, :root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg:#0e1014; --surface:#161920; --surface-2:#1c2029; --surface-3:#232833;
+  --thead:#191d26; --row-hover:#1a1e27;
+  --border:#272c37; --border-soft:#1e222b; --border-ctl:#3f4a5e; --border-soft-2:#39414f;
+  --text:#e9ecf2; --dim:#8f99ab; --faint:#626c7e; --text-mid:#c8cfdb; --text-strong:#d5dbe6;
+  --accent:#ff5a45; --accent-hover:#ff6d5a; --accent-soft:rgba(255,90,69,.14);
+  --ok:#34d07f; --warn:#e5b567; --link:#6aa9ff; --scroll-thumb:#2b313d;
+  --radius:12px; --radius-sm:9px;
+}
+:root[data-theme='light'] {
+  color-scheme: light;
+  --bg:#f5f7fa; --surface:#fff; --surface-2:#f7f8fa; --surface-3:#eef1f5;
+  --thead:#fafafa; --row-hover:#f5f7fa;
+  --border:#e5e7eb; --border-soft:#f0f0f0; --border-ctl:#c3cbd8; --border-soft-2:#d9dde3;
+  --text:#1f2329; --dim:#6b7280; --faint:#9aa3b0; --text-mid:#4b5563; --text-strong:#374151;
+  --accent:#ff5a45; --accent-hover:#f2452f; --accent-soft:rgba(255,90,69,.08);
+  --ok:#16a34a; --warn:#b45309; --link:#1677ff; --scroll-thumb:#c9cfd8;
+}
+* { box-sizing:border-box; }
+html, body { height:100%; margin:0; }
+body {
+  background:var(--bg); color:var(--text); overflow:hidden;
+  font:13px/1.55 -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+}
+.app { display:flex; flex-direction:column; height:100vh; }
+
+/* ---------- 顶部 ---------- */
+header.top {
+  flex:0 0 auto; display:flex; align-items:center; gap:12px; height:56px; padding:0 16px;
+  background:var(--surface); border-bottom:1px solid var(--border);
+}
+.brand { font-size:14.5px; font-weight:700; white-space:nowrap; }
+.brand small { color:var(--dim); font-weight:400; font-size:11.5px; margin-left:7px; }
+.top .spacer { flex:1; }
+.pill { font-size:12px; color:var(--dim); }
+.pill b { color:var(--accent); font-size:13px; }
+.btn {
+  height:34px; padding:0 12px; border-radius:9px; font:inherit; font-size:12.5px; cursor:pointer;
+  border:1px solid var(--border-soft-2); background:var(--surface-2); color:var(--text-mid); white-space:nowrap;
+}
+.btn:hover { color:var(--text); border-color:var(--border-ctl); }
+.btn-primary { background:var(--accent); color:#fff; border:1px solid transparent; font-weight:600; }
+.btn-ghost { background:transparent; }
+.icon-btn { width:34px; height:34px; display:grid; place-items:center; border-radius:9px;
+  border:1px solid var(--border-soft-2); background:var(--surface-2); color:var(--dim); cursor:pointer; font-size:14px; }
+
+/* ---------- 主体三栏 ---------- */
+.body { flex:1 1 auto; min-height:0; display:grid; grid-template-columns:minmax(0,1fr) 420px; }
+.left { min-width:0; min-height:0; display:flex; flex-direction:column; }
+.toolbar { flex:0 0 auto; display:flex; align-items:center; gap:10px; padding:10px 16px; border-bottom:1px solid var(--border-soft); background:var(--surface-2); }
+.toolbar input { flex:1; min-width:0; height:32px; padding:0 10px; border-radius:8px; border:1px solid var(--border-ctl); background:var(--surface); color:var(--text); font:inherit; font-size:12.5px; }
+.toolbar label { display:flex; align-items:center; gap:6px; font-size:12px; color:var(--dim); cursor:pointer; white-space:nowrap; }
+.scroll { flex:1 1 auto; min-height:0; overflow:auto; padding:12px 16px 40px; }
+.scroll::-webkit-scrollbar, .right::-webkit-scrollbar { width:10px; }
+.scroll::-webkit-scrollbar-thumb, .right::-webkit-scrollbar-thumb { background:var(--scroll-thumb); border-radius:99px; border:3px solid transparent; background-clip:content-box; }
+
+/* ---------- 分组与字段行 ---------- */
+.sec { margin-bottom:14px; border:1px solid var(--border-soft); border-radius:var(--radius); overflow:hidden; background:var(--surface); }
+.sec-head { display:flex; align-items:center; gap:9px; padding:10px 13px; background:var(--surface-2); cursor:pointer; user-select:none; }
+.sec-head .nm { font-size:13px; font-weight:600; }
+.sec-head .cnt { font-size:11.5px; color:var(--faint); }
+.sec-head .chosen { margin-left:auto; font-size:11.5px; color:var(--accent); font-weight:600; }
+.sec-head .caret { color:var(--faint); font-size:10px; transition:transform .14s; }
+.sec.open .sec-head .caret { transform:rotate(90deg); }
+.sec-body { display:none; }
+.sec.open .sec-body { display:block; }
+
+.row { display:grid; grid-template-columns:22px 260px minmax(0,1fr); gap:10px; align-items:start;
+  padding:9px 13px; border-top:1px solid var(--border-soft); }
+.row:hover { background:var(--row-hover); }
+.row.on { background:var(--accent-soft); }
+.row.hide { display:none; }
+.sw { margin-top:3px; width:16px; height:16px; border-radius:4px; border:1px solid var(--border-ctl);
+  background:var(--surface-2); display:grid; place-items:center; cursor:pointer; font-size:11px; color:transparent; }
+.row.on .sw { background:var(--accent); border-color:var(--accent); color:#fff; }
+.fname { font-size:12.5px; color:var(--text-mid); word-break:break-word; }
+.fname .meta { display:block; font-size:11px; color:var(--faint); margin-top:2px; }
+.fname code { background:var(--surface-3); padding:0 5px; border-radius:4px; font-size:11px; color:var(--text-strong); }
+.ctl { min-width:0; max-width:560px; }
+.ctl input[type=text], .ctl input[type=number], .ctl select {
+  height:30px; padding:0 9px; border-radius:8px; border:1px solid var(--border-ctl);
+  background:var(--surface-2); color:var(--text); font:inherit; font-size:12.5px; min-width:0;
+}
+.ctl .inline { display:flex; align-items:center; gap:7px; flex-wrap:wrap; }
+/* 输入框给个合理宽度就够，不要拉满整行——区间两格拉太宽反而难对齐 */
+.ctl .inline input { flex:0 0 auto; width:132px; }
+.ctl .inline input.wide { width:100%; }
+.ctl .unit { color:var(--faint); font-size:11.5px; }
+.chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+.chip-opt { height:26px; padding:0 9px; border-radius:7px; border:1px solid var(--border-soft-2);
+  background:var(--surface-2); color:var(--text-mid); font:inherit; font-size:11.5px; cursor:pointer; }
+.chip-opt:hover { border-color:var(--border-ctl); color:var(--text); }
+.chip-opt.on { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }
+.multi { max-height:132px; overflow:auto; display:flex; flex-wrap:wrap; gap:6px; padding:6px; border:1px solid var(--border-soft-2); border-radius:8px; background:var(--surface-2); }
+.others { font-size:11px; color:var(--warn); margin-top:6px; }
+.unsupported { font-size:11.5px; color:var(--dim); font-style:italic; }
+
+/* ---------- 右侧输出 ---------- */
+.right { min-height:0; display:flex; flex-direction:column; border-left:1px solid var(--border); background:var(--surface); }
+.right-head { flex:0 0 auto; padding:12px 14px; border-bottom:1px solid var(--border-soft); }
+.right-head h3 { margin:0 0 4px; font-size:13px; }
+.right-head p { margin:0; font-size:11.5px; color:var(--dim); }
+.right-body { flex:1 1 auto; min-height:0; overflow:auto; padding:12px 14px; }
+pre.out {
+  margin:0; padding:12px; border-radius:10px; border:1px solid var(--border-soft);
+  background:var(--bg); color:var(--text-mid); font:12px/1.6 ui-monospace, Consolas, monospace;
+  white-space:pre-wrap; word-break:break-word;
+}
+.right-foot { flex:0 0 auto; padding:12px 14px; border-top:1px solid var(--border-soft); display:flex; gap:8px; }
+.right-foot .btn { flex:1; }
+.hint { font-size:11.5px; color:var(--dim); margin:10px 0 0; padding:9px 11px; border-radius:9px; background:var(--surface-2); border:1px solid var(--border-soft); }
+.hint b { color:var(--text); }
+.empty { font-size:12.5px; color:var(--dim); text-align:center; padding:34px 10px; }
+.warnbox { font-size:11.5px; color:var(--warn); margin-top:10px; }
+.status { font-size:11.5px; margin-top:8px; }
+.status.ok { color:var(--ok); }
+.status.err { color:var(--accent); }
+@media (max-width:1080px) {
+  .body { grid-template-columns:minmax(0,1fr); }
+  .right { display:none; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="top">
+    <div class="brand">默认条件选择器<small>勾选后生成可粘贴的代码</small></div>
+    <div class="spacer"></div>
+    <div class="pill">已选 <b id="chosenCount">0</b> 项 · 共 <span id="totalCount">0</span> 项</div>
+    <button class="btn btn-ghost" id="loadCurrent">载入当前默认</button>
+    <button class="btn btn-ghost" id="clearAll">全部清空</button>
+    <button class="icon-btn" id="themeBtn">☀</button>
+  </header>
+
+  <div class="body">
+    <div class="left">
+      <div class="toolbar">
+        <input id="q" placeholder="搜索条件名或分组名，例如「一速」「图鉴」「勾玉」" />
+        <label><input type="checkbox" id="onlyChosen" /> 只看已选</label>
+        <button class="btn btn-ghost" id="expandAll">展开全部</button>
+        <button class="btn btn-ghost" id="collapseAll">收起全部</button>
+      </div>
+      <div class="scroll" id="list"><div class="empty">正在读取 filters.json…</div></div>
+    </div>
+
+    <aside class="right">
+      <div class="right-head">
+        <h3>生成的代码</h3>
+        <p>点右下「复制代码」后发给我即可。</p>
+      </div>
+      <div class="right-body">
+        <pre class="out" id="out">（还没有选择任何条件）</pre>
+        <div class="hint">
+          <b>关于「×100 倍率」</b>：带这个标记的字段，界面值提交前会乘以 100。
+          这里填的是<b>界面值</b>（比如价格填 1500、一速填 158），和你在面板上输入的一致，不用自己换算。
+        </div>
+        <div class="warnbox" id="warn"></div>
+        <div class="status" id="status"></div>
+      </div>
+      <div class="right-foot">
+        <button class="btn btn-primary" id="copyBtn">复制代码</button>
+        <button class="btn" id="downloadBtn">下载 JSON</button>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+/* ---------------------------------------------------------------------------
+   工具函数
+--------------------------------------------------------------------------- */
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
+const tsStr = (s) => "'" + String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'") + "'";
+
+/* 哪些类型「提交时不算生效」——用来在生成结果里给出提醒 */
+const UNSUPPORTED_KEYS = new Set(['goyu']);
+
+/* 每种类型的默认值形状 */
+function emptyValue(field) {
+  switch (field.type) {
+    case 'range_input_with_select': return { min:'', max:'' };
+    case 'single_select_and_input': return { num:'', speed:'' };
+    case 'multiple_select':
+    case 'indexer_list_check':
+    case 'custom_component': return [];
+    default: return '';
+  }
+}
+/* 该类型的值是否「已经填了东西」 */
+function hasValue(field, v) {
+  if (v == null) return false;
+  if (Array.isArray(v)) return v.length > 0;
+  if (typeof v === 'object') return Object.values(v).some((x) => String(x ?? '') !== '');
+  return String(v) !== '';
+}
+
+/* ---------------------------------------------------------------------------
+   状态
+--------------------------------------------------------------------------- */
+let SCHEMA = null;
+const state = new Map();   // key: `${si}:${fi}` -> value
+
+const keyOf = (si, fi) => si + ':' + fi;
+const fieldOf = (si, fi) => SCHEMA.sections[si].fields[fi];
+
+/* ---------------------------------------------------------------------------
+   渲染
+--------------------------------------------------------------------------- */
+function controlHtml(si, fi, f) {
+  const key = keyOf(si, fi);
+  const v = state.get(key);
+  const mul = f.valueMultiply && f.valueMultiply !== 1
+    ? `<span class="unit">（提交 ×${f.valueMultiply}）</span>` : '';
+
+  /* 区服选择：数据量大，用逗号分隔的 id 输入 */
+  if (f.displayType === 'select_server') {
+    return `<div class="ctl">
+      <div class="inline">
+        <input type="text" class="wide" data-k="${key}" data-shape="arr" placeholder="区服 id，多个用逗号分隔，例如：17,80"
+               value="${esc((v || []).join(','))}" />
+      </div>
+      <span class="unit">id 可在面板的区服选择器里搜索到；留空表示不限</span>
+    </div>`;
+  }
+
+  /* 勾选类 */
+  if (f.type === 'checkbox' || f.type === 'check_box') {
+    return `<div class="ctl"><label style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--text-mid);cursor:pointer;height:30px">
+      <input type="checkbox" data-k="${key}" data-shape="flag" ${hasValue(f, v) ? 'checked' : ''} />
+      启用<span class="unit">提交值 <code>${esc(f.checkboxValue ?? '1')}</code></span>
+    </label></div>`;
+  }
+
+  /* 价格：区间 + 快捷档位 */
+  if (f.type === 'range_input_with_select') {
+    const cur = v || { min:'', max:'' };
+    const opts = (f.options || []).map((o, i) => {
+      const on = String(o.min ?? '') === String(cur.min ?? '') && String(o.max ?? '') === String(cur.max ?? '') && hasValue(f, cur);
+      return `<button class="chip-opt${on ? ' on' : ''}" data-preset="${key}" data-min="${esc(o.min ?? '')}" data-max="${esc(o.max ?? '')}">${esc(o.label)}</button>`;
+    }).join('');
+    return `<div class="ctl">
+      <div class="inline">
+        <input type="number" data-k="${key}" data-part="min" placeholder="${esc(f.hintMin || '最低')}" value="${esc(cur.min)}" />
+        <span class="unit">~</span>
+        <input type="number" data-k="${key}" data-part="max" placeholder="${esc(f.hintMax || '最高')}" value="${esc(cur.max)}" />
+        <span class="unit">元</span>${mul}
+      </div>
+      <div class="chips">${opts}</div>
+    </div>`;
+  }
+
+  /* 个数 + 速度 */
+  if (f.type === 'single_select_and_input') {
+    const cur = v || { num:'', speed:'' };
+    return `<div class="ctl"><div class="inline">
+      <input type="text" data-k="${key}" data-part="num" placeholder="个数" value="${esc(cur.num)}" />
+      <span class="unit">${esc(f.note || '个满速御魂 ≥')}</span>
+      <input type="text" data-k="${key}" data-part="speed" placeholder="速度" value="${esc(cur.speed)}" />
+      ${mul}
+    </div></div>`;
+  }
+
+  /* 多选：选项多时给滚动容器 */
+  if (f.type === 'multiple_select' || f.type === 'indexer_list_check') {
+    const arr = Array.isArray(v) ? v.map(String) : [];
+    const opts = (f.options || []).map((o) => {
+      const on = arr.includes(String(o.value));
+      return `<button class="chip-opt${on ? ' on' : ''}" data-multi="${key}" data-val="${esc(o.value)}">${esc(o.label)}</button>`;
+    }).join('');
+    const many = (f.options || []).length > 24;
+    return `<div class="ctl"><div class="${many ? 'multi' : 'chips'}">${opts}</div>
+      <span class="unit">${esc(f.opType === 'and' ? '多选（AND 关系）' : '多选')} · 共 ${(f.options || []).length} 个选项</span>
+    </div>`;
+  }
+
+  /* 数字输入 */
+  if (f.type === 'input_integer' || f.type === 'input_float') {
+    const sym = f.symbol ? esc(f.symbol) + ' ' : '';
+    return `<div class="ctl"><div class="inline">
+      ${sym}<input type="number" data-k="${key}" placeholder="${esc(f.hint || '数值')}" value="${esc(v ?? '')}" />
+      ${mul}
+    </div></div>`;
+  }
+
+  return `<div class="ctl"><span class="unsupported">这个类型（${esc(f.type || f.displayType || '未知')}）暂不支持设为默认条件</span></div>`;
+}
+
+function render() {
+  const si0 = SCHEMA.sections.map((s, si) => ({ s, si }));
+  $('#list').innerHTML = si0.map(({ s, si }) => {
+    const fields = s.fields.map((f, fi) => {
+      const key = keyOf(si, fi);
+      const v = state.get(key);
+      const on = hasValue(f, v);
+      const label = f.label || f.key || f.innerLabel || '(未命名)';
+      const metaBits = [];
+      if (f.key) metaBits.push(`<code>${esc(f.key)}</code>`);
+      if (f.type) metaBits.push(esc(f.type));
+      if (f.opType) metaBits.push('op=' + esc(f.opType));
+      if (f.hint) metaBits.push('提示 ' + esc(f.hint));
+      if (f.min != null || f.max != null) metaBits.push(`范围 ${esc(f.min ?? '')}~${esc(f.max ?? '')}`);
+      if (f.trail && f.trail.length) metaBits.push('路径 ' + esc(f.trail.join(' / ')));
+      return `<div class="row${on ? ' on' : ''}" data-key="${key}"
+                   data-search="${esc((label + ' ' + s.label + ' ' + (f.key || '')).toLowerCase())}">
+        <div class="sw" data-toggle="${key}">✓</div>
+        <div class="fname">${esc(label)}<span class="meta">${metaBits.join(' · ')}</span></div>
+        ${controlHtml(si, fi, f)}
+      </div>`;
+    }).join('');
+    const chosen = s.fields.filter((f, fi) => hasValue(f, state.get(keyOf(si, fi)))).length;
+    return `<section class="sec open" data-sec="${si}">
+      <div class="sec-head" data-sechead="${si}">
+        <span class="caret">▶</span><span class="nm">${esc(s.label)}</span>
+        <span class="cnt">${s.fields.length} 项</span>
+        ${chosen ? `<span class="chosen">已选 ${chosen}</span>` : ''}
+      </div>
+      <div class="sec-body">${fields}</div>
+    </section>`;
+  }).join('');
+  applyFilter();
+  updateOutput();
+}
+
+/** 同步某一行的控件显示（选中态、输入框值、分组计数、输出代码） */
+function syncControls(si, fi) {
+  refreshRow(si, fi);
+}
+
+/* 只重画某一行 —— 不要整页重渲染。
+   整页重建会把用户正在点的 DOM 换掉：多选时连点两个选项，第二次点击落在已销毁的
+   节点上，只有第一个生效。行内更新还能保住滚动位置与展开状态。 */
+function refreshRow(si, fi) {
+  const key = keyOf(si, fi);
+  const row = document.querySelector(`.row[data-key="${key}"]`);
+  if (!row) return render();
+  const f = fieldOf(si, fi);
+  const v = state.get(key);
+  row.classList.toggle('on', hasValue(f, v));
+
+  // 优先「原位更新」：只改按钮的选中 class 与输入框的值，不替换任何节点。
+  // 替换节点会让同字段的其他按钮变成游离节点，快速连点时会丢事件。
+  const chipLike = row.querySelector('.chips, .multi');
+  if (chipLike) {
+    const arr = Array.isArray(v) ? v.map(String) : [];
+    chipLike.querySelectorAll('[data-multi]').forEach((b) => {
+      b.classList.toggle('on', arr.includes(String(b.dataset.val)));
+    });
+    row.querySelectorAll('[data-preset]').forEach((b) => {
+      const cur = v || {};
+      const same = String(b.dataset.min ?? '') === String(cur.min ?? '')
+        && String(b.dataset.max ?? '') === String(cur.max ?? '')
+        && hasValue(f, cur);
+      b.classList.toggle('on', same);
+    });
+    const flag = row.querySelector('input[data-shape="flag"]');
+    if (flag) flag.checked = hasValue(f, v);
+    // 区间/多段输入的值同步（不打断焦点：只在不相等时赋值）
+    row.querySelectorAll('input[data-part]').forEach((inp) => {
+      const want = String((v || {})[inp.dataset.part] ?? '');
+      if (inp.value !== want && document.activeElement !== inp) inp.value = want;
+    });
+    refreshSectionCount(si);
+    updateOutput();
+    return;
+  }
+
+  // 兜底：控件区整体重建（用于类型切换这类需要换控件的场景）
+  const ctl = row.querySelector('.ctl, .unsupported');
+  const holder = document.createElement('div');
+  holder.innerHTML = controlHtml(si, fi, f);
+  const fresh = holder.firstElementChild;
+  if (ctl && fresh) ctl.replaceWith(fresh);
+  refreshSectionCount(si);
+  updateOutput();
+}
+
+function refreshSectionCount(si) {
+  const sec = document.querySelector(`.sec[data-sec="${si}"]`);
+  if (!sec) return;
+  const chosen = SCHEMA.sections[si].fields.filter((f, fi) => hasValue(f, state.get(keyOf(si, fi)))).length;
+  let badge = sec.querySelector('.sec-head .chosen');
+  if (chosen === 0) { badge?.remove(); return; }
+  if (!badge) {
+    badge = document.createElement('span');
+    badge.className = 'chosen';
+    sec.querySelector('.sec-head').appendChild(badge);
+  }
+  badge.textContent = `已选 ${chosen}`;
+}
+function applyFilter() {
+  const q = ($('#q').value || '').trim().toLowerCase();
+  const only = $('#onlyChosen').checked;
+  document.querySelectorAll('.sec').forEach((sec) => {
+    let visible = 0;
+    sec.querySelectorAll('.row').forEach((row) => {
+      const hitQ = !q || row.dataset.search.includes(q);
+      const hitOn = !only || row.classList.contains('on');
+      const show = hitQ && hitOn;
+      row.classList.toggle('hide', !show);
+      if (show) visible += 1;
+    });
+    sec.style.display = visible ? '' : 'none';
+    if (q || only) sec.classList.add('open');
+  });
+}
+
+/* ---------------------------------------------------------------------------
+   生成输出
+--------------------------------------------------------------------------- */
+function buildSelected() {
+  const out = [];
+  SCHEMA.sections.forEach((s, si) => {
+    s.fields.forEach((f, fi) => {
+      const v = state.get(keyOf(si, fi));
+      if (!hasValue(f, v)) return;
+      out.push({ section: s.label, label: f.label || f.key || '', field: f, value: v });
+    });
+  });
+  return out;
+}
+
+function tsLiteral(f, v) {
+  if (f.type === 'range_input_with_select') {
+    const o = v;
+    return `{ min: ${tsStr(o.min ?? '')}, max: ${tsStr(o.max ?? '')} }`;
+  }
+  if (f.type === 'single_select_and_input') {
+    const o = v;
+    return `{ num: ${tsStr(o.num ?? '')}, speed: ${tsStr(o.speed ?? '')} }`;
+  }
+  if (Array.isArray(v)) return v.length ? `[${v.map((x) => tsStr(x)).join(', ')}]` : '[]';
+  if (f.type === 'checkbox' || f.type === 'check_box') return tsStr(f.checkboxValue ?? '1');
+  return tsStr(v);
+}
+
+function noteFor(f, v, label) {
+  const parts = [];
+  const unit = f.type === 'range_input_with_select' ? ' 元' : '';
+  const sym = f.symbol || (f.opType === 'gte' ? '≥' : '');
+  if (f.type === 'range_input_with_select') {
+    parts.push(`${label} ${v.min || '不限'}~${v.max || '不限'}${unit}`);
+  } else if (f.type === 'single_select_and_input') {
+    parts.push(`${label} ${v.num || '?'} 个满速御魂 ≥ ${v.speed || '?'}`);
+  } else if (Array.isArray(v)) {
+    const names = v.map((val) => {
+      const o = (f.options || []).find((x) => String(x.value) === String(val));
+      return o ? o.label : val;
+    });
+    parts.push(`${label}: ${names.slice(0, 6).join('、')}${names.length > 6 ? ` 等 ${names.length} 项` : ''}`);
+  } else if (f.type === 'checkbox' || f.type === 'check_box') {
+    parts.push(`${label}（勾选）`);
+  } else {
+    parts.push(`${label} ${sym}${sym ? ' ' : ''}${v}`);
+  }
+  if (f.valueMultiply && f.valueMultiply !== 1) parts.push(`提交时 ×${f.valueMultiply}`);
+  return parts.join('，');
+}
+
+function updateOutput() {
+  const sel = buildSelected();
+  $('#chosenCount').textContent = String(sel.length);
+
+  if (!sel.length) {
+    $('#out').textContent = '（还没有选择任何条件）\n\n在左侧任意字段上点一下最前面的方框即可启用，然后填值。';
+    $('#warn').textContent = '';
+    return;
+  }
+
+  const blocks = sel.map(({ section, label, field, value }) => `  {
+    section: ${tsStr(section)},
+    label: ${tsStr(label)},
+    value: ${tsLiteral(field, value)},
+    note: ${tsStr(noteFor(field, value, label))},
+  },`).join('\n');
+
+  $('#out').textContent =
+    `export const DEFAULT_CONDITIONS: DefaultCondition[] = [\n${blocks}\n];`;
+
+  const bad = sel.filter(({ field }) => UNSUPPORTED_KEYS.has(field.key));
+  $('#warn').textContent = bad.length
+    ? `提醒：${bad.map((b) => b.label).join('、')} 所在的列表接口不返回该字段，设了也不会真正生效（界面会明示「未生效」）。`
+    : '';
+}
+
+/* ---------------------------------------------------------------------------
+   交互
+--------------------------------------------------------------------------- */
+$('#list').addEventListener('click', (e) => {
+  const t = e.target;
+  const secHead = t.closest('[data-sechead]');
+  if (secHead) { document.querySelector(`.sec[data-sec="${secHead.dataset.sechead}"]`).classList.toggle('open'); return; }
+
+  const sw = t.closest('[data-toggle]');
+  if (sw) {
+    const [si, fi] = sw.dataset.toggle.split(':').map(Number);
+    const f = fieldOf(si, fi);
+    const key = sw.dataset.toggle;
+    if (hasValue(f, state.get(key))) state.delete(key);
+    else state.set(key, emptyValue(f));
+    syncControls(si, fi);
+    return;
+  }
+
+  const preset = t.closest('[data-preset]');
+  if (preset) {
+    const key = preset.dataset.preset;
+    const [si, fi] = key.split(':').map(Number);
+    const f = fieldOf(si, fi);
+    const cur = state.get(key) || { min:'', max:'' };
+    const next = { min: preset.dataset.min, max: preset.dataset.max };
+    const same = String(cur.min ?? '') === next.min && String(cur.max ?? '') === next.max;
+    state.set(key, same ? emptyValue(f) : next);
+    // 快捷档位要同时把输入框的值同步过去
+    const row = preset.closest('.row');
+    row.querySelectorAll('input[data-part]').forEach((inp) => {
+      const want = String((state.get(key) || {})[inp.dataset.part] ?? '');
+      if (inp.value !== want) inp.value = want;
+    });
+    syncControls(si, fi);
+    return;
+  }
+
+  const multi = t.closest('[data-multi]');
+  if (multi) {
+    const key = multi.dataset.multi;
+    const [si, fi] = key.split(':').map(Number);
+    const arr = Array.isArray(state.get(key)) ? state.get(key).slice() : [];
+    const val = multi.dataset.val;
+    const i = arr.indexOf(val);
+    if (i >= 0) arr.splice(i, 1); else arr.push(val);
+    state.set(key, arr);
+    syncControls(si, fi);
+    return;
+  }
+});
+
+/* 输入框改动：不整页重渲染，避免丢焦点 */
+$('#list').addEventListener('input', (e) => {
+  const el = e.target;
+  if (!el.dataset || !el.dataset.k) return;
+  const key = el.dataset.k;
+  const [si, fi] = key.split(':').map(Number);
+  const f = fieldOf(si, fi);
+  const shape = el.dataset.shape;
+
+  if (shape === 'flag') {
+    state.set(key, el.checked ? (f.checkboxValue ?? '1') : '');
+  } else if (shape === 'arr') {
+    const arr = el.value.split(/[,，\s]+/).map((x) => x.trim()).filter(Boolean);
+    state.set(key, arr);
+  } else if (el.dataset.part) {
+    const cur = (typeof state.get(key) === 'object' && state.get(key)) || emptyValue(f);
+    state.set(key, { ...cur, [el.dataset.part]: el.value });
+  } else {
+    state.set(key, el.value);
+  }
+  // 更新这一行的选中态与分组计数，不动 DOM 结构
+  const row = el.closest('.row');
+  const on = hasValue(f, state.get(key));
+  row.classList.toggle('on', on);
+  const [si2] = key.split(':').map(Number);
+  refreshSectionCount(si2);
+  updateOutput();
+});
+
+$('#q').addEventListener('input', applyFilter);
+$('#onlyChosen').addEventListener('change', applyFilter);
+$('#expandAll').addEventListener('click', () => document.querySelectorAll('.sec').forEach((s) => s.classList.add('open')));
+$('#collapseAll').addEventListener('click', () => document.querySelectorAll('.sec').forEach((s) => s.classList.remove('open')));
+$('#clearAll').addEventListener('click', () => {
+  if (!confirm('清空所有已选条件？')) return;
+  state.clear(); render();
+});
+
+/* 载入当前代码里的默认条件，方便在此基础上改 */
+$('#loadCurrent').addEventListener('click', () => {
+  state.clear();
+  const CURRENT = [
+    { section:'价格(元)', label:'价格(元)', value:{ min:'500', max:'1500' } },
+    { section:'资产', label:'勾玉', value:'100000' },
+    { section:'个人斗技', label:'散件一速', value:'158' },
+  ];
+  const missing = [];
+  CURRENT.forEach((c) => {
+    const si = SCHEMA.sections.findIndex((s) => s.label === c.section);
+    if (si < 0) { missing.push(c.section); return; }
+    const fi = SCHEMA.sections[si].fields.findIndex((f) => (f.label || f.key) === c.label);
+    if (fi < 0) { missing.push(c.section + ' · ' + c.label); return; }
+    state.set(keyOf(si, fi), c.value);
+  });
+  render();
+  $('#status').className = 'status ' + (missing.length ? 'err' : 'ok');
+  $('#status').textContent = missing.length
+    ? '有 ' + missing.length + ' 项在当前 filters.json 里找不到：' + missing.join('、')
+    : '已载入当前默认条件（价格 500~1500 / 勾玉 100000 / 散件一速 158）';
+});
+
+/* 复制 / 下载 */
+$('#copyBtn').addEventListener('click', async () => {
+  const text = $('#out').textContent;
+  try {
+    await navigator.clipboard.writeText(text);
+    $('#status').className = 'status ok';
+    $('#status').textContent = '已复制到剪贴板，直接发给我即可。';
+  } catch {
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); ta.remove();
+    $('#status').className = 'status ok';
+    $('#status').textContent = '已复制（兼容方式）。';
+  }
+});
+
+$('#downloadBtn').addEventListener('click', () => {
+  const sel = buildSelected().map(({ section, label, field, value }) => ({
+    section, label, value, note: noteFor(field, value, label), key: field.key ?? null,
+  }));
+  const blob = new Blob([JSON.stringify(sel, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'default-conditions.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+/* 深浅色 */
+const themeBtn = $('#themeBtn');
+const applyTheme = (t) => { document.documentElement.dataset.theme = t; themeBtn.textContent = t === 'dark' ? '☀' : '🌙'; };
+applyTheme(localStorage.getItem('cbg-theme') || 'dark');
+themeBtn.addEventListener('click', () => {
+  const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+  localStorage.setItem('cbg-theme', next); applyTheme(next);
+});
+
+/* ---------------------------------------------------------------------------
+   启动：读取真实的 filters.json
+--------------------------------------------------------------------------- */
+(async () => {
+  try {
+    const res = await fetch('../data/filters.json', { cache: 'no-cache' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    SCHEMA = await res.json();
+    $('#totalCount').textContent = String(SCHEMA.sections.reduce((n, s) => n + s.fields.length, 0));
+    render();
+    $('#status').className = 'status ok';
+    $('#status').textContent = `已读取 filters.json：${SCHEMA.sections.length} 个分组 / ${$('#totalCount').textContent} 项条件。`;
+  } catch (err) {
+    $('#list').innerHTML = `<div class="empty">读取 filters.json 失败：${esc(err.message)}<br><br>
+      这个页面必须和 data/filters.json 一起放在项目的 public/design/ 下才可用。<br>
+      本机开发时用 http://127.0.0.1:5173/design/defaults-builder.html 打开。</div>`;
+  }
+})();
+</script>
+</body>
+</html>

@@ -378,6 +378,40 @@ export const Dashboard = () => {
           </div>
         )}
 
+        {/*
+          条件生效情况：必须如实说明，不能让用户以为「命中 N 条」是全部条件筛出来的。
+          表述分两类，因为实测确认过站点的行为不同：
+            · 服务端已筛选但本地无字段 —— 站点真的按它筛了，只是列表接口不返回该值
+            · 本地可核对 —— 表格里有这个字段，能排序、能本地复筛
+        */}
+        {live.hasQueried &&
+          !live.errorText &&
+          (live.conditionSupport.serverOnly.length > 0 || live.conditionSupport.local.length > 0) && (
+            <div className="callout callout-cond">
+              <span>🧭</span>
+              <div>
+                {live.conditionSupport.serverOnly.length > 0 && (
+                  <>
+                    <b>{live.conditionSupport.serverOnly.length} 项条件由服务端筛选，但本地无法核对</b>：
+                    {live.conditionSupport.serverOnly.join('、')}。
+                    <span className="hint-sm">
+                      藏宝阁接受这些参数并据此筛选（站点返回的符合条数会变），但列表接口不返回对应字段，
+                      所以表格里看不到这些值，也无法按它们排序或二次筛选。
+                    </span>
+                  </>
+                )}
+                {live.conditionSupport.serverOnly.length > 0 && live.conditionSupport.local.length > 0 && <br />}
+                {live.conditionSupport.local.length > 0 && (
+                  <>
+                    <b>{live.conditionSupport.local.length} 项可在本地核对</b>：
+                    {live.conditionSupport.local.join('、')}。
+                    <span className="hint-sm">表格里有这些字段，可排序、可二次筛选。</span>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
         {!live.hasQueried && !live.running && (
           <div className="state-box">
             <div className="big">还没有查询结果</div>

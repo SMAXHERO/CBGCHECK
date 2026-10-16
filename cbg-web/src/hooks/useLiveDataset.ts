@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { SearchParams } from '@/api/searchSchema';
 import { liveApi, type HealthInfo, type SearchProgress, type SearchResult, type ServiceStatus } from '@/api/live';
+import { classifyConditionSupport, PARAM_LABELS, type ConditionSupport } from '@/utils/predicate';
 import { computeAnalytics, type Analytics } from '@/utils/analytics';
 import { useRenderCount } from '@/hooks/useRenderCount';
 import type { Listing } from '@/types';
@@ -43,6 +44,13 @@ export interface LiveView {
   errorText: string | null;
   /** 提示性信息（不是错误），例如「已取消，保留部分结果」 */
   notice: string | null;
+  /**
+   * 本次结果的条件生效情况。
+   * local       有本地字段，能排序、能本地复筛
+   * serverOnly  站点已按它筛选（实测 total_num 会变），但列表接口不返回该字段，
+   *             所以本地看不到值、也没法二次排序
+   */
+  conditionSupport: { local: string[]; serverOnly: string[] };
   serviceMessage: string;
 }
 
@@ -61,6 +69,8 @@ export const useLiveDataset = (): LiveView => {
   const [notice, setNotice] = useState<string | null>(null);
 
   const lastParams = useRef<SearchParams>({});
+  /** 本次结果对应的参数（在查询结束时定格），用于如实说明条件生效情况 */
+  const [resultParams, setResultParams] = useState<SearchParams>({});
   const jobIdRef = useRef<string | null>(null);
   const pollTimer = useRef<number | null>(null);
   const pollDeadline = useRef(0);
@@ -111,6 +121,7 @@ export const useLiveDataset = (): LiveView => {
       setCancelling(false);
       setHasQueried(true);
       setResult(r.result);
+      if (r.result?.ok) setResultParams(lastParams.current);
       if (r.result && !r.result.ok) {
         setErrorText(
           r.result.error === 'SESSION_TIMEOUT' || r.result.error === 'e12'
@@ -215,6 +226,16 @@ export const useLiveDataset = (): LiveView => {
   const rows = useMemo(() => result?.rows ?? [], [result]);
   const analytics = useMemo(() => computeAnalytics(rows), [rows]);
 
+  /** 条件生效情况：把参数名换成中文名，便于界面直接展示 */
+  const conditionSupport = useMemo(() => {
+    const raw: ConditionSupport = classifyConditionSupport(resultParams);
+    const toLabel = (k: string) => PARAM_LABELS[k] ?? k;
+    return {
+      local: raw.localKeys.map(toLabel),
+      serverOnly: raw.serverOnlyKeys.map(toLabel),
+    };
+  }, [resultParams]);
+
   return {
     status: health?.status ?? 'starting',
     health,
@@ -230,6 +251,7 @@ export const useLiveDataset = (): LiveView => {
     recheck,
     errorText,
     notice,
+    conditionSupport,
     serviceMessage: health?.message ?? '正在探测伴随服务…',
   };
 };
