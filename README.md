@@ -256,6 +256,7 @@ node tools/cbg/scraper-service/server.mjs --max-pages 4 --delay 5000
 │   ├── scraper-service/accountAnalyze.mjs  账号评分的服务端逻辑（速度表 + 逐方案算分）
 │   ├── account_score.mjs                   命令行：账号评分（须佐之男 / 阿修罗）
 │   ├── soul_speed_table.mjs                命令行：每种御魂 × 6 位置的最快速
+│   ├── score_sampling.mjs                  抽样统计：评分出分率（御魂数 vs 能否出分）
 │   ├── sync_servers.py                     从藏宝阁官方数据源同步区服清单
 │   ├── check_defaults.py                   核对默认条件（从 defaults.ts 直接解析）
 │   ├── harvest_market.mjs                  采集行情样本（列表+详情，做成交分析用）

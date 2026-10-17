@@ -1,4 +1,4 @@
-﻿/**
+/**
  * accountAnalyze.mjs — 模块二「账号评分」的服务端逻辑。
  *
  * 为什么放在伴随服务里：
@@ -334,3 +334,116 @@ export async function analyzeAccount({ eid, serverid, heroes, subOnly = false, p
     heroes: heroScores,
   };
 }
+
+/**
+ * 轻量探测：只回答两个问题——
+ *   1) 这个账号有多少御魂
+ *   2) 每个目标式神**第一套方案**能不能算出分
+ *
+ * 用途：做「御魂数 → 出分率」的抽样统计。
+ * 为什么要单独做：完整分析最多要
+ *   1 次详情 + 1 次方案清单 + Σ(每套方案 2 次) ≈ 30+ 请求，
+ * 拿它去跑几十个账号必然触发风控。探测模式固定 **4 个请求/账号**
+ * （详情 + 清单 + 每个式神 1 次），既能判断「算不算得出来」，又足够轻。
+ */
+export async function probeAccount({ eid, serverid, heroes, pageGet, pageEval }) {
+  const get = makeGetter(pageGet);
+  if (typeof pageEval !== 'function') throw new Error('probeAccount 需要 pageEval');
+
+  /**
+   * 详情接口一次返回约 2.6 MB，而探测只需要「御魂数量 / 勾玉 / 签到天数」三个数。
+   *
+   * 如果照旧把整份 JSON 通过 `Runtime.evaluate` 的 returnByValue 传回 Node，
+   * CDP 要序列化 2.6 MB 的字符串 —— 实测跑十几个账号后页面就会
+   * `页面响应超时（60000ms）：Runtime.evaluate` 而彻底卡死（踩过）。
+   *
+   * 所以这里**在页面里就把 equip_desc 解析掉**，只回传要用的字段，
+   * 传输量从 2.6 MB 降到几百字节。
+   */
+  const detail = await pageEval(`
+    (async () => {
+      const r = await fetch('/cgi/api/get_equip_detail?client_type=h5&serverid=${serverid}&eid=${encodeURIComponent(eid)}', {
+        credentials: 'include', headers: { 'x-requested-with': 'XMLHttpRequest' }
+      });
+      const j = await r.json();
+      if (j.status !== 1 || !j.equip) {
+        return { status: j.status, status_code: j.status_code, msg: j.msg };
+      }
+      let d = {};
+      try { d = JSON.parse(j.equip.equip_desc || '{}'); } catch (e) {}
+      const inv = d.inventory || {};
+      let soulCount = 0;
+      for (const k in inv) {
+        const v = inv[k];
+        if (v && typeof v === 'object' && v.attrs) soulCount += 1;
+      }
+      return {
+        status: 1,
+        eid: j.equip.eid,
+        price: j.equip.price,
+        server_name: j.equip.server_name,
+        soulCount: soulCount,
+        goyu: d.goyu === undefined ? null : d.goyu,
+        signDays: d.sign_days === undefined ? null : d.sign_days
+      };
+    })()
+  `);
+
+  if (!detail || detail.status !== 1) {
+    const code = String(detail?.status_code ?? '');
+    return {
+      ok: false,
+      blocked: code === 'CAPTCHA_AUTH' || code === 'MOBILE_AUTH' || code === 'SESSION_TIMEOUT',
+      error: `${code} ${detail?.msg ?? '详情接口无返回'}`.trim(),
+    };
+  }
+  const realEid = detail.eid || eid;
+  const soulCount = detail.soulCount;
+
+  const list = await get(
+    `/cgi/api/get_yys_heroes_matching_plan?client_type=h5&eid=${encodeURIComponent(realEid)}&obj_serverid=${serverid}`,
+  );
+  const all = list?.status === 1 && list.data
+    ? Object.entries(list.data).map(([heroId, v]) => ({ heroId, name: v.name, plans: v.plans || [] }))
+    : [];
+
+  const heroResults = [];
+  for (const want of heroes) {
+    const h = all.find((x) => x.name === want) || all.find((x) => (x.name || '').includes(want));
+    if (!h) {
+      heroResults.push({ name: want, hasPlans: false, planCount: 0, scored: false, score: null });
+      continue;
+    }
+    const first = h.plans[0];
+    if (!first) {
+      heroResults.push({ name: h.name, hasPlans: false, planCount: 0, scored: false, score: null });
+      continue;
+    }
+    // tries: 1 —— 探测只要一个「能不能」的信号，不重试
+    const r = await computePlan(get, realEid, serverid, h.heroId, first.id, { tries: 1 });
+    heroResults.push({
+      name: h.name,
+      hasPlans: true,
+      planCount: h.plans.length,
+      scored: Boolean(r.sv),
+      score: r.sv?.damage ?? null,
+      computing: Boolean(r.computing),
+      blocked: Boolean(r.blocked),
+    });
+    await sleep(700);
+  }
+
+  return {
+    ok: true,
+    eid: realEid,
+    serverid,
+    price: detail.price,
+    serverName: detail.server_name,
+    soulCount,
+    goyu: detail.goyu,
+    signDays: detail.signDays,
+    heroes: heroResults,
+    blocked: heroResults.some((h) => h.blocked),
+  };
+}
+

@@ -23,7 +23,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { analyzeAccount, parseAccountInput } from './accountAnalyze.mjs';
+import { analyzeAccount, parseAccountInput, probeAccount } from './accountAnalyze.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -500,8 +500,55 @@ const server = http.createServer(async (req, res) => {
    * GET  /api/account/analyze?eid=..&serverid=..&heroes=须佐之男,阿修罗&subOnly=1
    *
    * 为什么必须由服务端代理：藏宝阁这三个接口**没有 CORS 头**，浏览器直连会被拦。
-   * 好处是这些接口**匿名可用**，不需要登录态，所以这个端点不依赖浏览器是否登录。
+   * 而且必须走**已登录的页面上下文**——匿名 Node 请求在风控升级后会被判 SESSION_TIMEOUT。
    */
+
+  /**
+   * 轻量探测：只返回「御魂数量」与「每个式神第一套方案能否算出分」。
+   *
+   * GET /api/account/probe?eid=..&serverid=..
+   *
+   * 固定 4 个请求/账号（详情 + 方案清单 + 每式神 1 次），
+   * 专门用于「御魂数 → 出分率」这类抽样统计，不适合做完整分析。
+   */
+  if (p === '/api/account/probe') {
+    const eid = url.searchParams.get('eid') || '';
+    const serverid = url.searchParams.get('serverid') || '';
+    const heroes = url.searchParams.get('heroes')
+      ? url.searchParams.get('heroes').split(',').filter(Boolean)
+      : ['须佐之男', '阿修罗'];
+    if (!eid || !serverid) {
+      json(res, 400, { ok: false, error: 'BAD_ARGS', message: '需要 eid 与 serverid' });
+      return;
+    }
+    try {
+      await ensureOnHost();
+      const result = await probeAccount({
+        eid,
+        serverid,
+        heroes,
+        pageGet: async (path) =>
+          evalInPage(
+            `(async () => {
+               const r = await fetch(${JSON.stringify(path)}, {
+                 credentials: 'include',
+                 headers: { 'x-requested-with': 'XMLHttpRequest' }
+               });
+               return await r.text();
+             })()`,
+            60000,
+          ),
+        // 给 probe 用的「在页面里解析、只回传数字」通道（详情有 2.6MB，不能整个搬回来）
+        pageEval: (expression) => evalInPage(expression, 60000),
+      });
+      json(res, 200, result);
+    } catch (err) {
+      log(`账号探测失败：${err.message}`);
+      json(res, 500, { ok: false, error: 'PROBE_FAILED', message: err.message });
+    }
+    return;
+  }
+
   if (p === '/api/account/analyze') {
     let args;
     if (req.method === 'POST') {
