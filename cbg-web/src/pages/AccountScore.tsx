@@ -55,7 +55,7 @@ const HeroCard = ({ hero, onRetry }: { hero: HeroScore; onRetry?: () => void }) 
             {hero.blocked
               ? '藏宝阁要求安全验证 —— 在受控浏览器窗口里打开这个账号的商品页过一次验证（或等几分钟冷却），再点分析'
               : hero.computing
-                ? `${hero.computing} 套方案还在藏宝阁侧计算中 —— 稍等再点一次分析即可`
+                ? `${hero.computing} 套方案没算出来。御魂数量不足时，这套方案可能凑不齐 —— 可点「重新分析」再试一次`
                 : hero.error
                   ? `没算出评分：${hero.error}`
                   : '这套账号没能算出评分'}
