@@ -1,5 +1,6 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { App, Spin } from 'antd';
+import { useLocation } from 'react-router-dom';
 import { ModuleTabs } from '@/components/ModuleTabs';
 import { useTheme } from '@/hooks/useTheme';
 import {
@@ -31,7 +32,7 @@ const SPEED_MODES = [
   { key: 'subOnly', label: '仅副属性速度', hint: '排除 2 号位主属性，只看随机副属性堆出来的速度，更有区分度' },
 ] as const;
 
-const HeroCard = ({ hero }: { hero: HeroScore }) => {
+const HeroCard = ({ hero, onRetry }: { hero: HeroScore; onRetry?: () => void }) => {
   const [open, setOpen] = useState(false);
   if (hero.missing) {
     return (
@@ -44,21 +45,45 @@ const HeroCard = ({ hero }: { hero: HeroScore }) => {
     );
   }
   const { best, worst, plans } = hero;
+  const noScore = !best && !worst;
   return (
     <div className="score-hero">
       <div className="score-hero-head">
         <b>{hero.name}</b>
-        <span className="score-range">
-          最优 <em>{fmt(best?.score, 1)}</em> · 最差 {fmt(worst?.score, 1)}
+        {noScore ? (
+          <span className="score-warn">
+            {hero.blocked
+              ? '藏宝阁要求安全验证 —— 在受控浏览器窗口里打开这个账号的商品页过一次验证（或等几分钟冷却），再点分析'
+              : hero.computing
+                ? `${hero.computing} 套方案还在藏宝阁侧计算中 —— 稍等再点一次分析即可`
+                : hero.error
+                  ? `没算出评分：${hero.error}`
+                  : '这套账号没能算出评分'}
+          </span>
+        ) : (
+          <span className="score-range">
+            最优 <em>{fmt(best?.score, 1)}</em> · 最差 {fmt(worst?.score, 1)}
+          </span>
+        )}
+        <span className="score-count">
+          {hero.scoredCount != null && hero.planCount != null && hero.scoredCount < hero.planCount
+            ? `${hero.scoredCount}/${hero.planCount} 套已出分`
+            : `${hero.planCount} 套方案`}
         </span>
-        <span className="score-count">{hero.planCount} 套方案</span>
+        {noScore && onRetry && (
+          <button className="score-toggle" onClick={onRetry}>
+            重新分析
+          </button>
+        )}
         <button className="score-toggle" onClick={() => setOpen((v) => !v)}>
           {open ? '收起' : '展开全部方案'}
         </button>
       </div>
-      <div className="score-best">
-        最佳：{best?.suit}（{best?.limit || '无额外限制'}）· 246 号位 {best?.slots}
-      </div>
+      {best && (
+        <div className="score-best">
+          最佳：{best.suit}（{best.limit || '无额外限制'}）· 246 号位 {best.slots}
+        </div>
+      )}
       {open && (
         <div className="score-plans">
           <table className="score-table">
@@ -157,6 +182,7 @@ const SpeedTable = ({ rows, mode }: { rows: SuitSpeedRow[]; mode: 'all' | 'subOn
 export const AccountScore = () => {
   const { theme, toggle } = useTheme();
   const { message } = App.useApp();
+  const location = useLocation();
 
   const [input, setInput] = useState('');
   const [eidOnly, setEidOnly] = useState('');
@@ -166,6 +192,60 @@ export const AccountScore = () => {
   const [data, setData] = useState<AccountAnalysis | null>(null);
   const [speedMode, setSpeedMode] = useState<'all' | 'subOnly'>('all');
   const [showHelp, setShowHelp] = useState(false);
+  /**
+   * 常驻错误提示。
+   *
+   * 用 antd 的 message 弹一下就消失，用户回头看不到失败原因；
+   * 更要紧的是**失败时必须清掉上一次的结果**——否则会出现
+   * 「URL 是账号 A、界面显示账号 B 的数据」这种误导（真踩过）。
+   */
+  const [errorText, setErrorText] = useState('');
+
+  /**
+   * 从 URL 参数自动分析。
+   *
+   * 模块一的表格每行都有「评分」入口，点它会跳到
+   *   #/score?eid=…&serverid=…
+   * 这里读参数直接跑，用户不用再粘一次地址。
+   *
+   * 用 ref 记住已处理过的参数：React 严格模式下 effect 会跑两遍，
+   * 不做去重会重复请求两遍（每次 15 秒，很浪费）。
+   */
+  const autoRanRef = useRef('');
+
+  const runParams = useCallback(
+    async (eid: string, serverid: string) => {
+      setLoading(true);
+      setNeedEid(false);
+      setErrorText('');
+      try {
+        const res = await accountApi.analyze(eid, serverid);
+        setData(res);
+        setInput(`eid=${eid}&serverid=${serverid}`);
+        message.success('分析完成');
+      } catch (err) {
+        // 失败就清掉旧结果，避免把上一个账号的数字当成这个账号的
+        setData(null);
+        const msg = (err as Error).message || '分析失败';
+        setErrorText(msg);
+        message.error(msg);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [message],
+  );
+
+  useEffect(() => {
+    const sp = new URLSearchParams(location.search);
+    const eid = sp.get('eid') || '';
+    const sid = sp.get('serverid') || '';
+    if (!eid || !sid) return;
+    const key = `${eid}|${sid}`;
+    if (autoRanRef.current === key) return;
+    autoRanRef.current = key;
+    void runParams(eid, sid);
+  }, [location.search, runParams]);
 
   const run = useCallback(async () => {
     const raw = input.trim();
@@ -176,6 +256,7 @@ export const AccountScore = () => {
     const parsed = parseInput(raw);
     setLoading(true);
     setNeedEid(false);
+    setErrorText('');
     try {
       const res = parsed.eid && parsed.serverid
         ? await accountApi.analyze(parsed.eid, parsed.serverid)
@@ -187,7 +268,10 @@ export const AccountScore = () => {
       if (e.code === 'NEED_EID') {
         setNeedEid(true);
       } else {
-        message.error(e.message || '分析失败');
+        setData(null);
+        const msg = e.message || '分析失败';
+        setErrorText(msg);
+        message.error(msg);
       }
     } finally {
       setLoading(false);
@@ -317,6 +401,17 @@ export const AccountScore = () => {
           </div>
         )}
 
+        {errorText && !loading && (
+          <div className="score-need score-error">
+            <b>分析失败：</b>
+            {errorText}
+            <div className="score-error-hint">
+              常见原因：藏宝阁触发了安全验证 / 登录态失效。可到受控浏览器窗口里打开任意商品页过一次验证，
+              或等几分钟冷却后重试。
+            </div>
+          </div>
+        )}
+
         {data && acct && (
           <>
             <section className="score-card">
@@ -375,7 +470,15 @@ export const AccountScore = () => {
               </p>
               <div className="score-heroes">
                 {data.heroes.map((h) => (
-                  <HeroCard key={h.name} hero={h} />
+                  <HeroCard
+                    key={h.name}
+                    hero={h}
+                    onRetry={
+                      data.eid && data.serverid
+                        ? () => void runParams(data.eid, data.serverid)
+                        : undefined
+                    }
+                  />
                 ))}
               </div>
             </section>

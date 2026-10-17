@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { Empty, Table, Tag, Tooltip, Typography } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import type { TablePaginationConfig } from 'antd/es/table';
+import { useNavigate } from 'react-router-dom';
 import type { Listing } from '@/types';
 import { cbgDetailUrl } from '@/api/dataset';
 import { useAppStore } from '@/store/useAppStore';
@@ -42,9 +43,14 @@ const highlightColor = (label: string): string => {
   return 'default';
 };
 
+/** 模块二「账号评分」的路由，带上 eid 与 serverid 直接打开分析 */
+export const scoreRouteFor = (row: Listing) =>
+  `/score?eid=${encodeURIComponent(row.eid ?? '')}&serverid=${row.server_id ?? ''}`;
+
 export const DataTable = ({ rows, loading, columns: variant = 'full' }: Props) => {
   const selectedIds = useAppStore((s) => s.selectedIds);
   const setSelected = useAppStore((s) => s.setSelected);
+  const navigate = useNavigate();
 
   const allColumns = useMemo<ColumnsType<Listing>>(
     () => [
@@ -76,7 +82,25 @@ export const DataTable = ({ rows, loading, columns: variant = 'full' }: Props) =
                 <path d="M6 3h7v7M13 3 6 10" />
               </svg>
             </Link>
-            <span className="cell-sub">{r.order_sn.slice(-12)}</span>
+            <span className="cell-sub">
+              {r.order_sn.slice(-12)}
+              {r.eid ? (
+                <button
+                  type="button"
+                  className="cell-score-link"
+                  title="用这个账号的御魂数据做评分（须佐之男 / 阿修罗）"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(scoreRouteFor(r));
+                  }}
+                >
+                  评分
+                  <svg width="8" height="8" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M6 3h7v7M13 3 6 10" />
+                  </svg>
+                </button>
+              ) : null}
+            </span>
           </div>
         ),
       },

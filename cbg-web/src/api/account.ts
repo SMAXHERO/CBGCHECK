@@ -1,4 +1,4 @@
-import { SCRAPER_BASE } from '@/api/live';
+﻿import { SCRAPER_BASE } from '@/api/live';
 
 /**
  * 模块二「账号评分」的客户端。
@@ -33,6 +33,13 @@ export interface HeroScore {
   name: string;
   heroId?: string;
   planCount?: number;
+  /** 成功拿到评分的套数 */
+  scoredCount?: number;
+  /** 还在「计算中」没拿到分的套数（站点是懒计算，第一次请求只是触发） */
+  computing?: number;
+  /** 触发了风控（验证/登录态）—— 需要用户去浏览器里过一次验证，或等冷却 */
+  blocked?: boolean;
+  error?: string | null;
   best?: PlanScore | null;
   worst?: PlanScore | null;
   plans: PlanScore[];

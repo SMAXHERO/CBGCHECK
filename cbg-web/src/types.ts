@@ -1,9 +1,24 @@
 /** 规范化后的账号记录。字段定义与 tools/cbg/seed_web_data.py 的输出严格对应。 */
 export interface Listing {
-  /** 商品唯一 ID（藏宝阁 eid） */
+  /**
+   * 详情页 URL 的末段 —— 是**订单号**（game_ordersn），不是 eid。
+   *
+   * 这两个 id 形状一样（时间戳-区服-随机串），极易搞混：
+   * 商品页要用 ordersn，而详情/评分接口要用 eid（见下面的 `eid` 字段）。
+   * 证据：站点列表页真实链接是 /cgi/mweb/equip/12/202610160301613-12-SDI0LBZYNXWYY，
+   * 该行的 game_ordersn 正是这个串，eid 是另一个。
+   */
   id: string;
   /** 订单号 */
   order_sn: string;
+  /**
+   * 商品实体 id（藏宝阁 eid）。
+   *
+   * 模块二「账号评分」用它调 `/cgi/api/get_equip_detail` 等接口——
+   * 那些接口**不认 ordersn**（传 ordersn 报「物品不存在」）。
+   * 列表接口每行都会返回，所以从模块一跳模块二可以直接带着走。
+   */
+  eid: string;
   /** 账号标题（藏宝阁叫 format_equip_name） */
   title: string;
 

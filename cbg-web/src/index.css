@@ -1699,3 +1699,46 @@ body {
     display: none;
   }
 }
+
+/* 模块一表格里的「评分」入口：跳到模块二并带上 eid / serverid */
+.cell-score-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 8px;
+  padding: 0 6px;
+  height: 17px;
+  border: 1px solid var(--border-soft-2);
+  border-radius: 5px;
+  background: var(--surface-2);
+  color: var(--mod-b);
+  font: inherit;
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  vertical-align: middle;
+  transition: background 0.12s, border-color 0.12s;
+}
+.cell-score-link:hover {
+  background: var(--mod-b-soft);
+  border-color: var(--mod-b);
+}
+.cell-score-link:active {
+  transform: translateY(0.5px);
+}
+
+/* 模块二：常驻错误条 */
+.score-error {
+  background: var(--danger-soft);
+  border-color: var(--danger-border);
+  color: var(--text-mid);
+}
+.score-error b {
+  color: var(--danger);
+}
+.score-error-hint {
+  margin-top: 6px;
+  font-size: 11.5px;
+  color: var(--dim);
+  line-height: 1.6;
+}

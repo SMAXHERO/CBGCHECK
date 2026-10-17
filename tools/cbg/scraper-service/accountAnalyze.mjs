@@ -1,51 +1,58 @@
-/**
+﻿/**
  * accountAnalyze.mjs — 模块二「账号评分」的服务端逻辑。
  *
- * 为什么放在伴随服务里：这三个藏宝阁接口**没有 CORS 头**（实测
- * access-control-allow-origin 为空），浏览器不能直接从 github.io 或
- * 127.0.0.1:5173 调用。服务端在本机发请求就没有跨域限制。
+ * 为什么放在伴随服务里：
+ *   1. 这三个藏宝阁接口**没有 CORS 头**（实测 access-control-allow-origin 为空），
+ *      浏览器不能直接从 github.io 或 127.0.0.1:5173 调用。
+ *   2. 更要紧的是**风控**：这些接口虽然一度匿名可用，但请求一多就会被升级成
+ *      「请登录之后继续访问」（SESSION_TIMEOUT）甚至「进行安全验证」（CAPTCHA_AUTH），
+ *      而且**升级后匿名 Node fetch 就再也调不通了**。
+ *      所以这里**不用 Node 裸 fetch，而是通过已登录的浏览器页面发请求**——
+ *      带着真实登录态，和站点自己的行为一致，是最不容易被拦的方式。
  *
- * 三个接口全部**匿名可用**（不需要登录态，实测 Node 直接请求即可）：
+ * 三个接口：
  *
  *   GET /cgi/api/get_equip_detail?client_type=h5&serverid=<sid>&eid=<eid>
  *       → equip.equip_desc（约 1.6MB JSON 字符串）→ inventory / heroes
  *   GET /cgi/api/get_yys_heroes_matching_plan?client_type=h5&eid=<eid>&obj_serverid=<sid>
  *       → data = { heroId: { name, plans:[{ id, desc:[{label,value}] }] } }
  *   GET /cgi/api/compute_yys_heroes_plan?client_type=h5&eid=<eid>&obj_serverid=<sid>&heroId=<h>&planId=<p>
- *       → data.result.suit_vals.damage 就是页面上的「总评分」
+ *       → data.result.suit_vals.damage 就是页面上的「总评分」（**懒计算**，详见 computePlan）
  *
  * 两个必须记住的坑：
  *   1) 商品页地址里是 **ordersn**，接口要 **eid**，两者不同且**无法互相推导**
  *      （ordersn 查详情报「物品不存在」；HTML 不含 eid；首段差值不稳定）。
- *      所以这里接受「御魂搭配」弹窗地址，它直接带 eid：
- *        /cgi/mweb/yuhun-collocation?eid=<eid>&serverid=<sid>&isH5=true
+ *      好在模块一的列表接口每行都返回 eid，从列表跳过来不用操心这件事。
  *   2) 御魂速度 = attrs 里的「速度」值 + Σ rattr.speedAdditionVal × 3
  *      （rattr 是 0~1 归一化比例，上限 0.9999；×3 换算为游戏数值）
  *      2 号位速度可以是**主属性**（满值 57），所以 P2 有两种口径，见 buildSpeedTable。
  */
 
-const UA =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36 Edg/155.0.0.0';
 const BASE = 'https://yys.cbg.163.com';
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-const cbgGet = async (path) => {
-  const res = await fetch(BASE + path, {
-    headers: {
-      'user-agent': UA,
-      'x-requested-with': 'XMLHttpRequest',
-      accept: 'application/json, text/plain, */*',
-      referer: BASE + '/cgi/mweb/pl?search_type=role',
-    },
-  });
-  const text = await res.text();
+/**
+ * 通过浏览器页面发 GET 并解析 JSON。
+ *
+ * `pageGet(path)` 由 server.mjs 注入 —— 它在**已登录的页面上下文里** fetch，
+ * 所以自带 cookie，不会像 Node 裸 fetch 那样被当作未登录请求拦下。
+ */
+const makeGetter = (pageGet) => async (path) => {
+  const text = await pageGet(path);
   try {
     return JSON.parse(text);
   } catch {
-    throw new Error(`藏宝阁返回非 JSON（HTTP ${res.status}）：${text.slice(0, 120)}`);
+    throw new Error(`藏宝阁返回非 JSON：${String(text).slice(0, 120)}`);
   }
 };
+
+/*
+ * 注意：这里**故意不留 Node 裸 fetch 的版本**。
+ * 实测风控升级之后，匿名 Node 请求会被直接判为 SESSION_TIMEOUT，
+ * 而同一个请求从已登录的页面上下文发出就正常。留个"方便"的匿名实现
+ * 只会让以后的人再踩一次坑，所以只保留 makeGetter。
+ */
 
 /**
  * 解析用户粘贴的地址。
@@ -142,9 +149,58 @@ const METRIC_KEYS = [
   ['resist', 'debuffResist', '效果抵抗'],
 ];
 
+/**
+ * 算一套方案的评分。
+ *
+ * 站点的评分是**懒计算**的，响应有几种形态，必须区别对待：
+ *
+ *   { "computing": true, "msg": "该式神御魂搭配方式正在计算中！" }
+ *        → 还在算，可以再等一次（只等一次，别无限轮）
+ *
+ *   { "status": 3, "status_code": "CAPTCHA_AUTH", "msg": "进行安全验证" }
+ *   { "status": 2, "status_code": "SESSION_TIMEOUT", "msg": "请登录之后继续访问" }
+ *        → 触发了风控，**重试只会更糟**。
+ *          实测教训：一次 16 套方案 × 12 次重试 = 192 个请求，
+ *          直接把接口打成 CAPTCHA_AUTH，随后连列表查询都要求验证，
+ *          浏览器页面里发同样的请求也被拒（说明不是请求头问题，是账号/IP 级的风控）。
+ *
+ * 所以：最多 2 次请求；一旦碰到风控就返回 blocked，调用方立刻停止后续所有方案。
+ */
+async function computePlan(get, eid, serverid, heroId, planId, { tries = 2, gapMs = 2500 } = {}) {
+  const url =
+    `/cgi/api/compute_yys_heroes_plan?client_type=h5&eid=${encodeURIComponent(eid)}` +
+    `&obj_serverid=${serverid}&heroId=${heroId}&planId=${planId}`;
+
+  let last = null;
+  for (let i = 0; i < tries; i += 1) {
+    const c = await get(url);
+    last = c;
+    const sv = c?.data?.result?.suit_vals;
+    if (sv) return { sv, computing: false, blocked: false };
+
+    // 风控：立即放弃，重试没有意义且有害
+    const code = String(c?.status_code ?? '');
+    if (code === 'CAPTCHA_AUTH' || code === 'MOBILE_AUTH' || code === 'SESSION_TIMEOUT' || c?.status === 3) {
+      return { sv: null, computing: false, blocked: true, error: c?.msg || code || '触发风控' };
+    }
+    // 还在算
+    if (c?.computing) {
+      if (i < tries - 1) await sleep(gapMs);
+      continue;
+    }
+    return { sv: null, computing: false, blocked: false, error: c?.msg || code || '未知错误' };
+  }
+  return {
+    sv: null,
+    computing: Boolean(last?.computing),
+    blocked: false,
+    error: last?.msg || '未返回评分',
+  };
+}
+
 /** 拉指定式神的全部方案并逐个算分 */
-async function scoreHeroes(eid, serverid, heroNames, onProgress) {
-  const list = await cbgGet(
+async function scoreHeroes(get, eid, serverid, heroNames, onProgress) {
+  const list = await get(
     `/cgi/api/get_yys_heroes_matching_plan?client_type=h5&eid=${encodeURIComponent(eid)}&obj_serverid=${serverid}`,
   );
   if (list.status !== 1 || !list.data) throw new Error('方案清单接口失败：' + (list.msg || list.status_code || ''));
@@ -159,26 +215,58 @@ async function scoreHeroes(eid, serverid, heroNames, onProgress) {
       continue;
     }
     const rows = [];
-    for (const p of h.plans) {
-      const c = await cbgGet(
-        `/cgi/api/compute_yys_heroes_plan?client_type=h5&eid=${encodeURIComponent(eid)}` +
-          `&obj_serverid=${serverid}&heroId=${h.heroId}&planId=${p.id}`,
-      );
-      const sv = c?.data?.result?.suit_vals || {};
+    let pending = 0;
+    let blocked = false;
+    let lastError = null;
+    /**
+     * 该账号是「冷计算」状态吗？
+     *
+     * 站点对**从没算过**的账号，第一套方案会返回 computing=true，
+     * 这时每套都等两轮只会让一次分析拖到 60 秒以上（实测 62 秒）。
+     * 所以一旦确认是冷计算，后续方案只发**一次**请求把它排进队列，
+     * 由用户稍后点「重新分析」来取结果 —— 界面上会明确说明。
+     */
+    let coldAccount = false;
+
+    for (let idx = 0; idx < h.plans.length; idx += 1) {
+      const p = h.plans[idx];
       const desc = Object.fromEntries((p.desc || []).map((d) => [d.label, d.value]));
-      const row = { planId: p.id, suit: desc['御魂套装'] || '', slots: desc['246号位选择'] || '', limit: desc['属性限制'] || '' };
-      for (const [alias, key] of METRIC_KEYS) row[alias] = sv[key] ?? null;
-      rows.push(row);
+      const base = { planId: p.id, suit: desc['御魂套装'] || '', slots: desc['246号位选择'] || '', limit: desc['属性限制'] || '' };
+
+      // 一旦触发风控就别继续打了 —— 打下去只会让风控更久
+      if (blocked) {
+        rows.push({ ...base, ...Object.fromEntries(METRIC_KEYS.map(([alias]) => [alias, null])) });
+        pending += 1;
+        continue;
+      }
+
+      const r = await computePlan(get, eid, serverid, h.heroId, p.id, coldAccount ? { tries: 1 } : undefined);
+      if (r.blocked) blocked = true;
+      if (!r.sv) {
+        if (r.computing) {
+          pending += 1;
+          // 第一套就要等 → 整个账号都是冷的，后面的别再等第二轮
+          if (idx === 0) coldAccount = true;
+        } else if (r.error) lastError = r.error;
+      }
+      rows.push({ ...base, ...Object.fromEntries(METRIC_KEYS.map(([alias, key]) => [alias, r.sv?.[key] ?? null])) });
       if (onProgress) onProgress(h.name, rows.length, h.plans.length);
-      await sleep(600);
+      await sleep(coldAccount ? 500 : 900);
     }
     rows.sort((a, b) => (b.score || 0) - (a.score || 0));
+    const scored = rows.filter((r) => r.score !== null);
     out.push({
       name: h.name,
       heroId: h.heroId,
       planCount: rows.length,
-      best: rows[0] || null,
-      worst: rows[rows.length - 1] || null,
+      scoredCount: scored.length,
+      /** 有多少套还在「计算中」没拿到分 —— 前端要如实告诉用户，不能显示成「—」装没事 */
+      computing: pending,
+      /** 触发了风控（验证/登录态）：需要用户去浏览器里过一次验证，或等冷却 */
+      blocked,
+      error: lastError,
+      best: scored[0] || null,
+      worst: scored[scored.length - 1] || null,
       plans: rows,
     });
   }
@@ -189,8 +277,10 @@ async function scoreHeroes(eid, serverid, heroNames, onProgress) {
  * 主入口：给 eid + serverid，返回前端要的全部数据。
  * 注意只返回**提炼后的字段**——原始详情有 2.6MB，绝不能整体塞给浏览器。
  */
-export async function analyzeAccount({ eid, serverid, heroes, subOnly = false }) {
-  const detail = await cbgGet(
+export async function analyzeAccount({ eid, serverid, heroes, subOnly = false, pageGet }) {
+  if (typeof pageGet !== 'function') throw new Error('analyzeAccount 需要 pageGet（在页面上下文里发请求）');
+  const get = makeGetter(pageGet);
+  const detail = await get(
     `/cgi/api/get_equip_detail?client_type=h5&serverid=${serverid}&eid=${encodeURIComponent(eid)}`,
   );
   if (detail.status !== 1 || !detail.equip) {
@@ -210,7 +300,7 @@ export async function analyzeAccount({ eid, serverid, heroes, subOnly = false })
   const [speedAll, speedSub, heroScores] = await Promise.all([
     Promise.resolve(buildSpeedTable(inventory, false)),
     Promise.resolve(buildSpeedTable(inventory, true)),
-    scoreHeroes(realEid, serverid, heroes),
+    scoreHeroes(get, realEid, serverid, heroes),
   ]);
 
   // 账号概览（列表接口不返回、只有详情里有的那些）

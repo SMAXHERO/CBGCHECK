@@ -548,11 +548,24 @@ const server = http.createServer(async (req, res) => {
 
       logOrigin(req, p);
       log(`账号评分：eid=${args.eid} serverid=${args.serverid}`);
+      // 必须走已登录的页面发请求：匿名 Node fetch 在风控升级后会被判 SESSION_TIMEOUT
+      await ensureOnHost();
       const result = await analyzeAccount({
         eid: args.eid,
         serverid: args.serverid,
         heroes: args.heroes && args.heroes.length ? args.heroes : ['须佐之男', '阿修罗'],
         subOnly: args.subOnly,
+        pageGet: async (path) =>
+          evalInPage(
+            `(async () => {
+               const r = await fetch(${JSON.stringify(path)}, {
+                 credentials: 'include',
+                 headers: { 'x-requested-with': 'XMLHttpRequest' }
+               });
+               return await r.text();
+             })()`,
+            60000,
+          ),
       });
       log(
         `账号评分完成：${result.heroes.map((h) => `${h.name}=${h.best?.score ?? '—'}`).join(' ')}` +
