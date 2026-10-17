@@ -1,0 +1,152 @@
+import { SCRAPER_BASE } from '@/api/live';
+
+/**
+ * 模块二「账号评分」的客户端。
+ *
+ * 这些数据由**伴随服务**代理获取，而不是浏览器直连藏宝阁——
+ * 藏宝阁的接口没有 CORS 头（实测 access-control-allow-origin 为空），
+ * 浏览器从 github.io / 127.0.0.1:5173 直接 fetch 会被拦。
+ * 好处是那三个接口**匿名可用**，所以这个模块不依赖你是否登录藏宝阁。
+ */
+
+/** 一套御魂搭配方案的评分与属性 */
+export interface PlanScore {
+  planId: string;
+  /** 御魂套装，如「狂骨四件套+荒骷髅」 */
+  suit: string;
+  /** 246 号位选择，如「攻攻暴/爆伤」 */
+  slots: string;
+  /** 属性限制，如「满暴速度≥158」 */
+  limit: string;
+  score: number | null;
+  attack: number | null;
+  hp: number | null;
+  defense: number | null;
+  speed: number | null;
+  critRate: number | null;
+  critPower: number | null;
+  hit: number | null;
+  resist: number | null;
+}
+
+export interface HeroScore {
+  name: string;
+  heroId?: string;
+  planCount?: number;
+  best?: PlanScore | null;
+  worst?: PlanScore | null;
+  plans: PlanScore[];
+  /** 该式神在这个账号的可用方案清单里没找到 */
+  missing?: boolean;
+}
+
+/** 一种御魂在 6 个位置上的最快速 */
+export interface SuitSpeedRow {
+  name: string;
+  p1: number | null;
+  p2: number | null;
+  p3: number | null;
+  p4: number | null;
+  p5: number | null;
+  p6: number | null;
+  /** 6 个位置里的最大值 */
+  max: number;
+  /** 6 个位置的合计（看这套御魂整体的速度厚度） */
+  sum: number;
+  /** 有几个位置有数据（0~6） */
+  coverage: number;
+}
+
+export interface AccountInfo {
+  ordersn: string;
+  serverName: string;
+  areaName: string;
+  status: number;
+  statusDesc: string;
+  price: number;
+  level: string | null;
+  collectNum: number;
+  createTime: string;
+  sellingTime: string;
+  detailUrl: string;
+  goyu: number | null;
+  signDays: number | null;
+  fengzidu: number | null;
+  soulCount: number;
+  mainSpeedSouls: number;
+}
+
+export interface AccountAnalysis {
+  ok: boolean;
+  eid: string;
+  serverid: string;
+  account: AccountInfo;
+  speed: { all: SuitSpeedRow[]; subOnly: SuitSpeedRow[] };
+  heroes: HeroScore[];
+}
+
+export interface AnalyzeError {
+  ok: false;
+  error: string;
+  message: string;
+}
+
+const request = async <T,>(path: string, init?: RequestInit, timeoutMs = 180_000): Promise<T> => {
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), timeoutMs);
+  try {
+    const res = await fetch(`${SCRAPER_BASE}${path}`, { ...init, signal: ctl.signal });
+    const text = await res.text();
+    let body: unknown = null;
+    try {
+      body = text ? JSON.parse(text) : null;
+    } catch {
+      throw new Error(`服务返回非 JSON（HTTP ${res.status}）：${text.slice(0, 120)}`);
+    }
+    // 400 带着结构化的 error/message，直接抛给调用方展示
+    if (!res.ok) {
+      const e = body as AnalyzeError | null;
+      const err = new Error(e?.message || `HTTP ${res.status}`) as Error & { code?: string; parsed?: unknown };
+      err.code = e?.error;
+      err.parsed = (e as unknown as { parsed?: unknown })?.parsed;
+      throw err;
+    }
+    return body as T;
+  } finally {
+    clearTimeout(timer);
+  }
+};
+
+export const accountApi = {
+  /** 用地址分析（地址里含 eid 时最省事） */
+  async analyzeByUrl(url: string, heroes?: string[]): Promise<AccountAnalysis> {
+    return request<AccountAnalysis>('/api/account/analyze', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ url, heroes }),
+    });
+  },
+
+  /** 分别给 eid + serverid（用户只有商品页地址时走这个） */
+  async analyze(eid: string, serverid: string, heroes?: string[]): Promise<AccountAnalysis> {
+    return request<AccountAnalysis>('/api/account/analyze', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ eid, serverid, heroes }),
+    });
+  },
+};
+
+/** 把用户粘贴的东西拆成可用参数（前端先粗判，避免白跑一次请求） */
+export function parseInput(raw: string): { url?: string; eid?: string; serverid?: string; looksLikeEquipOnly?: boolean } {
+  const s = raw.trim();
+  if (!s) return {};
+  const eid = s.match(/[?&]eid=([0-9A-Za-z-]+)/)?.[1];
+  const sid = s.match(/[?&](?:serverid|obj_serverid)=(\d+)/)?.[1];
+  if (eid && sid) return { url: s, eid, serverid: sid };
+  const equip = s.match(/\/equip\/(\d+)\//);
+  if (equip) return { url: s, looksLikeEquipOnly: true };
+  // 直接粘 eid 的情况
+  if (/^[0-9]{10,}-\d+-[0-9A-Za-z]+$/.test(s)) return { eid: s };
+  return { url: s };
+}

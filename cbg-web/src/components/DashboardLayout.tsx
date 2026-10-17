@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { useAppStore } from '@/store/useAppStore';
+import { ModuleTabs } from '@/components/ModuleTabs';
 import { useTheme } from '@/hooks/useTheme';
 import { useRenderCount } from '@/hooks/useRenderCount';
 import { SCRAPER_BASE, type ServiceStatus } from '@/api/live';
@@ -95,6 +96,7 @@ export const DashboardLayout = ({
         <div className="head-in">
           <h1>{title}</h1>
           {badge && <span className="pill-tag">{badge}</span>}
+          <ModuleTabs />
           <span
             className="status-pill"
             title={`数据来源：${SCRAPER_BASE}（本机伴随服务 + 已登录浏览器）`}

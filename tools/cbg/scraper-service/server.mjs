@@ -23,6 +23,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { analyzeAccount, parseAccountInput } from './accountAnalyze.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -489,6 +490,79 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'OPTIONS') {
     res.writeHead(204, CORS);
     res.end();
+    return;
+  }
+
+  /**
+   * 模块二：账号评分。
+   *
+   * POST /api/account/analyze  body: { url?, eid?, serverid?, heroes?: string[], subOnly?: boolean }
+   * GET  /api/account/analyze?eid=..&serverid=..&heroes=须佐之男,阿修罗&subOnly=1
+   *
+   * 为什么必须由服务端代理：藏宝阁这三个接口**没有 CORS 头**，浏览器直连会被拦。
+   * 好处是这些接口**匿名可用**，不需要登录态，所以这个端点不依赖浏览器是否登录。
+   */
+  if (p === '/api/account/analyze') {
+    let args;
+    if (req.method === 'POST') {
+      const body = await readBody(req);
+      args = {
+        url: body.url,
+        eid: body.eid,
+        serverid: body.serverid,
+        heroes: Array.isArray(body.heroes) ? body.heroes : undefined,
+        subOnly: Boolean(body.subOnly),
+      };
+    } else {
+      args = {
+        eid: url.searchParams.get('eid') || undefined,
+        serverid: url.searchParams.get('serverid') || undefined,
+        url: url.searchParams.get('url') || undefined,
+        heroes: url.searchParams.get('heroes') ? url.searchParams.get('heroes').split(',').filter(Boolean) : undefined,
+        subOnly: url.searchParams.get('subOnly') === '1',
+      };
+    }
+
+    try {
+      // 允许用户只粘一个地址，服务端自己拆 eid / serverid
+      if (args.url) {
+        const parsed = parseAccountInput(args.url);
+        if (parsed.needsEid) {
+          json(res, 400, {
+            ok: false,
+            error: 'NEED_EID',
+            message:
+              '这个地址里只有 ordersn，接口需要 eid。请改粘「御魂搭配」地址（含 eid=…），' +
+              '或另外提供 eid。获取办法：页面打开「御魂搭配」弹窗，复制弹窗 iframe 的地址。',
+            parsed,
+          });
+          return;
+        }
+        args.eid = args.eid || parsed.eid;
+        args.serverid = args.serverid || parsed.serverid;
+      }
+      if (!args.eid || !args.serverid) {
+        json(res, 400, { ok: false, error: 'BAD_ARGS', message: '需要 eid 与 serverid（或一个含 eid 的地址）' });
+        return;
+      }
+
+      logOrigin(req, p);
+      log(`账号评分：eid=${args.eid} serverid=${args.serverid}`);
+      const result = await analyzeAccount({
+        eid: args.eid,
+        serverid: args.serverid,
+        heroes: args.heroes && args.heroes.length ? args.heroes : ['须佐之男', '阿修罗'],
+        subOnly: args.subOnly,
+      });
+      log(
+        `账号评分完成：${result.heroes.map((h) => `${h.name}=${h.best?.score ?? '—'}`).join(' ')}` +
+          `  御魂 ${result.account.soulCount} 件`,
+      );
+      json(res, 200, result);
+    } catch (err) {
+      log(`账号评分失败：${err.message}`);
+      json(res, 500, { ok: false, error: 'ANALYZE_FAILED', message: err.message });
+    }
     return;
   }
 

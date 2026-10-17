@@ -1311,3 +1311,391 @@ body {
     padding-top: 4px;
   }
 }
+
+/* =========================================================================
+   模块切换 Tab
+   -------------------------------------------------------------------------
+   两个模块各一个主色圆点：角色查询用主题色（珊瑚红），账号评分用青色，
+   切过去一眼知道自己在哪个模块。颜色跟着主题走，所以用变量。
+   ========================================================================= */
+:root,
+:root[data-theme='dark'] {
+  --mod-b: #2bb3a3;
+  --mod-b-soft: rgba(43, 179, 163, 0.14);
+}
+:root[data-theme='light'] {
+  --mod-b: #0f9e8e;
+  --mod-b-soft: rgba(15, 158, 142, 0.1);
+}
+
+.mod-tabs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  flex: 0 0 auto;
+}
+.mod-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 11px;
+  border-radius: 7px;
+  font-size: 12.5px;
+  color: var(--dim);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.12s, color 0.12s;
+}
+.mod-tab:hover {
+  color: var(--text);
+  background: var(--surface-3);
+}
+.mod-tab.on {
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.16);
+}
+.mod-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 99px;
+  flex: 0 0 auto;
+}
+.mod-dot.dot-a {
+  background: var(--accent);
+}
+.mod-dot.dot-b {
+  background: var(--mod-b);
+}
+.mod-tab:not(.on) .mod-dot {
+  opacity: 0.55;
+}
+
+/* =========================================================================
+   模块二：账号评分
+   ========================================================================= */
+.score-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.score-card {
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+}
+.score-h2 {
+  margin: 0 0 6px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.score-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 8px;
+  border-radius: 99px;
+  background: var(--mod-b-soft);
+  color: var(--mod-b);
+}
+.score-p {
+  margin: 0 0 12px;
+  font-size: 12.5px;
+  color: var(--dim);
+  line-height: 1.6;
+}
+.score-p code,
+.score-help code {
+  background: var(--surface-3);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 11.5px;
+  color: var(--text-strong);
+}
+
+.score-input-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.score-input {
+  flex: 1 1 340px;
+  min-width: 0;
+  height: 36px;
+  padding: 0 11px;
+  border-radius: 9px;
+  border: 1px solid var(--border-ctl);
+  background: var(--surface-2);
+  color: var(--text);
+  font: inherit;
+  font-size: 12.5px;
+}
+.score-input::placeholder {
+  color: var(--faint);
+}
+.score-input-sm {
+  flex: 0 0 150px;
+}
+
+.score-help {
+  margin-top: 12px;
+  padding: 11px 13px;
+  border-radius: 9px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  font-size: 12.5px;
+  color: var(--text-mid);
+  line-height: 1.65;
+}
+.score-help p {
+  margin: 0 0 8px;
+}
+.score-help ol {
+  margin: 0 0 8px;
+  padding-left: 20px;
+}
+
+.score-need {
+  margin-top: 12px;
+  padding: 11px 13px;
+  border-radius: 9px;
+  background: var(--accent-soft);
+  border: 1px solid var(--border-soft-2);
+  font-size: 12.5px;
+  color: var(--text-mid);
+  line-height: 1.65;
+}
+
+.score-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12.5px;
+  color: var(--dim);
+  padding: 6px 2px;
+}
+
+/* 账号概览 */
+.acct-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px 14px;
+  margin-top: 4px;
+}
+.acct-grid > div {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.acct-k {
+  font-size: 11.5px;
+  color: var(--dim);
+}
+.acct-v {
+  font-size: 14px;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.acct-v.price {
+  color: var(--price-text);
+  font-size: 17px;
+}
+.score-foot {
+  margin: 12px 0 0;
+  font-size: 11.5px;
+  color: var(--faint);
+}
+.score-foot a {
+  color: var(--link);
+}
+
+/* 式神卡片 */
+.score-heroes {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.score-hero {
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  padding: 11px 13px;
+  background: var(--surface-2);
+}
+.score-hero.missing {
+  opacity: 0.85;
+}
+.score-hero-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.score-hero-head b {
+  font-size: 13.5px;
+}
+.score-range {
+  font-size: 12.5px;
+  color: var(--dim);
+}
+.score-range em {
+  font-style: normal;
+  font-weight: 700;
+  color: var(--mod-b);
+  font-size: 14px;
+}
+.score-count {
+  font-size: 11.5px;
+  color: var(--faint);
+}
+.score-toggle {
+  margin-left: auto;
+  border: 1px solid var(--border-soft-2);
+  background: var(--surface);
+  color: var(--dim);
+  border-radius: 7px;
+  height: 26px;
+  padding: 0 10px;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.score-toggle:hover {
+  color: var(--text);
+  border-color: var(--border-ctl);
+}
+.score-best {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--text-mid);
+}
+.score-warn {
+  font-size: 12px;
+  color: var(--warn);
+}
+.score-plans {
+  margin-top: 10px;
+  overflow-x: auto;
+}
+
+/* 表格（评分表与速度表共用） */
+.score-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+.score-table thead th {
+  background: var(--thead);
+  color: var(--dim);
+  font-weight: 600;
+  font-size: 11.5px;
+  text-align: left;
+  padding: 7px 9px;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.score-table thead th.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+.score-table thead th.sortable:hover {
+  color: var(--text);
+}
+.score-table tbody td {
+  padding: 6px 9px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.score-table tbody tr:hover {
+  background: var(--row-hover);
+}
+.score-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+.score-table .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.score-table .strong {
+  font-weight: 700;
+  color: var(--mod-b);
+}
+.score-table .dim {
+  color: var(--faint);
+}
+
+/* 速度表：表头固定 + 可滚动，64 种御魂不至于把页面拉太长 */
+.speed-wrap {
+  max-height: 520px;
+  overflow: auto;
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+}
+.speed-note {
+  margin: 8px 10px 10px;
+  font-size: 11.5px;
+  color: var(--dim);
+  line-height: 1.6;
+}
+
+/* 分段选择器（速度口径切换） */
+.seg {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 9px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  margin-bottom: 10px;
+}
+.seg-btn {
+  height: 28px;
+  padding: 0 11px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--dim);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.seg-btn:hover {
+  color: var(--text);
+}
+.seg-btn.on {
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 600;
+}
+
+@media (max-width: 1000px) {
+  .acct-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 640px) {
+  .acct-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .mod-label {
+    display: none;
+  }
+}

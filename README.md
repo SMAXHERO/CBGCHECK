@@ -4,6 +4,13 @@
 
 数据不是抓下来的静态文件，而是**每次点「查询」时实时拉取**。
 
+**两个模块**，顶部 Tab 切换（各有独立地址，可单独分享）：
+
+| 模块 | 地址 | 做什么 |
+|---|---|---|
+| **角色查询** | `#/` | 73 项条件筛账号、KPI、图表、明细表、导出 |
+| **账号评分** | `#/score` | 粘一个账号地址 → 须佐之男/阿修罗的御魂搭配评分 + 每种御魂 6 个位置的最快速。**不需要登录藏宝阁** → **[docs/module2-scoring.md](docs/module2-scoring.md)** |
+
 > ### 🚀 想直接用？看 **[docs/getting-started.md](docs/getting-started.md)**
 >
 > 从零到能用的完整步骤（装什么、在哪敲、看到什么才算对、出问题怎么查），照着做约 10 分钟。
@@ -56,6 +63,30 @@
   底部按钮会变成「取消查询」，点下去**不到 1 秒**就停（实测 0.44 秒），
   已取到的部分结果保留下来可以照常看图表和导出，界面上会明确标注**结果不完整**。
   取消后可以立刻重新查询，不会撞上「已有查询在进行中」。
+
+---
+
+## 模块二：账号评分
+
+粘一个账号地址，输出两件事：
+
+| 输出 | 说明 |
+|---|---|
+| **式神御魂搭配评分** | 默认须佐之男 / 阿修罗。评分由藏宝阁按**该账号实际御魂**逐套算出来（不是静态攻略）：须佐 5 套、阿修罗 11 套 |
+| **每种御魂的最快速** | 该账号 64 种御魂各自在 P1~P6 能达到的最快速，可切「含 2 号位主属性 / 仅副属性」两种口径 |
+
+**不需要登录藏宝阁**——用到的三个接口匿名可用，由本机伴随服务代理（它们没有 CORS 头，浏览器直连会被拦）。
+
+```bash
+# 也可以用命令行跑同一套逻辑
+node tools/cbg/account_score.mjs --url "<含 eid 的地址>"
+node tools/cbg/soul_speed_table.mjs --serverid 47 --eid <eid> --sub-only
+```
+
+> ⚠️ **地址里必须有 `eid`**。商品页地址只有 `ordersn`，两者**无法互相推导**
+> （实测 ordersn 查详情一律「物品不存在」）。正确做法：页面打开「御魂搭配」弹窗，
+> 复制弹窗地址 `…/yuhun-collocation?eid=…&serverid=…`。
+> 细节与全部实测结论见 **[docs/module2-scoring.md](docs/module2-scoring.md)**。
 
 ---
 
@@ -201,12 +232,16 @@ node tools/cbg/scraper-service/server.mjs --max-pages 4 --delay 5000
 ├── docs/
 │   ├── getting-started.md        ★ 从零到能用的分步手册
 │   ├── filter-sources.md         筛选条件与区服清单的来源、为何会过期、怎么更新
+│   ├── module2-scoring.md        ★ 账号评分模块：三个接口、eid 怎么拿、速度怎么算
 │   └── self-host.md              本机使用 / Fork 部署 / 多人使用的说明
 ├── .githooks/pre-push            推送前扫描密钥（安装：git config core.hooksPath .githooks）
 ├── cbg-web/                      面板（React + Vite + TypeScript + antd + ECharts）
 │   ├── src/
 │   │   ├── api/live.ts           伴随服务客户端（含取消查询）
+│   │   ├── api/account.ts        账号评分客户端与类型
 │   │   ├── components/           条件面板、图表、表格、对比清单、打印视图
+│   │   ├── components/ModuleTabs.tsx  顶部模块切换（#/ 与 #/score）
+│   │   ├── pages/AccountScore.tsx     ★ 模块二：账号评分页
 │   │   ├── config/defaults.ts    默认筛选条件
 │   │   ├── hooks/                实时数据源、条件 schema、主题
 │   │   └── utils/                参数换算、统计、导出
@@ -217,15 +252,18 @@ node tools/cbg/scraper-service/server.mjs --max-pages 4 --delay 5000
 │   │   └── style-preview.html      第一模块界面示例
 │   └── README.md                 ← 详细文档在这里（部署、主题、踩过的坑）
 ├── tools/cbg/
-│   ├── scraper-service/server.mjs  伴随服务（浏览器驱动 + HTTP API + 取消）
-│   ├── sync_servers.py             从藏宝阁官方数据源同步区服清单
-│   ├── check_defaults.py           核对默认条件（从 defaults.ts 直接解析）
-│   ├── harvest_market.mjs          采集行情样本（列表+详情，做成交分析用）
-│   ├── fetch_detail_sample.mjs     小样本抽样（详情接口字段验证）
-│   ├── probe-public-pna.mjs        排查用：实测公网页面能否访问本机服务
-│   ├── seed_web_data.py            把接口返回解析成可排序的数值字段
-│   ├── fetch_cbg.py                数据管道入口（dry-run / live / from-file）
-│   └── verify_links.py             核对商品链接拼得对不对
+│   ├── scraper-service/server.mjs          伴随服务（浏览器驱动 + HTTP API + 取消）
+│   ├── scraper-service/accountAnalyze.mjs  账号评分的服务端逻辑（速度表 + 逐方案算分）
+│   ├── account_score.mjs                   命令行：账号评分（须佐之男 / 阿修罗）
+│   ├── soul_speed_table.mjs                命令行：每种御魂 × 6 位置的最快速
+│   ├── sync_servers.py                     从藏宝阁官方数据源同步区服清单
+│   ├── check_defaults.py                   核对默认条件（从 defaults.ts 直接解析）
+│   ├── harvest_market.mjs                  采集行情样本（列表+详情，做成交分析用）
+│   ├── fetch_detail_sample.mjs             小样本抽样（详情接口字段验证）
+│   ├── probe-public-pna.mjs                排查用：实测公网页面能否访问本机服务
+│   ├── seed_web_data.py                    把接口返回解析成可排序的数值字段
+│   ├── fetch_cbg.py                        数据管道入口（dry-run / live / from-file）
+│   └── verify_links.py                     核对商品链接拼得对不对
 └── .github/workflows/deploy.yml    构建并部署到 GitHub Pages
 ```
 
@@ -248,6 +286,8 @@ node tools/cbg/scraper-service/server.mjs --max-pages 4 --delay 5000
 | 服务无访问口令 | CORS 允许任意来源，任何你点过「允许」的页面都能调用它。见下方「安全提醒」 |
 | **部分条件服务端筛了但本地看不到** | 见下方专门一节：勾玉、皮肤数这类字段站点**接受参数并据此筛选**，但列表接口不返回，所以表格里没有这一列。界面会如实说明，不会假装它们不存在 |
 | 抓取速度受限 | 实测累计约 250 条会触发站点安全验证，所以默认 4 秒/页、单次最多 8 页（120 条）。被拦后需在浏览器里手动过验证并等冷却。**中途可用「取消查询」随时停下** |
+| **账号评分必须给 eid** | 商品页地址里只有 `ordersn`，接口要 `eid`，**两者无法互相推导**。要粘「御魂搭配」弹窗的地址（含 `eid=`）。细节见 [docs/module2-scoring.md](docs/module2-scoring.md) |
+| 账号评分也要本机服务 | 那三个接口没有 CORS 头，浏览器不能直连，必须经伴随服务代理。好消息是它们**匿名可用**，不需要你登录藏宝阁 |
 | **只能看挂牌，看不到成交** | 列表接口**只返回在售**（传 `status=4` 会被忽略）；站点的「最近成交」页当前无数据，且不支持按价格/时间筛。所以**没有历史成交回溯**，无法直接做「成交价分布」。详见 [docs/filter-sources.md 第 6.5 节](docs/filter-sources.md) |
 | **风控是递进的** | 不是「能用/不能用」的二元状态：低频时详情接口匿名可用，请求变多后升级为必须登录、进而要求手机验证，且**不会退回**。批量采集必须保守限速，见 [第 6.4 节](docs/filter-sources.md) |
 | 取消不能中断已发出的那一页请求 | 请求由页面里的 `fetch` 发出，服务发不了 abort 信号。最坏情况是「当前这页取完就停」（通常不到 1 秒，极端 20 秒超时） |

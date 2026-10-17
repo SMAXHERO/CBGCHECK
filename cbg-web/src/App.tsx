@@ -3,6 +3,7 @@ import { ConfigProvider, App as AntApp, theme } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
 import { HashRouter, Route, Routes } from 'react-router-dom';
 import { Dashboard } from './pages/Dashboard';
+import { AccountScore } from './pages/AccountScore';
 import { useTheme } from './hooks/useTheme';
 
 /**
@@ -98,6 +99,9 @@ const App = () => {
         <QueryClientProvider client={queryClient}>
           <HashRouter>
             <Routes>
+              {/* 两个模块各占一条 hash 路由：可以单独分享、刷新不丢 */}
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/score" element={<AccountScore />} />
               <Route path="*" element={<Dashboard />} />
             </Routes>
           </HashRouter>
