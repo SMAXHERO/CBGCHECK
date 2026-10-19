@@ -54,7 +54,9 @@
   --hover-tint: #39414f;
 
   --ok: #34d07f;
+  --ok-soft: rgba(52, 208, 127, 0.12);
   --warn: #e5b567;
+  --warn-soft: rgba(229, 181, 103, 0.12);
   /* 取消/中断类操作用色：soft 是底、danger 是字与描边 */
   --danger: #ff6b6b;
   --danger-soft: rgba(255, 107, 107, 0.14);
@@ -98,7 +100,9 @@
   --hover-tint: #e5e7eb;
 
   --ok: #16a34a;
+  --ok-soft: rgba(22, 163, 74, 0.09);
   --warn: #b45309;
+  --warn-soft: rgba(180, 83, 9, 0.09);
   /* 取消/中断类操作用色：浅底上用更深的红，保证对比度 */
   --danger: #d4380d;
   --danger-soft: rgba(212, 56, 13, 0.08);
@@ -1741,4 +1745,116 @@ body {
   font-size: 11.5px;
   color: var(--dim);
   line-height: 1.6;
+}
+
+/* 模块二：分析缓存状态条 */
+.cache-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 7px 12px;
+  border-radius: 9px;
+  border: 1px dashed var(--border-soft-2);
+  background: var(--surface-2);
+  color: var(--dim);
+  font-size: 11.5px;
+}
+.cache-bar .score-toggle {
+  margin-left: auto;
+}
+
+/* 模块二：账号概览的「养成 / 资产 / 收集」小节 */
+.acct-subtitle {
+  margin: 14px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-soft);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-mid);
+}
+.acct-note {
+  margin-left: 6px;
+  font-size: 10.5px;
+  font-weight: 400;
+  color: var(--faint);
+}
+
+/* 模块二：A1 速度核心 */
+.speed-core-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px;
+  margin-top: 4px;
+}
+.speed-core-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  min-width: 0;
+}
+.speed-core-k {
+  font-size: 11.5px;
+  color: var(--dim);
+}
+.speed-core-v {
+  font-size: 24px;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+.speed-core-sub {
+  font-size: 10.5px;
+  color: var(--faint);
+  line-height: 1.5;
+}
+.speed-check {
+  align-self: flex-start;
+  margin-top: 2px;
+  font-size: 10.5px;
+  padding: 1px 7px;
+  border-radius: 99px;
+  border: 1px solid var(--border-soft-2);
+  color: var(--faint);
+}
+.speed-check.ok {
+  color: var(--ok);
+  border-color: var(--ok);
+  background: var(--ok-soft);
+}
+.speed-check.warn {
+  color: var(--warn);
+  border-color: var(--warn);
+  background: var(--warn-soft);
+}
+.speed-check.muted {
+  color: var(--faint);
+}
+
+/* 模块二：A2 速度分布 */
+.stat-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+.stat-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 9px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  font-size: 11.5px;
+  color: var(--dim);
+}
+.stat-chip b {
+  font-size: 14px;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
 }

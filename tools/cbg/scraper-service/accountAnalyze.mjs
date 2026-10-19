@@ -87,6 +87,8 @@ export function parseAccountInput(raw) {
 const SPEED_SUB_MAX = 18;
 /** 2 号位主属性速度满级固定值 */
 const SPEED_MAIN_MAX = 57;
+/** 统一保留 2 位小数 */
+const round2 = (x) => Math.round(x * 100) / 100;
 
 /**
  * 拆出一件御魂的速度（游戏口径）。
@@ -163,6 +165,257 @@ export function buildSpeedTable(inventory, subOnly = false) {
     .sort((a, b) => b.max - a.max || b.sum - a.sum);
 
   return { total, mainSpeedCount, rows };
+}
+
+/* ------------------------- 速度核心 / 分布 / 账号概览 ------------------------- */
+
+/** 从 n 个位置里取 k 个的所有组合（位置只有 6 个，暴力枚举足够） */
+function combinations(arr, k) {
+  if (k === 0) return [[]];
+  if (arr.length < k) return [];
+  const [first, ...rest] = arr;
+  return [...combinations(rest, k - 1).map((c) => [first, ...c]), ...combinations(rest, k)];
+}
+
+/** 解析官方卖点（equip.highlights）：散件一速 / 招财一速 / 头尾数量 / 头速度 */
+function parseOfficialHighlights(highlights) {
+  const list = Array.isArray(highlights) ? highlights.filter((x) => typeof x === 'string') : [];
+  const text = list.join(' ');
+  const num = (re) => {
+    const m = text.match(re);
+    return m ? Number(m[1]) : null;
+  };
+  const touWei = text.match(/(\d+)\s*头\s*(\d+)\s*尾/);
+  return {
+    raw: list,
+    scatterSpeed: num(/散件一速\s*([\d.]+)/),
+    zhaocaiSpeed: num(/招财一速\s*([\d.]+)/),
+    headSpeed: num(/头速度\s*([\d.]+)/),
+    tou: touWei ? Number(touWei[1]) : null,
+    wei: touWei ? Number(touWei[2]) : null,
+  };
+}
+
+/**
+ * 「4 件套 + 2 散件」一速：官方 highlights 里的「招财一速」就是这个口径。
+ * 选 4 个位置穿套装内最快的御魂，剩下 2 个位置用任意御魂里最快的。
+ */
+function bestFourPlusTwo(suitBest, allBest) {
+  if (!suitBest) return null;
+  const positions = [1, 2, 3, 4, 5, 6];
+  const usable = positions.filter((p) => suitBest[p] != null);
+  if (usable.length < 4) return null;
+  let best = null;
+  for (const combo of combinations(usable, 4)) {
+    let sum = 0;
+    for (const p of combo) sum += suitBest[p];
+    for (const p of positions) if (!combo.includes(p)) sum += allBest[p] ?? 0;
+    if (best === null || sum > best) best = sum;
+  }
+  return best;
+}
+
+/**
+ * A1：速度核心指标 + 官方卖点交叉校验。
+ *
+ * 口径：
+ *   - 散件一速 = 6 个位置各自最快的总速度之和（含 2 号位主属性 57）
+ *   - 招财一速 = 4 件招财猫 + 2 件任意套装（官方 highlights 同口径）
+ *   - 头速度   = 2 号位速度主属性御魂里，最高的副属性速度
+ *
+ * 官方 highlights 里如果带了这些值，就逐项比对：一致 ok=true，不一致如实标出差异。
+ * 这样页面上的数字不是「我们算的」，而是「和官方标注互相验证过的」。
+ */
+export function buildSpeedCore(inventory, highlights = []) {
+  const allBest = {};
+  const suitBest = {};
+  let headSpeed = 0;
+
+  for (const v of Object.values(inventory || {})) {
+    if (!v || typeof v !== 'object' || !Array.isArray(v.attrs)) continue;
+    const pos = v.pos;
+    if (!pos) continue;
+    const { sub, main, total } = soulSpeed(v, pos);
+    if (!total) continue;
+
+    allBest[pos] = Math.max(allBest[pos] ?? 0, total);
+    const name = v.name || '?';
+    suitBest[name] = suitBest[name] || {};
+    suitBest[name][pos] = Math.max(suitBest[name][pos] ?? 0, total);
+    if (main) headSpeed = Math.max(headSpeed, sub);
+  }
+
+  const perPosition = {};
+  for (let p = 1; p <= 6; p += 1) perPosition[`p${p}`] = allBest[p] ?? null;
+
+  const scatterSpeed = round2(Object.values(allBest).reduce((a, b) => a + b, 0)) || null;
+  const zhaocaiSpeed = round2(bestFourPlusTwo(suitBest['招财猫'], allBest) ?? 0) || null;
+  const official = parseOfficialHighlights(highlights);
+
+  const checks = [];
+  const addCheck = (key, label, local, ref) => {
+    if (ref === null || ref === undefined) return;
+    checks.push({
+      key,
+      label,
+      local: local ?? null,
+      official: ref,
+      ok: local != null && Math.abs(local - ref) <= 0.02,
+    });
+  };
+  addCheck('scatterSpeed', '散件一速', scatterSpeed, official.scatterSpeed);
+  addCheck('zhaocaiSpeed', '招财一速', zhaocaiSpeed, official.zhaocaiSpeed);
+  addCheck('headSpeed', '头速度', headSpeed || null, official.headSpeed);
+
+  return {
+    scatterSpeed,
+    zhaocaiSpeed,
+    headSpeed: headSpeed || null,
+    perPosition,
+    official,
+    checks,
+  };
+}
+
+/**
+ * A2：速度分布统计（全部本地口径，数据直接来自 inventory）。
+ *
+ * 「真 17 / 伪 17」是社区口径：显示 +17 的御魂里，
+ * 真实值 ≥17.00 才算真 17，16.5~16.99 属于「看着像 17」的伪 17。
+ * 副属性速度理论上限 18（6★ 共 6 次 roll、每次上限 3）。
+ */
+export function buildSpeedStats(inventory) {
+  const stats = {
+    subSpeedCount: 0,
+    ge15: 0,
+    ge16: 0,
+    ge17: 0,
+    true17: 0,
+    fake17: 0,
+    nearFull: 0,
+    full: 0,
+    unleveled: 0,
+    maxSubSpeed: null,
+    hitTailSpeed: null,
+    hitTailCount: 0,
+    resistTailSpeed: null,
+    resistTailCount: 0,
+  };
+
+  for (const v of Object.values(inventory || {})) {
+    if (!v || typeof v !== 'object' || !Array.isArray(v.attrs)) continue;
+    const pos = v.pos;
+    if (!pos) continue;
+    const { sub } = soulSpeed(v, pos);
+
+    if (sub > 0) {
+      stats.subSpeedCount += 1;
+      if (sub >= 15) stats.ge15 += 1;
+      if (sub >= 16) stats.ge16 += 1;
+      if (sub >= 17) {
+        stats.ge17 += 1;
+        stats.true17 += 1;
+      } else if (sub >= 16.5) {
+        stats.fake17 += 1;
+      }
+      if (sub >= 17.99) stats.full += 1;
+      if (sub >= 17.5) stats.nearFull += 1;
+      const level = v.level == null ? 15 : Number(v.level);
+      if (level < 15) stats.unleveled += 1;
+      if (stats.maxSubSpeed === null || sub > stats.maxSubSpeed) stats.maxSubSpeed = sub;
+    }
+
+    // 四号位命中/抵抗主属性（官方「尾」的候选）：副属性速度越高越值钱
+    if (pos === 4) {
+      const mainName = v.attrs[0]?.[0];
+      if (mainName === '效果命中' && sub > 0) {
+        stats.hitTailCount += 1;
+        if (stats.hitTailSpeed === null || sub > stats.hitTailSpeed) stats.hitTailSpeed = sub;
+      } else if (mainName === '效果抵抗' && sub > 0) {
+        stats.resistTailCount += 1;
+        if (stats.resistTailSpeed === null || sub > stats.resistTailSpeed) stats.resistTailSpeed = sub;
+      }
+    }
+  }
+
+  stats.maxSubSpeed = stats.maxSubSpeed === null ? null : round2(stats.maxSubSpeed);
+  stats.hitTailSpeed = stats.hitTailSpeed === null ? null : round2(stats.hitTailSpeed);
+  stats.resistTailSpeed = stats.resistTailSpeed === null ? null : round2(stats.resistTailSpeed);
+  return stats;
+}
+
+/**
+ * A3：账号概览（式神 / 资产 / 收集）——全部来自同一份 equip_desc，零额外请求。
+ *
+ * 字段来源：heroes（星级、稀有度、技能）、hero_history（图鉴）、skin / head_skin、
+ * damo_count_dict（达摩）、money / strength / soul_jade / skin_coupon（资源）、
+ * pvp_score / pvp_rank / fengzidu / honor_score / medal（斗技与成就点）、
+ * achieve_ids / boss_equips（成就数、首领御魂数）。
+ */
+export function buildAccountOverview(desc = {}) {
+  const heroes = desc.heroes && typeof desc.heroes === 'object' ? Object.values(desc.heroes) : [];
+  const byStar = {};
+  const byRarity = {};
+  let sixStar = 0;
+  let fullSkillSixStar = 0;
+
+  for (const h of heroes) {
+    if (!h || typeof h !== 'object') continue;
+    const star = Number(h.star) || 0;
+    const rarity = Number(h.rarity) || 0;
+    byStar[star] = (byStar[star] || 0) + 1;
+    byRarity[rarity] = (byRarity[rarity] || 0) + 1;
+    if (star === 6) {
+      sixStar += 1;
+      const skills = Array.isArray(h.skinfo) ? h.skinfo : [];
+      if (skills.length && skills.every(([, lv]) => Number(lv) >= 5)) fullSkillSixStar += 1;
+    }
+  }
+
+  const skin = desc.skin && typeof desc.skin === 'object' ? desc.skin : {};
+  const skinCount = Object.values(skin).reduce((sum, items) => sum + (Array.isArray(items) ? items.length : 0), 0);
+  const headSkin = desc.head_skin && typeof desc.head_skin === 'object' ? desc.head_skin : null;
+  const damoTotal =
+    desc.damo_count_dict && typeof desc.damo_count_dict === 'object'
+      ? Object.values(desc.damo_count_dict).reduce(
+          (sum, byId) => sum + Object.values(byId || {}).reduce((a, n) => a + (Number(n) || 0), 0),
+          0,
+        )
+      : null;
+
+  const dex = {};
+  for (const [key, v] of Object.entries(desc.hero_history || {})) {
+    if (!v || typeof v !== 'object' || v.got == null) continue;
+    dex[key] = { got: Number(v.got), all: v.all == null ? null : Number(v.all) };
+  }
+
+  const numOrNull = (x) => (Number.isFinite(Number(x)) ? Number(x) : null);
+
+  return {
+    heroCount: heroes.length || null,
+    sixStar,
+    fiveStar: byStar[5] || 0,
+    ssrOwned: byRarity[4] || 0,
+    spOwned: byRarity[5] || 0,
+    urOwned: byRarity[6] || 0,
+    fullSkillSixStar,
+    starCounts: byStar,
+    rarityCounts: byRarity,
+    dex: Object.keys(dex).length ? dex : null,
+    skinCount: skinCount || null,
+    headSkinCount: headSkin ? Object.keys(headSkin).length : null,
+    damoTotal,
+    money: numOrNull(desc.money),
+    strength: numOrNull(desc.strength),
+    soulJade: numOrNull(desc.soul_jade),
+    skinCoupon: numOrNull(desc.skin_coupon),
+    pvpScore: numOrNull(desc.pvp_score),
+    pvpRank: numOrNull(desc.pvp_rank),
+    honorScore: numOrNull(desc.honor_score),
+    medal: numOrNull(desc.medal),
+    achieveCount: Array.isArray(desc.achieve_ids) ? desc.achieve_ids.length : null,
+    bossEquipCount: Array.isArray(desc.boss_equips) ? desc.boss_equips.length : null,
+  };
 }
 
 const METRIC_KEYS = [
@@ -325,6 +578,11 @@ export async function analyzeAccount({ eid, serverid, heroes, subOnly = false, p
   }
   const inventory = desc.inventory || {};
 
+  // A1 / A2 / A3 都是纯本地计算，不额外发请求
+  const speedCore = buildSpeedCore(inventory, equip.highlights || []);
+  const speedStats = buildSpeedStats(inventory);
+  const overview = buildAccountOverview(desc);
+
   const [speedAll, speedSub, heroScores] = await Promise.all([
     Promise.resolve(buildSpeedTable(inventory, false)),
     Promise.resolve(buildSpeedTable(inventory, true)),
@@ -355,6 +613,12 @@ export async function analyzeAccount({ eid, serverid, heroes, subOnly = false, p
       soulCount: speedAll.total,
       mainSpeedSouls: speedAll.mainSpeedCount,
     },
+    /** A1：速度核心指标 + 与官方卖点的交叉校验 */
+    speedCore,
+    /** A2：副属性速度分布 / 真 17 / 命中与抵抗四号位速度 */
+    speedStats,
+    /** A3：式神、资产、图鉴收集概览 */
+    overview,
     speed: {
       all: speedAll.rows,
       subOnly: speedSub.rows,

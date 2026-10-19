@@ -21,9 +21,11 @@
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
+import { createHash } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { analyzeAccount, parseAccountInput, probeAccount } from './accountAnalyze.mjs';
+import { DEFAULT_TTL_MS as ANALYSIS_TTL_MS, readAnalysisCache, writeAnalysisCache } from './analysisCache.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -52,6 +54,11 @@ const CONFIG = {
    * 配合 8 页上限，单次查询约 28 秒。
    */
   pageDelayMs: Number(arg('delay', 4000)),
+  /**
+   * 模块二分析结果缓存有效期（毫秒），默认 10 分钟。
+   * 页面刷新/重复打开时优先走缓存，显式传 refresh=1 才重新抓。
+   */
+  analysisTtlMs: Number(arg('analysis-ttl', process.env.CBG_ANALYSIS_TTL_MS ?? ANALYSIS_TTL_MS)),
   headless: hasFlag('headless'),
   browser: arg('browser', process.env.CBG_BROWSER ?? ''),
   profileDir: arg('profile', path.join(__dirname, 'profile')),
@@ -496,8 +503,11 @@ const server = http.createServer(async (req, res) => {
   /**
    * 模块二：账号评分。
    *
-   * POST /api/account/analyze  body: { url?, eid?, serverid?, heroes?: string[], subOnly?: boolean }
-   * GET  /api/account/analyze?eid=..&serverid=..&heroes=须佐之男,阿修罗&subOnly=1
+   * POST /api/account/analyze  body: { url?, eid?, serverid?, heroes?: string[], subOnly?: boolean, refresh?: boolean }
+   * GET  /api/account/analyze?eid=..&serverid=..&heroes=须佐之男,阿修罗&subOnly=1&refresh=1
+   *
+   * refresh 不传时优先返回 analysisCache 里的结果（默认 10 分钟，见 --analysis-ttl）；
+   * 页面上的「刷新/重新分析」会显式传 refresh=1 强制重新抓取。
    *
    * 为什么必须由服务端代理：藏宝阁这三个接口**没有 CORS 头**，浏览器直连会被拦。
    * 而且必须走**已登录的页面上下文**——匿名 Node 请求在风控升级后会被判 SESSION_TIMEOUT。
@@ -559,6 +569,7 @@ const server = http.createServer(async (req, res) => {
         serverid: body.serverid,
         heroes: Array.isArray(body.heroes) ? body.heroes : undefined,
         subOnly: Boolean(body.subOnly),
+        refresh: Boolean(body.refresh),
       };
     } else {
       args = {
@@ -567,6 +578,7 @@ const server = http.createServer(async (req, res) => {
         url: url.searchParams.get('url') || undefined,
         heroes: url.searchParams.get('heroes') ? url.searchParams.get('heroes').split(',').filter(Boolean) : undefined,
         subOnly: url.searchParams.get('subOnly') === '1',
+        refresh: url.searchParams.get('refresh') === '1',
       };
     }
 
@@ -595,12 +607,37 @@ const server = http.createServer(async (req, res) => {
 
       logOrigin(req, p);
       log(`账号评分：eid=${args.eid} serverid=${args.serverid}`);
+
+      const ttlMs =
+        Number.isFinite(CONFIG.analysisTtlMs) && CONFIG.analysisTtlMs > 0 ? CONFIG.analysisTtlMs : ANALYSIS_TTL_MS;
+      const heroesWanted = args.heroes && args.heroes.length ? args.heroes : ['须佐之男', '阿修罗'];
+      // 缓存 key 带上 heroes / subOnly 口径：不同式神组合不能命中同一份结果
+      const cacheKeyEid =
+        `${args.eid}${args.subOnly ? '-sub' : ''}-` +
+        createHash('sha1').update(JSON.stringify([...heroesWanted].sort())).digest('hex').slice(0, 8);
+
+      // A5：优先返回未过期的分析缓存，避免重复分析反复请求藏宝阁
+      if (!args.refresh) {
+        const cached = readAnalysisCache(cacheKeyEid, { ttlMs });
+        if (cached) {
+          log(`账号评分命中缓存：eid=${args.eid}（${Math.round(cached.ageMs / 1000)} 秒前）`);
+          json(res, 200, {
+            ...cached.data,
+            cached: true,
+            cachedAt: cached.generatedAt,
+            cacheAgeMs: cached.ageMs,
+            cacheTtlMs: ttlMs,
+          });
+          return;
+        }
+      }
+
       // 必须走已登录的页面发请求：匿名 Node fetch 在风控升级后会被判 SESSION_TIMEOUT
       await ensureOnHost();
       const result = await analyzeAccount({
         eid: args.eid,
         serverid: args.serverid,
-        heroes: args.heroes && args.heroes.length ? args.heroes : ['须佐之男', '阿修罗'],
+        heroes: heroesWanted,
         subOnly: args.subOnly,
         pageGet: async (path) =>
           evalInPage(
@@ -614,11 +651,22 @@ const server = http.createServer(async (req, res) => {
             60000,
           ),
       });
+
+      // 写入缓存；失败不影响本次返回
+      const saved = writeAnalysisCache(cacheKeyEid, result);
+      if (!saved) log('账号评分缓存写入失败（不影响本次结果）');
+
       log(
         `账号评分完成：${result.heroes.map((h) => `${h.name}=${h.best?.score ?? '—'}`).join(' ')}` +
           `  御魂 ${result.account.soulCount} 件`,
       );
-      json(res, 200, result);
+      json(res, 200, {
+        ...result,
+        cached: false,
+        cachedAt: saved?.generatedAt ?? null,
+        cacheAgeMs: 0,
+        cacheTtlMs: ttlMs,
+      });
     } catch (err) {
       log(`账号评分失败：${err.message}`);
       json(res, 500, { ok: false, error: 'ANALYZE_FAILED', message: err.message });
@@ -637,6 +685,8 @@ const server = http.createServer(async (req, res) => {
       browserReady: state.browserReady,
       host: CONFIG.host,
       cdpPort: CONFIG.cdpPort,
+      /** 模块二分析缓存有效期（毫秒），页面据此提示缓存是否还有效 */
+      analysisTtlMs: CONFIG.analysisTtlMs,
       lastSuccessAt: state.lastSuccessAt,
       lastTotal: state.lastTotal,
       busy: Boolean(state.job && state.job.running),

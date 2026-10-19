@@ -39,6 +39,9 @@ cbg-web/dist/
 # 抓取归档（含站点原始数据，按需自行决定是否提交）
 tools/cbg/raw/
 
+# 模块二分析结果缓存（本地生成，不提交）
+cache/analysis/
+
 # 日志与临时文件
 *.log
 npm-debug.log*

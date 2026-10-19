@@ -1,4 +1,4 @@
-﻿import { SCRAPER_BASE } from '@/api/live';
+import { SCRAPER_BASE } from '@/api/live';
 
 /**
  * 模块二「账号评分」的客户端。
@@ -64,6 +64,112 @@ export interface SuitSpeedRow {
   coverage: number;
 }
 
+/* -------------------- A1：速度核心 / 官方交叉校验 -------------------- */
+
+/** 官方卖点（equip.highlights）解析结果 */
+export interface OfficialHighlights {
+  raw: string[];
+  scatterSpeed: number | null;
+  zhaocaiSpeed: number | null;
+  headSpeed: number | null;
+  /** 官方标注的「N头M尾」 */
+  tou: number | null;
+  wei: number | null;
+}
+
+/** 单个指标与官方标注的比对 */
+export interface SpeedCheck {
+  key: 'scatterSpeed' | 'zhaocaiSpeed' | 'headSpeed';
+  label: string;
+  local: number | null;
+  official: number;
+  /** 本地复算与官方标注一致（误差 ≤0.02） */
+  ok: boolean;
+}
+
+export interface SpeedCore {
+  /** 散件一速：6 个位置各自最快的总速度之和 */
+  scatterSpeed: number | null;
+  /** 招财一速：4 件招财猫 + 2 件任意套装 */
+  zhaocaiSpeed: number | null;
+  /** 头速度：2 号位速度主属性御魂里最高的副属性速度 */
+  headSpeed: number | null;
+  /** 散件一速的各位置贡献 */
+  perPosition: {
+    p1: number | null;
+    p2: number | null;
+    p3: number | null;
+    p4: number | null;
+    p5: number | null;
+    p6: number | null;
+  };
+  official: OfficialHighlights;
+  checks: SpeedCheck[];
+}
+
+/* -------------------- A2：副属性速度分布 -------------------- */
+
+export interface SpeedStats {
+  /** 带副属性速度的御魂件数 */
+  subSpeedCount: number;
+  ge15: number;
+  ge16: number;
+  ge17: number;
+  /** 真 17：真实值 ≥17.00 */
+  true17: number;
+  /** 伪 17：16.5~16.99（显示像 17，实际不满） */
+  fake17: number;
+  /** 近满速：≥17.5 */
+  nearFull: number;
+  /** 满速：≥17.99（6★ 理论上限 18） */
+  full: number;
+  /** 未满级但带速度副属性的「速度胚子」 */
+  unleveled: number;
+  maxSubSpeed: number | null;
+  /** 四号位主属性效果命中、且带速度副属性的御魂 */
+  hitTailCount: number;
+  hitTailSpeed: number | null;
+  /** 四号位主属性效果抵抗、且带速度副属性的御魂 */
+  resistTailCount: number;
+  resistTailSpeed: number | null;
+}
+
+/* -------------------- A3：账号概览 -------------------- */
+
+export interface DexEntry {
+  got: number;
+  all: number | null;
+}
+
+export interface AccountOverview {
+  heroCount: number | null;
+  sixStar: number;
+  fiveStar: number;
+  /** 拥有（含重复）的 SSR / SP / UR 数量 */
+  ssrOwned: number;
+  spOwned: number;
+  urOwned: number;
+  /** 六星且技能全满的式神数 */
+  fullSkillSixStar: number;
+  starCounts: Record<string, number>;
+  rarityCounts: Record<string, number>;
+  /** 图鉴收集：r / sr / ssr / sp / ur / gua / x */
+  dex: Record<string, DexEntry> | null;
+  skinCount: number | null;
+  headSkinCount: number | null;
+  damoTotal: number | null;
+  money: number | null;
+  strength: number | null;
+  soulJade: number | null;
+  skinCoupon: number | null;
+  pvpScore: number | null;
+  pvpRank: number | null;
+  honorScore: number | null;
+  medal: number | null;
+  achieveCount: number | null;
+  bossEquipCount: number | null;
+}
+
 export interface AccountInfo {
   ordersn: string;
   serverName: string;
@@ -87,7 +193,21 @@ export interface AccountAnalysis {
   ok: boolean;
   eid: string;
   serverid: string;
+  /** A5：结果是否来自服务端缓存（默认 10 分钟内有效） */
+  cached?: boolean;
+  /** 缓存生成时间（ISO 字符串） */
+  cachedAt?: string | null;
+  /** 缓存年龄（毫秒） */
+  cacheAgeMs?: number | null;
+  /** 服务端缓存有效期（毫秒） */
+  cacheTtlMs?: number;
   account: AccountInfo;
+  /** A1：速度核心指标 + 与官方卖点的交叉校验 */
+  speedCore: SpeedCore;
+  /** A2：副属性速度分布 / 真 17 / 命中与抵抗四号位速度 */
+  speedStats: SpeedStats;
+  /** A3：式神、资产、图鉴收集概览 */
+  overview: AccountOverview;
   speed: { all: SuitSpeedRow[]; subOnly: SuitSpeedRow[] };
   heroes: HeroScore[];
 }
@@ -125,21 +245,21 @@ const request = async <T,>(path: string, init?: RequestInit, timeoutMs = 180_000
 };
 
 export const accountApi = {
-  /** 用地址分析（地址里含 eid 时最省事） */
-  async analyzeByUrl(url: string, heroes?: string[]): Promise<AccountAnalysis> {
+  /** 用地址分析（地址里含 eid 时最省事）；refresh=true 强制绕过服务端缓存 */
+  async analyzeByUrl(url: string, heroes?: string[], refresh = false): Promise<AccountAnalysis> {
     return request<AccountAnalysis>('/api/account/analyze', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ url, heroes }),
+      body: JSON.stringify({ url, heroes, refresh }),
     });
   },
 
-  /** 分别给 eid + serverid（用户只有商品页地址时走这个） */
-  async analyze(eid: string, serverid: string, heroes?: string[]): Promise<AccountAnalysis> {
+  /** 分别给 eid + serverid（用户只有商品页地址时走这个）；refresh=true 强制绕过服务端缓存 */
+  async analyze(eid: string, serverid: string, heroes?: string[], refresh = false): Promise<AccountAnalysis> {
     return request<AccountAnalysis>('/api/account/analyze', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ eid, serverid, heroes }),
+      body: JSON.stringify({ eid, serverid, heroes, refresh }),
     });
   },
 };

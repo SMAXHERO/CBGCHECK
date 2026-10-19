@@ -8,6 +8,8 @@ import {
   parseInput,
   type AccountAnalysis,
   type HeroScore,
+  type SpeedCore,
+  type SpeedStats,
   type SuitSpeedRow,
 } from '@/api/account';
 import { SCRAPER_BASE } from '@/api/live';
@@ -26,6 +28,19 @@ import { SCRAPER_BASE } from '@/api/live';
 
 const fmt = (n: number | null | undefined, digits = 2) =>
   n === null || n === undefined ? '—' : Number(n).toFixed(digits);
+
+const fmtInt = (n: number | null | undefined) =>
+  n === null || n === undefined ? '—' : Number(n).toLocaleString('zh-CN');
+
+/** 缓存年龄 -> 「12 秒」/「3 分钟」/「2 小时」 */
+const fmtAge = (ms: number | null | undefined) => {
+  if (ms === null || ms === undefined) return '刚刚';
+  const sec = Math.max(0, Math.round(ms / 1000));
+  if (sec < 60) return `${sec} 秒`;
+  const min = Math.round(sec / 60);
+  if (min < 60) return `${min} 分钟`;
+  return `${Math.round(min / 60)} 小时`;
+};
 
 const SPEED_MODES = [
   { key: 'all', label: '总速度（含 2 号位主属性）', hint: '反映这个位置最快能到多少；2 号位 = 主属性 57 + 副属性速度（最高约 75），其余位置 ≤ 18' },
@@ -179,6 +194,120 @@ const SpeedTable = ({ rows, mode }: { rows: SuitSpeedRow[]; mode: 'all' | 'subOn
   );
 };
 
+/** A1：速度核心指标 + 与官方卖点的交叉校验 */
+const SpeedCoreCard = ({ core }: { core: SpeedCore }) => {
+  const posVals = [
+    core.perPosition.p1,
+    core.perPosition.p2,
+    core.perPosition.p3,
+    core.perPosition.p4,
+    core.perPosition.p5,
+    core.perPosition.p6,
+  ];
+  const checkOf = (key: string) => core.checks?.find((c) => c.key === key);
+  const badge = (key: string) => {
+    const c = checkOf(key);
+    if (!c) return <span className="speed-check muted">官方未标注</span>;
+    return c.ok ? (
+      <span className="speed-check ok">官方 {fmt(c.official)} ✓</span>
+    ) : (
+      <span className="speed-check warn">官方 {fmt(c.official)} / 本地 {fmt(c.local)}</span>
+    );
+  };
+  const matched = core.checks.filter((c) => c.ok).length;
+  return (
+    <section className="score-card">
+      <h2 className="score-h2">
+        速度核心
+        <span className="score-badge">本地复算 · 与官方卖点比对</span>
+      </h2>
+      <div className="speed-core-grid">
+        <div className="speed-core-item">
+          <span className="speed-core-k">散件一速</span>
+          <b className="speed-core-v">{fmt(core.scatterSpeed)}</b>
+          <span className="speed-core-sub">
+            {posVals.map((v, i) => `P${i + 1} ${fmt(v)}`).join(' · ')}
+          </span>
+          {badge('scatterSpeed')}
+        </div>
+        <div className="speed-core-item">
+          <span className="speed-core-k">招财一速</span>
+          <b className="speed-core-v">{fmt(core.zhaocaiSpeed)}</b>
+          <span className="speed-core-sub">4 件招财猫 + 2 件任意套装</span>
+          {badge('zhaocaiSpeed')}
+        </div>
+        <div className="speed-core-item">
+          <span className="speed-core-k">头速度</span>
+          <b className="speed-core-v">{fmt(core.headSpeed)}</b>
+          <span className="speed-core-sub">2 号位速度主属性的最高副属性速度</span>
+          {badge('headSpeed')}
+        </div>
+        <div className="speed-core-item">
+          <span className="speed-core-k">头 / 尾数量</span>
+          <b className="speed-core-v">
+            {core.official?.tou === null || core.official?.tou === undefined
+              ? '—'
+              : `${core.official.tou}头${core.official.wei ?? 0}尾`}
+          </b>
+          <span className="speed-core-sub">官方口径：头 = 2 号位速度主属性，尾 = 4 号位命中/抵抗主属性（且速度达标）</span>
+          <span className="speed-check muted">直接引用官方 highlights</span>
+        </div>
+      </div>
+      <p className="speed-note">
+        散件一速 = 六个位置各自最快的总速度之和；招财一速 = 4 件招财猫 + 2 件任意套装（与藏宝阁官方口径一致）。
+        {core.checks.length > 0
+          ? ` 本次 ${matched}/${core.checks.length} 项与官方标注一致。`
+          : ' 这个账号的官方卖点里没有可比的数值，以上为本地复算。'}
+      </p>
+    </section>
+  );
+};
+
+/** A2：副属性速度分布 */
+const SpeedStatsCard = ({ stats }: { stats: SpeedStats }) => {
+  const chips: Array<{ k: string; v: string }> = [
+    { k: '副属性 ≥15', v: String(stats.ge15) },
+    { k: '≥16', v: String(stats.ge16) },
+    { k: '≥17', v: String(stats.ge17) },
+    { k: '真 17', v: String(stats.true17) },
+    { k: '伪 17', v: String(stats.fake17) },
+    { k: '近满速', v: String(stats.nearFull) },
+    { k: '满速', v: String(stats.full) },
+    { k: '速度胚子', v: String(stats.unleveled) },
+    { k: '最高副属性', v: fmt(stats.maxSubSpeed) },
+    {
+      k: '命中4号位',
+      v: stats.hitTailSpeed === null ? String(stats.hitTailCount) : `${stats.hitTailCount}（${fmt(stats.hitTailSpeed)}）`,
+    },
+    {
+      k: '抵抗4号位',
+      v:
+        stats.resistTailSpeed === null ? String(stats.resistTailCount) : `${stats.resistTailCount}（${fmt(stats.resistTailSpeed)}）`,
+    },
+  ];
+  return (
+    <section className="score-card">
+      <h2 className="score-h2">
+        速度分布
+        <span className="score-badge">共 {stats.subSpeedCount} 件带速度副属性</span>
+      </h2>
+      <div className="stat-chips">
+        {chips.map((c) => (
+          <span className="stat-chip" key={c.k}>
+            <b>{c.v}</b>
+            <span>{c.k}</span>
+          </span>
+        ))}
+      </div>
+      <p className="speed-note">
+        副属性速度理论上限 18（6★ 共 6 次 roll、每次上限 3）。「真 17」= 实际值 ≥17.00；
+        「伪 17」= 16.5~16.99（显示像 +17）。命中/抵抗 4 号位 = 四号位主属性效果命中 / 效果抵抗、且带速度副属性的御魂；
+        官方「尾」的计数更严格（还要求速度达标），见上方「头 / 尾数量」。
+      </p>
+    </section>
+  );
+};
+
 export const AccountScore = () => {
   const { theme, toggle } = useTheme();
   const { message } = App.useApp();
@@ -214,15 +343,15 @@ export const AccountScore = () => {
   const autoRanRef = useRef('');
 
   const runParams = useCallback(
-    async (eid: string, serverid: string) => {
+    async (eid: string, serverid: string, refresh = false) => {
       setLoading(true);
       setNeedEid(false);
       setErrorText('');
       try {
-        const res = await accountApi.analyze(eid, serverid);
+        const res = await accountApi.analyze(eid, serverid, undefined, refresh);
         setData(res);
         setInput(`eid=${eid}&serverid=${serverid}`);
-        message.success('分析完成');
+        message.success(refresh ? '重新分析完成' : '分析完成');
       } catch (err) {
         // 失败就清掉旧结果，避免把上一个账号的数字当成这个账号的
         setData(null);
@@ -235,6 +364,11 @@ export const AccountScore = () => {
     },
     [message],
   );
+
+  /** 手动刷新：跳过服务端缓存，重新抓一遍（风控风险由用户自己决定） */
+  const refresh = useCallback(() => {
+    if (data?.eid && data?.serverid) void runParams(data.eid, data.serverid, true);
+  }, [data, runParams]);
 
   useEffect(() => {
     const sp = new URLSearchParams(location.search);
@@ -259,8 +393,8 @@ export const AccountScore = () => {
     setErrorText('');
     try {
       const res = parsed.eid && parsed.serverid
-        ? await accountApi.analyze(parsed.eid, parsed.serverid)
-        : await accountApi.analyzeByUrl(raw);
+        ? await accountApi.analyze(parsed.eid, parsed.serverid, undefined, true)
+        : await accountApi.analyzeByUrl(raw, undefined, true);
       setData(res);
       message.success('分析完成');
     } catch (err) {
@@ -287,7 +421,7 @@ export const AccountScore = () => {
     }
     setLoading(true);
     try {
-      const res = await accountApi.analyze(e, s);
+      const res = await accountApi.analyze(e, s, undefined, true);
       setData(res);
       setNeedEid(false);
       message.success('分析完成');
@@ -299,7 +433,12 @@ export const AccountScore = () => {
   }, [eidOnly, serveridOnly, message]);
 
   const acct = data?.account;
+  const ov = data?.overview;
   const speedRows = data ? (speedMode === 'all' ? data.speed.all : data.speed.subOnly) : [];
+  const dexText = (key: string) => {
+    const d = ov?.dex?.[key];
+    return d ? `${d.got}/${d.all ?? '?'}` : '—';
+  };
 
   return (
     <div className="app-shell">
@@ -412,6 +551,21 @@ export const AccountScore = () => {
           </div>
         )}
 
+        {data && (
+          <div className="cache-bar">
+            <span>
+              {data.cached
+                ? `结果来自 ${fmtAge(data.cacheAgeMs)}前的缓存（服务端 TTL ${Math.round(
+                    (data.cacheTtlMs ?? 0) / 60000,
+                  )} 分钟，刷新可重新抓取）`
+                : '实时分析结果'}
+            </span>
+            <button className="score-toggle" onClick={refresh} disabled={loading}>
+              {loading ? '刷新中…' : '刷新'}
+            </button>
+          </div>
+        )}
+
         {data && acct && (
           <>
             <section className="score-card">
@@ -453,6 +607,79 @@ export const AccountScore = () => {
                   <b className="acct-v">{acct.collectNum}</b>
                 </div>
               </div>
+              {ov && (
+                <>
+                  <h3 className="acct-subtitle">养成 / 资产 / 收集</h3>
+                  <div className="acct-grid">
+                    <div>
+                      <span className="acct-k">式神条目</span>
+                      <b className="acct-v">{fmtInt(ov.heroCount)} 条</b>
+                    </div>
+                    <div>
+                      <span className="acct-k">六星式神</span>
+                      <b className="acct-v">
+                        {ov.sixStar} 只<span className="acct-note">满技能 {ov.fullSkillSixStar}</span>
+                      </b>
+                    </div>
+                    <div>
+                      <span className="acct-k">SSR / SP</span>
+                      <b className="acct-v">
+                        {ov.ssrOwned} / {ov.spOwned}
+                        <span className="acct-note">含重复</span>
+                      </b>
+                    </div>
+                    <div>
+                      <span className="acct-k">式神图鉴</span>
+                      <b className="acct-v">
+                        SSR {dexText('ssr')} · SP {dexText('sp')}
+                      </b>
+                    </div>
+                    <div>
+                      <span className="acct-k">皮肤 / 头像框</span>
+                      <b className="acct-v">
+                        {fmtInt(ov.skinCount)} / {fmtInt(ov.headSkinCount)}
+                      </b>
+                    </div>
+                    <div>
+                      <span className="acct-k">金币</span>
+                      <b className="acct-v">{fmtInt(ov.money)}</b>
+                    </div>
+                    <div>
+                      <span className="acct-k">体力</span>
+                      <b className="acct-v">{fmtInt(ov.strength)}</b>
+                    </div>
+                    <div>
+                      <span className="acct-k">达摩</span>
+                      <b className="acct-v">{fmtInt(ov.damoTotal)}</b>
+                    </div>
+                    <div>
+                      <span className="acct-k">魂玉 / 皮肤券</span>
+                      <b className="acct-v">
+                        {fmtInt(ov.soulJade)} / {fmtInt(ov.skinCoupon)}
+                      </b>
+                    </div>
+                    <div>
+                      <span className="acct-k">斗技 / 排名</span>
+                      <b className="acct-v">
+                        {ov.pvpScore === null ? '—' : fmtInt(ov.pvpScore)}
+                        {ov.pvpRank !== null && ov.pvpRank > 0 ? ` / #${fmtInt(ov.pvpRank)}` : ' / 未上榜'}
+                      </b>
+                    </div>
+                    <div>
+                      <span className="acct-k">荣誉分 / 勋章</span>
+                      <b className="acct-v">
+                        {fmtInt(ov.honorScore)} / {fmtInt(ov.medal)}
+                      </b>
+                    </div>
+                    <div>
+                      <span className="acct-k">成就 / 首领御魂</span>
+                      <b className="acct-v">
+                        {fmtInt(ov.achieveCount)} / {fmtInt(ov.bossEquipCount)}
+                      </b>
+                    </div>
+                  </div>
+                </>
+              )}
               <p className="score-foot">
                 上架 {acct.createTime}
                 {acct.sellingTime && acct.sellingTime !== acct.createTime ? ` ｜ 更新 ${acct.sellingTime}` : ''}
@@ -462,6 +689,9 @@ export const AccountScore = () => {
                 </a>
               </p>
             </section>
+
+            {data.speedCore && <SpeedCoreCard core={data.speedCore} />}
+            {data.speedStats && <SpeedStatsCard stats={data.speedStats} />}
 
             <section className="score-card">
               <h2 className="score-h2">式神御魂搭配评分</h2>
@@ -475,7 +705,7 @@ export const AccountScore = () => {
                     hero={h}
                     onRetry={
                       data.eid && data.serverid
-                        ? () => void runParams(data.eid, data.serverid)
+                        ? () => void runParams(data.eid, data.serverid, true)
                         : undefined
                     }
                   />
