@@ -16,8 +16,9 @@
  *   1. 地址里的 `202610161701616-47-C8MSKXBXH4B4E` 是 **ordersn**，
  *      而这三个接口要的是 **eid**（`202610161701613-47-SMSV5P0UFDMEW`），两者不同！
  *      但 `get_equip_detail` 传 ordersn 也能查通，且响应里带 eid —— 所以用 ordersn 探一次即可。
- *   2. 御魂的速度 = 「attrs 里的速度基础值」+ `Σ rattr.speedAdditionVal × 3`
- *      （rattr 是 0~1 的归一化比例，实测上限 0.9999，需 ×3 换算为游戏数值）
+ *   2. 御魂速度直接取 attrs 里的「速度」条目（已经是最终值；2 号位主速度御魂
+ *      会同时有主属性 57.00 和副属性 x）。旧的「attrs + Σ rattr×3」把同一份
+ *      速度算了两遍，导致非 2 号位出现 >18 的单件速度，已修正。
  *
  * 用法：
  *   node tools/cbg/account_score.mjs --url "https://yys.cbg.163.com/cgi/mweb/equip/47/202610161701616-47-C8MSKXBXH4B4E"
@@ -93,26 +94,40 @@ export async function resolveEid(serverid, ordersn) {
   return { eid: j.equip.eid, equip: j.equip };
 }
 
-/** 御魂速度：基础值 + Σrattr×3（见文件头注释的坑 2） */
+/**
+ * 御魂速度：副属性速度 + 2 号位主属性速度 57（见文件头注释的坑 2）。
+ *
+ * attrs 里的「速度」是最终值，2 号位主速度御魂有两条：
+ * 主属性 57.00 + 副属性 x。副属性不可能 >18，所以 >18 的那条必是主属性。
+ */
+const SPEED_SUB_MAX = 18; // 6★ 副属性速度理论满值：6 次 roll × 每次上限 3
+const SPEED_MAIN_MAX = 57; // 2 号位主属性速度满级
+
 export function soulSpeed(soul) {
-  const attrs = Object.fromEntries((soul.attrs || []).map(([k, v]) => [k, v]));
-  const base = parseFloat(attrs['速度'] || '0') || 0;
-  const rSum = (soul.rattr || []).filter(([k]) => k === 'speedAdditionVal').reduce((a, [, x]) => a + x, 0);
-  return { base, random: Math.round(rSum * 3 * 100) / 100, total: Math.round((base + rSum * 3) * 100) / 100 };
+  const vals = (soul.attrs || [])
+    .filter(([k]) => k === '速度')
+    .map(([, x]) => parseFloat(x))
+    .filter((x) => Number.isFinite(x) && x > 0);
+
+  const hasMain = soul.pos === 2 && vals.some((x) => x > SPEED_SUB_MAX);
+  const main = hasMain ? SPEED_MAIN_MAX : 0;
+  const sub = Math.max(0, vals.reduce((a, b) => a + b, 0) - main);
+  const round2 = (x) => Math.round(x * 100) / 100;
+  return { sub: round2(sub), main, total: round2(sub + main) };
 }
 
-/** 每种御魂 × 6 个位置的最快速 */
+/** 每种御魂 × 6 个位置的最快速（总速度：2 号位 = 57 + 副属性） */
 export function speedBySuit(inventory) {
   const best = {};
   let total = 0;
   for (const v of Object.values(inventory || {})) {
     if (!v || typeof v !== 'object' || !v.attrs) continue;
+    const pos = v.pos;
+    if (!pos) continue;
     total += 1;
     const s = soulSpeed(v);
     if (!s.total) continue;
     const name = v.name || '?';
-    const pos = v.pos;
-    if (!pos) continue;
     best[name] = best[name] || {};
     if (!best[name][pos] || s.total > best[name][pos].total) best[name][pos] = { ...s, uuid: v.uuid, level: v.level, star: v.qua };
   }

@@ -5,16 +5,21 @@
  *           → equip.equip_desc（约 1.6MB JSON 字符串）→ inventory（御魂仓库）
  * 接口**匿名可用**，不需要登录。
  *
- * 速度的算法（实测校准过）：
- *   速度 = attrs 里的「速度」值  +  Σ rattr.speedAdditionVal × 3
- *   rattr 是 0~1 的归一化比例（上限 0.9999），× 3 换算为游戏数值。
- *   验证：主属性 57 的 2 号位，rattr 和为 0 → 总速度 57，正确。
+ * 速度的算法（实测自藏宝阁 get_equip_detail 的 inventory）：
+ *   attrs 里的「速度」条目**已经是最终值**；2 号位主速度御魂有两条
+ *   （主属性 57.00 + 副属性 x）。所以：
+ *     副属性速度 = attrs 里所有「速度」之和 −（2 号位主属性 57）
+ *     总速度     = 副属性速度 +（2 号位主属性 57）
+ *   副属性速度满值 18（6★ 共 6 次 roll、每次上限 3），
+ *   非 2 号位的单件总速度不可能超过 18。
  *
- * ⚠️ 2 号位的歧义（本脚本同时给出两种口径）：
- *   2 号位的主属性**可以是速度**，满值 57。所以按「总速度」统计时，
- *   所有御魂的 P2 都是 57.00，没有任何区分度。
- *   因此额外提供 --sub-only：排除主属性速度，只看**副属性堆出来的速度**。
- *   给「哪些御魂速度更好」做参考时，用 --sub-only 更有意义。
+ * ⚠️ 旧算法「attrs 速度 + Σ rattr.speedAdditionVal × 3」是错的：
+ *   rattr 只是同一份副属性速度的「每次 roll 归一化比例」，相加会把速度算两遍
+ *   （实测非 2 号位出现 34.24 这种值），已修正。
+ *
+ * ⚠️ 2 号位的两种口径（本脚本同时给出）：
+ *   - 默认「总速度」：P2 = 57 + 副属性速度，最高约 75；
+ *   - --sub-only：P2 去掉 57 主属性，只看副属性堆出来的速度（≤18），更有区分度。
  *
  * 用法：
  *   node tools/cbg/soul_speed_table.mjs --serverid 47 --eid <eid>
@@ -35,8 +40,28 @@ const AS_JSON = has('json');
 const UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36 Edg/155.0.0.0';
 
-/** 判断「速度」是不是 2 号位的主属性（满值 57 且没有随机速度加成） */
-const isMainSpeed = (pos, base, random) => pos === 2 && base >= 55 && random === 0;
+/** 6★ 副属性速度理论满值：6 次 roll × 每次上限 3 */
+const SPEED_SUB_MAX = 18;
+/** 2 号位主属性速度满级固定值 */
+const SPEED_MAIN_MAX = 57;
+
+/**
+ * 拆出一件御魂的速度。
+ * attrs 里「速度」条目是最终值；2 号位主速度御魂有两条（57 主属性 + x 副属性），
+ * 副属性不可能 >18，所以 2 号位 >18 的「速度」必是主属性。
+ */
+export function soulSpeed(v) {
+  const vals = (v.attrs || [])
+    .filter(([k]) => k === '速度')
+    .map(([, x]) => parseFloat(x))
+    .filter((x) => Number.isFinite(x) && x > 0);
+
+  const hasMain = v.pos === 2 && vals.some((x) => x > SPEED_SUB_MAX);
+  const main = hasMain ? SPEED_MAIN_MAX : 0;
+  const sub = Math.max(0, vals.reduce((a, b) => a + b, 0) - main);
+  const round2 = (x) => Math.round(x * 100) / 100;
+  return { sub: round2(sub), main, total: round2(sub + main) };
+}
 
 export function buildTable(inventory, subOnly) {
   const best = {};
@@ -49,22 +74,18 @@ export function buildTable(inventory, subOnly) {
     if (!pos) continue;
     total += 1;
 
-    const attrs = Object.fromEntries(v.attrs.map(([k, val]) => [k, val]));
-    const base = parseFloat(attrs['速度'] || '0') || 0;
-    const rSum = (v.rattr || []).filter(([k]) => k === 'speedAdditionVal').reduce((a, [, x]) => a + x, 0);
-    const random = Math.round(rSum * 3 * 100) / 100;
-    const totalSpd = Math.round((base + random) * 100) / 100;
-
-    if (isMainSpeed(pos, base, random)) {
-      mainSpeedCount += 1;
-      if (subOnly) continue; // 排除主属性速度
-    }
+    const { sub, main, total: totalSpd } = soulSpeed(v);
+    if (main) mainSpeedCount += 1;
     if (!totalSpd) continue;
+
+    // 仅副属性口径：只去掉 2 号位的 57 主属性，仍比较副属性速度
+    const value = subOnly ? sub : totalSpd;
+    if (!value) continue;
 
     const name = v.name || '?';
     best[name] = best[name] || {};
-    if (!best[name][pos] || totalSpd > best[name][pos].total) {
-      best[name][pos] = { total: totalSpd, base, random, star: v.qua, level: v.level };
+    if (!best[name][pos] || value > best[name][pos].total) {
+      best[name][pos] = { total: value, sub, main, star: v.qua, level: v.level };
     }
   }
 

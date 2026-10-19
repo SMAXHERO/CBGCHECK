@@ -28,8 +28,8 @@ const fmt = (n: number | null | undefined, digits = 2) =>
   n === null || n === undefined ? '—' : Number(n).toFixed(digits);
 
 const SPEED_MODES = [
-  { key: 'all', label: '总速度（含 2 号位主属性）', hint: '反映这个位置最快能到多少；2 号位因主属性可加速度，所有御魂都是 57' },
-  { key: 'subOnly', label: '仅副属性速度', hint: '排除 2 号位主属性，只看随机副属性堆出来的速度，更有区分度' },
+  { key: 'all', label: '总速度（含 2 号位主属性）', hint: '反映这个位置最快能到多少；2 号位 = 主属性 57 + 副属性速度（最高约 75），其余位置 ≤ 18' },
+  { key: 'subOnly', label: '仅副属性速度', hint: '2 号位去掉 57 主属性，只看随机副属性堆出来的速度（≤ 18），更有区分度' },
 ] as const;
 
 const HeroCard = ({ hero, onRetry }: { hero: HeroScore; onRetry?: () => void }) => {
@@ -171,8 +171,8 @@ const SpeedTable = ({ rows, mode }: { rows: SuitSpeedRow[]; mode: 'all' | 'subOn
       </table>
       {mode === 'subOnly' && (
         <p className="speed-note">
-          已排除 2 号位的「主属性速度」——那个位置满值固定 57，混在一起会让 P2 列失去比较意义。
-          这里看的是各御魂在副属性上堆速度的能力。
+          已排除 2 号位的「主属性速度」（满级固定 57，叠加副属性后最高约 75），
+          这里看的是各御魂在副属性上堆速度的能力（单件上限 18）。
         </p>
       )}
     </div>

@@ -23,9 +23,10 @@
  *   1) 商品页地址里是 **ordersn**，接口要 **eid**，两者不同且**无法互相推导**
  *      （ordersn 查详情报「物品不存在」；HTML 不含 eid；首段差值不稳定）。
  *      好在模块一的列表接口每行都返回 eid，从列表跳过来不用操心这件事。
- *   2) 御魂速度 = attrs 里的「速度」值 + Σ rattr.speedAdditionVal × 3
- *      （rattr 是 0~1 归一化比例，上限 0.9999；×3 换算为游戏数值）
- *      2 号位速度可以是**主属性**（满值 57），所以 P2 有两种口径，见 buildSpeedTable。
+ *   2) 御魂速度 = attrs 里「速度」条目之和（已经是最终值，**不要**再加 rattr）：
+ *      2 号位主速度御魂有两条「速度」（主属性 57.00 + 副属性 x）；
+ *      副属性速度满值 18（6★ 共 6 次 roll、每次上限 3），
+ *      总速度 = 副属性速度 +（2 号位主属性 57）。见 buildSpeedTable。
  */
 
 const BASE = 'https://yys.cbg.163.com';
@@ -82,14 +83,46 @@ export function parseAccountInput(raw) {
   throw new Error('识别不了这个地址。需要「御魂搭配」地址（含 eid），或商品页地址 + eid');
 }
 
-/** 判断「速度」是不是 2 号位的主属性（满值 57，且没有随机速度加成） */
-const isMainSpeed = (pos, base, random) => pos === 2 && base >= 55 && random === 0;
+/** 6★ 御魂副属性速度的理论满值：初始 1 次 + 强化 5 次，共 6 次 roll，每次上限 3 */
+const SPEED_SUB_MAX = 18;
+/** 2 号位主属性速度满级固定值 */
+const SPEED_MAIN_MAX = 57;
+
+/**
+ * 拆出一件御魂的速度（游戏口径）。
+ *
+ * 藏宝阁 inventory 的 `attrs` 里「速度」条目**已经是最终值**：
+ *   - 普通御魂只有副属性一条「速度」；
+ *   - 2 号位主速度御魂有两条：「速度 57.00」（主属性）+「速度 x」（副属性）。
+ * 副属性速度不可能超过 18，所以 2 号位出现的 >18 的「速度」只能是主属性。
+ *
+ * ⚠️ `rattr` 里的 speedAdditionVal 是**每次随机 roll 的归一化比例**（0~1，×3 为数值），
+ * 全部加起来 ×3 恰好等于 attrs 里的副属性速度——两者是同一份数据，**不能相加**。
+ * 旧实现把它们相加，导致单件速度翻倍、非 2 号位出现 >18 的「最快速」。
+ */
+const soulSpeed = (v, pos) => {
+  const vals = (v.attrs || [])
+    .filter(([k]) => k === '速度')
+    .map(([, x]) => parseFloat(x))
+    .filter((x) => Number.isFinite(x) && x > 0);
+
+  const hasMain = pos === 2 && vals.some((x) => x > SPEED_SUB_MAX);
+  const main = hasMain ? SPEED_MAIN_MAX : 0;
+  const sub = Math.max(0, vals.reduce((a, b) => a + b, 0) - main);
+  const round2 = (x) => Math.round(x * 100) / 100;
+  return { sub: round2(sub), main, total: round2(sub + main) };
+};
 
 /**
  * 每种御魂在 6 个位置的**最快速**。
  *
- * subOnly = true 时排除 2 号位主属性速度——因为那个位置所有人都固定 57，
- * 混在一起看会让 P2 列失去区分度；只看副属性才能比较「谁的速攻更好」。
+ * 两种口径：
+ *   - subOnly = false：总速度。2 号位 = 主属性 57 + 副属性速度（最高约 75），
+ *     其余位置就是副属性速度（≤18）。
+ *   - subOnly = true：仅副属性速度。2 号位只去掉 57 主属性，仍比较副属性（≤18），
+ *     这样既排除了固定的主属性，又保留了区分度。
+ *
+ * 修正后，非 2 号位的单件速度不可能超过 18（6★ 副属性速度满值）。
  */
 export function buildSpeedTable(inventory, subOnly = false) {
   const best = {};
@@ -102,21 +135,16 @@ export function buildSpeedTable(inventory, subOnly = false) {
     if (!pos) continue;
     total += 1;
 
-    const attrs = Object.fromEntries(v.attrs.map(([k, val]) => [k, val]));
-    const base = parseFloat(attrs['速度'] || '0') || 0;
-    const rSum = (v.rattr || []).filter(([k]) => k === 'speedAdditionVal').reduce((a, [, x]) => a + x, 0);
-    const random = Math.round(rSum * 3 * 100) / 100;
-    const sum = Math.round((base + random) * 100) / 100;
+    const { sub, main, total: totalSpeed } = soulSpeed(v, pos);
+    if (main) mainSpeedCount += 1;
+    if (!totalSpeed) continue;
 
-    if (isMainSpeed(pos, base, random)) {
-      mainSpeedCount += 1;
-      if (subOnly) continue;
-    }
-    if (!sum) continue;
+    const value = subOnly ? sub : totalSpeed;
+    if (!value) continue;
 
     const name = v.name || '?';
     best[name] = best[name] || {};
-    if (!best[name][pos] || sum > best[name][pos]) best[name][pos] = sum;
+    if (!best[name][pos] || value > best[name][pos]) best[name][pos] = value;
   }
 
   const rows = Object.entries(best)
