@@ -30,7 +30,7 @@ import { resolveDefaults } from '@/config/defaults';
  * 条件是攒着的，点「查询」才发出去。因此底栏在条件变更后会提示「条件已改」。
  */
 
-export const Dashboard = () => {
+export const Dashboard = ({ active = true }: { active?: boolean }) => {
   useRenderCount('Dashboard');
   const config = useSearchConfig();
   const live = useLiveDataset();
@@ -155,15 +155,18 @@ export const Dashboard = () => {
   paramsRef.current = built.params;
   const dirtyRef = useRef<() => void>(() => {});
   useEffect(() => {
+    // 模块切换后页面保持挂载：只有当前处于模块一（active）时才允许自动查首屏，
+    // 避免停留在模块二时后台偷偷打一轮藏宝阁接口。
+    if (!active) return;
     if (autoQueried.current) return;
     // 必须等默认条件套用完成再查，否则首次查询会漏掉默认条件
     if (live.status !== 'ready' || !config.schema || !defaultsApplied) return;
     autoQueried.current = true;
     const first = paramsRef.current;
     void live.query(first).then(() => dirtyRef.current());
-    // 只在「服务就绪 + schema 载入 + 默认条件套用」后触发一次
+    // 只在「模块一可见 + 服务就绪 + schema 载入 + 默认条件套用」后触发一次
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [live.status, config.schema, defaultsApplied]);
+  }, [active, live.status, config.schema, defaultsApplied]);
 
   // 记录本次查询用的参数指纹，供「条件已改」提示使用
   dirtyRef.current = () => setLastQueried(JSON.stringify(built.params));

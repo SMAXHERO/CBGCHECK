@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ConfigProvider, App as AntApp, theme } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
-import { HashRouter, Route, Routes } from 'react-router-dom';
+import { HashRouter, useLocation } from 'react-router-dom';
 import { Dashboard } from './pages/Dashboard';
 import { AccountScore } from './pages/AccountScore';
 import { useTheme } from './hooks/useTheme';
@@ -19,6 +19,33 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+/**
+ * 模块切换：两个页面**始终挂载**，只切换显示。
+ *
+ * 为什么不用 <Routes>：路由切换会卸载页面组件，导致
+ *   - 模块一已查到的结果、筛选条件、勾选项全部丢失；
+ *   - 回到模块一还会触发「服务就绪自动查询」，重新打一轮藏宝阁接口；
+ *   - 模块二已分析好的账号数据也会被清空。
+ * 保持挂载后，切模块只是切显示：数据留在原地，只有用户明确点
+ * 「查询 / 开始分析 / 刷新」时才重新取数。
+ *
+ * URL 仍保留 #/ 与 #/score 两条路由，分享、刷新、浏览器前进后退都正常。
+ */
+const ModuleSwitch = () => {
+  const { pathname } = useLocation();
+  const scoreActive = pathname.startsWith('/score');
+  return (
+    <>
+      <div className="module-pane" hidden={scoreActive}>
+        <Dashboard active={!scoreActive} />
+      </div>
+      <div className="module-pane" hidden={!scoreActive}>
+        <AccountScore />
+      </div>
+    </>
+  );
+};
 
 /** antd 令牌：深色对齐 cbg-filter-kit 的设计令牌，浅色用 antd 默认色板 */
 const antdTheme = (mode: 'dark' | 'light') =>
@@ -98,12 +125,8 @@ const App = () => {
       <AntApp>
         <QueryClientProvider client={queryClient}>
           <HashRouter>
-            <Routes>
-              {/* 两个模块各占一条 hash 路由：可以单独分享、刷新不丢 */}
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/score" element={<AccountScore />} />
-              <Route path="*" element={<Dashboard />} />
-            </Routes>
+            {/* 两个模块各占一条 hash 路由：可以单独分享、刷新不丢 */}
+            <ModuleSwitch />
           </HashRouter>
         </QueryClientProvider>
       </AntApp>

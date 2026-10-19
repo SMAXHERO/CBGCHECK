@@ -160,6 +160,14 @@ body {
   flex-direction: column;
 }
 
+/* 模块切换：两个页面都保持挂载，只切换显示，保留各自的查询结果与筛选条件 */
+.module-pane {
+  min-height: 100vh;
+}
+.module-pane[hidden] {
+  display: none !important;
+}
+
 .app-header {
   position: sticky;
   top: 0;
