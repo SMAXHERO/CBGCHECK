@@ -38,18 +38,22 @@ const cacheFile = (eid) => path.join(CACHE_DIR, `${cacheKey(eid)}.json`);
 
 /**
  * 读取缓存。
- * @returns {{ data: object, generatedAt: string, ageMs: number } | null}
- *          未命中 / 过期 / 结构版本不符 都返回 null。
+ * @param {object} [opts]
+ * @param {number} [opts.ttlMs] 有效期（默认 10 分钟）
+ * @param {boolean} [opts.allowExpired] 允许返回已过期缓存（自动取分需要旧结果里的 planId）
+ * @returns {{ data: object, generatedAt: string, ageMs: number, expired: boolean } | null}
+ *          未命中 / 过期（且未允许）/ 结构版本不符 都返回 null。
  */
-export function readAnalysisCache(eid, { ttlMs = DEFAULT_TTL_MS } = {}) {
+export function readAnalysisCache(eid, { ttlMs = DEFAULT_TTL_MS, allowExpired = false } = {}) {
   if (!eid) return null;
   try {
     const raw = JSON.parse(fs.readFileSync(cacheFile(eid), 'utf8'));
     if (!raw || raw.version !== CACHE_VERSION || !raw.data || !raw.generatedAt) return null;
     const generatedMs = Date.parse(raw.generatedAt);
     const ageMs = Date.now() - generatedMs;
-    if (!Number.isFinite(ageMs) || ageMs < 0 || ageMs > ttlMs) return null;
-    return { data: raw.data, generatedAt: raw.generatedAt, ageMs };
+    const expired = !Number.isFinite(ageMs) || ageMs < 0 || ageMs > ttlMs;
+    if (expired && !allowExpired) return null;
+    return { data: raw.data, generatedAt: raw.generatedAt, ageMs, expired };
   } catch {
     return null;
   }

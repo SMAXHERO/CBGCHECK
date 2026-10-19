@@ -167,9 +167,9 @@ node tools/cbg/verify_speed_table.mjs --file "<缓存详情.json>" [--file ...]
 
 ---
 
-## 四、速度核心 / 分布 / 账号概览 / 缓存（A1–A3、A5）
+## 四、速度核心 / 分布 / 账号概览 / 缓存 / 自动取分（A1–A3、A5、B1、B3）
 
-这一节的四块内容都来自**同一次详情请求**，不会额外增加藏宝阁请求。
+A1–A3 都来自**同一次详情请求**，不会额外增加藏宝阁请求；A5 是本地结果缓存，B1/B3 是交互与诊断。
 
 ### 4.1 速度核心（A1，含官方交叉校验）
 
@@ -224,11 +224,50 @@ node tools/cbg/verify_speed_table.mjs --file "<缓存详情.json>" [--file ...]
 - 页面顶部显示「结果来自 X 分钟前的缓存」；点「刷新」或「重新分析」时传 `refresh=1` 强制重新抓取；
 - 缓存结构带 `version`，字段升级后旧缓存自动失效；写入失败不影响本次分析结果。
 
+### 4.5 冷计算自动取分（B1）
+
+站点对**从没算过**的账号，第一次请求只会返回「正在计算中！」。原来的做法是让用户自己过一会儿
+点「重新分析」——但那会把详情、方案清单全部重拉一遍，既慢又多打请求。
+
+现在新增 `POST /api/account/rescore`：
+
+- 只重试上一次分析结果里 **pending（排队计算）的方案**，不重新拉详情、不重新拉方案清单；
+- 从分析缓存里读上次结果（允许已过 TTL），把新分数合并回缓存；
+- 单轮最多 `--rescore-max`（默认 20）个请求，请求间 sleep 700ms；一旦触发风控立即停止；
+- 页面上的「自动取分」按钮：每轮间隔 20 秒、最多 3 轮，显示倒计时、每轮请求数与剩余套数；可随时「停止」；
+- 如果某轮触发 `CAPTCHA_AUTH` / `SESSION_TIMEOUT`，自动停止并提示先去浏览器完成验证。
+
+### 4.6 错误分类与请求预算（B3）
+
+**错误分类**：服务端把藏宝阁的失败响应归类成 `errorCode`，前端分别给出「接下来该做什么」：
+
+| errorCode | 用户该做什么 |
+|---|---|
+| `ITEM_NOT_FOUND` | 商品已下架/不存在 → 回模块一重新选一个在售账号 |
+| `CAPTCHA_AUTH` | 在伴随服务的浏览器窗口里完成滑块验证 |
+| `SESSION_TIMEOUT` | 在浏览器窗口里重新登录藏宝阁 |
+| `MOBILE_AUTH` | 在浏览器窗口里完成手机验证 |
+| `COMPUTE_PENDING` | 站点还在计算，稍后重新分析或自动取分 |
+| `NO_CACHE` | 先点「开始分析」，再自动取分 |
+| `API_ERROR` / `ANALYZE_FAILED` | 其他接口异常，显示原始信息 |
+
+**请求预算**：分析结果里新增 `meta`：
+
+```json
+"meta": { "requestCount": 18, "durationMs": 20500 }
+```
+
+页面顶部会显示「本次消耗 N 个请求 · X 秒」；自动取分累计的请求数会并进 `requestCount`。
+缓存命中时显示的是**原分析**的请求数与耗时，方便判断这个账号的分析成本。
+
 ### 回归校验
 
 ```bash
 # A1/A2/A3：速度核心、分布、账号概览（离线，用缓存详情）
 node tools/cbg/verify_analysis.mjs --file "<缓存详情.json>" [--file ...]
+
+# B1/B3：自动取分计数、风控停止、错误分类（离线，用假 pageGet，不需要网络）
+node tools/cbg/verify_retry.mjs
 
 # 速度表边界（原有）
 node tools/cbg/verify_speed_table.mjs --file "<缓存详情.json>"
@@ -246,6 +285,7 @@ node tools/cbg/verify_speed_table.mjs --file "<缓存详情.json>"
 | `tools/cbg/account_score.mjs` | 独立 CLI：速度表 + 逐方案评分 |
 | `tools/cbg/verify_speed_table.mjs` | 速度口径回归校验（用缓存详情即可，不需要联网） |
 | `tools/cbg/verify_analysis.mjs` | A1/A2/A3 回归校验（速度核心 / 分布 / 账号概览） |
+| `tools/cbg/verify_retry.mjs` | B1/B3 回归校验（自动取分计数、风控停止、错误分类） |
 | `tools/cbg/scraper-service/server.mjs` | 路由 `POST/GET /api/account/analyze`（含缓存与 `refresh` 参数） |
 | `cbg-web/src/api/account.ts` | 前端客户端与类型 |
 | `cbg-web/src/pages/AccountScore.tsx` | 页面 |

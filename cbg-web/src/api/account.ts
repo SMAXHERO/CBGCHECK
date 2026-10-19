@@ -27,6 +27,10 @@ export interface PlanScore {
   critPower: number | null;
   hit: number | null;
   resist: number | null;
+  /** B1：这套方案还在站点排队计算（自动取分只重试 pending 的） */
+  pending?: boolean;
+  /** B3：这套方案失败时的分类 code */
+  errorCode?: string | null;
 }
 
 export interface HeroScore {
@@ -40,11 +44,40 @@ export interface HeroScore {
   /** 触发了风控（验证/登录态）—— 需要用户去浏览器里过一次验证，或等冷却 */
   blocked?: boolean;
   error?: string | null;
+  /** B3：错误分类（CAPTCHA_AUTH / SESSION_TIMEOUT / MOBILE_AUTH / API_ERROR…） */
+  errorCode?: string | null;
   best?: PlanScore | null;
   worst?: PlanScore | null;
   plans: PlanScore[];
   /** 该式神在这个账号的可用方案清单里没找到 */
   missing?: boolean;
+}
+
+/** B3：一次分析/取分实际消耗的请求与耗时 */
+export interface AnalyzeMeta {
+  requestCount: number;
+  durationMs: number;
+  /** 自动取分累计回来的信息（上一次分析的时间不变，这里是附加统计） */
+  lastRetry?: {
+    requestCount: number;
+    durationMs: number;
+    attempted: number;
+    stillPending: number;
+  };
+}
+
+export interface RescoreResult {
+  ok: boolean;
+  heroes: HeroScore[];
+  meta: {
+    requestCount: number;
+    durationMs: number;
+    attempted: number;
+    stillPending: number;
+  };
+  blocked?: boolean;
+  errorCode?: string | null;
+  cachedAt?: string | null;
 }
 
 /** 一种御魂在 6 个位置上的最快速 */
@@ -208,6 +241,10 @@ export interface AccountAnalysis {
   speedStats: SpeedStats;
   /** A3：式神、资产、图鉴收集概览 */
   overview: AccountOverview;
+  /** B3：本次分析实际消耗的请求数与耗时 */
+  meta?: AnalyzeMeta;
+  /** B3：顶层错误分类（某个式神触发风控时） */
+  errorCode?: string | null;
   speed: { all: SuitSpeedRow[]; subOnly: SuitSpeedRow[] };
   heroes: HeroScore[];
 }
@@ -260,6 +297,18 @@ export const accountApi = {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ eid, serverid, heroes, refresh }),
+    });
+  },
+
+  /**
+   * B1：自动取分——只重试上次分析里还在排队计算的方案（不重新拉详情/方案清单）。
+   * 需要服务端还保留着这次分析的结果（10 分钟内，或之后仍缓存着）。
+   */
+  async rescore(eid: string, serverid: string, heroes?: string[], subOnly?: boolean): Promise<RescoreResult> {
+    return request<RescoreResult>('/api/account/rescore', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ eid, serverid, heroes, subOnly }),
     });
   },
 };

@@ -24,7 +24,7 @@ import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { analyzeAccount, parseAccountInput, probeAccount } from './accountAnalyze.mjs';
+import { analyzeAccount, parseAccountInput, probeAccount, rescoreAccount } from './accountAnalyze.mjs';
 import { DEFAULT_TTL_MS as ANALYSIS_TTL_MS, readAnalysisCache, writeAnalysisCache } from './analysisCache.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -59,10 +59,24 @@ const CONFIG = {
    * 页面刷新/重复打开时优先走缓存，显式传 refresh=1 才重新抓。
    */
   analysisTtlMs: Number(arg('analysis-ttl', process.env.CBG_ANALYSIS_TTL_MS ?? ANALYSIS_TTL_MS)),
+  /** 自动取分（B1）单轮最多请求数，防止把接口打出风控 */
+  rescoreMaxRequests: Number(arg('rescore-max', 20)),
   headless: hasFlag('headless'),
   browser: arg('browser', process.env.CBG_BROWSER ?? ''),
   profileDir: arg('profile', path.join(__dirname, 'profile')),
 };
+
+/**
+ * 模块二分析缓存 key：eid + 式神组合 + subOnly 口径。
+ * 分析（analyze）与自动取分（rescore）必须用同一个 key，否则取不到上次结果。
+ */
+function analysisCacheKey(eid, heroes, subOnly) {
+  const heroHash = createHash('sha1')
+    .update(JSON.stringify([...(heroes || [])].sort()))
+    .digest('hex')
+    .slice(0, 8);
+  return `${eid}${subOnly ? '-sub' : ''}-${heroHash}`;
+}
 
 /* ------------------------------ 找浏览器 ------------------------------ */
 
@@ -559,6 +573,108 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  /**
+   * B1：冷计算账号自动取分。
+   *
+   * POST /api/account/rescore  body: { eid, serverid, heroes?: string[], subOnly?: boolean }
+   *
+   * 只重试上一次分析结果里「还在排队计算」的方案：
+   *   - 不重新拉详情、不重新拉方案清单（省请求，也避免重复触发风控）；
+   *   - 从分析缓存读取上次结果（允许已过 TTL），把新分数合并回缓存；
+   *   - 单轮最多 CONFIG.rescoreMaxRequests 个请求，触发风控立即停止。
+   */
+  if (p === '/api/account/rescore') {
+    let args;
+    if (req.method === 'POST') {
+      const body = await readBody(req);
+      args = {
+        eid: body.eid,
+        serverid: body.serverid,
+        heroes: Array.isArray(body.heroes) ? body.heroes : undefined,
+        subOnly: Boolean(body.subOnly),
+      };
+    } else {
+      args = {
+        eid: url.searchParams.get('eid') || undefined,
+        serverid: url.searchParams.get('serverid') || undefined,
+        heroes: url.searchParams.get('heroes') ? url.searchParams.get('heroes').split(',').filter(Boolean) : undefined,
+        subOnly: url.searchParams.get('subOnly') === '1',
+      };
+    }
+
+    try {
+      if (!args.eid || !args.serverid) {
+        json(res, 400, { ok: false, error: 'BAD_ARGS', message: '需要 eid 与 serverid' });
+        return;
+      }
+      const heroesWanted = args.heroes && args.heroes.length ? args.heroes : ['须佐之男', '阿修罗'];
+      const cacheKeyEid = analysisCacheKey(args.eid, heroesWanted, args.subOnly);
+      const cached = readAnalysisCache(cacheKeyEid, { allowExpired: true });
+      if (!cached) {
+        json(res, 409, {
+          ok: false,
+          error: 'NO_CACHE',
+          message: '还没有这个账号的分析结果，请先点「开始分析」，再使用自动取分。',
+        });
+        return;
+      }
+
+      logOrigin(req, p);
+      log(`自动取分：eid=${args.eid} 上次分析 ${Math.round(cached.ageMs / 1000)} 秒前`);
+      await ensureOnHost();
+      const out = await rescoreAccount({
+        eid: cached.data.eid || args.eid,
+        serverid: args.serverid,
+        previous: cached.data,
+        maxRequests:
+          Number.isFinite(CONFIG.rescoreMaxRequests) && CONFIG.rescoreMaxRequests > 0
+            ? CONFIG.rescoreMaxRequests
+            : 20,
+        pageGet: async (path) =>
+          evalInPage(
+            `(async () => {
+               const r = await fetch(${JSON.stringify(path)}, {
+                 credentials: 'include',
+                 headers: { 'x-requested-with': 'XMLHttpRequest' }
+               });
+               return await r.text();
+             })()`,
+            60000,
+          ),
+      });
+
+      // 把本轮取到的分数合并回缓存，下次「刷新」前都能看到最新分
+      const merged = {
+        ...cached.data,
+        heroes: out.heroes,
+        meta: {
+          ...(cached.data.meta || {}),
+          requestCount: (cached.data.meta?.requestCount ?? 0) + out.meta.requestCount,
+          durationMs: (cached.data.meta?.durationMs ?? 0) + out.meta.durationMs,
+          lastRetry: out.meta,
+        },
+        errorCode: out.errorCode ?? cached.data.errorCode ?? null,
+      };
+      const saved = writeAnalysisCache(cacheKeyEid, merged);
+      log(
+        `自动取分完成：本轮请求 ${out.meta.requestCount} 个，仍缺 ${out.meta.stillPending} 套` +
+          (out.blocked ? `（触发风控 ${out.errorCode}）` : ''),
+      );
+      json(res, 200, {
+        ok: true,
+        heroes: out.heroes,
+        meta: out.meta,
+        blocked: out.blocked,
+        errorCode: out.errorCode,
+        cachedAt: saved?.generatedAt ?? null,
+      });
+    } catch (err) {
+      log(`自动取分失败：${err.message}`);
+      json(res, 500, { ok: false, error: err.code || 'RESCORE_FAILED', message: err.message });
+    }
+    return;
+  }
+
   if (p === '/api/account/analyze') {
     let args;
     if (req.method === 'POST') {
@@ -612,9 +728,7 @@ const server = http.createServer(async (req, res) => {
         Number.isFinite(CONFIG.analysisTtlMs) && CONFIG.analysisTtlMs > 0 ? CONFIG.analysisTtlMs : ANALYSIS_TTL_MS;
       const heroesWanted = args.heroes && args.heroes.length ? args.heroes : ['须佐之男', '阿修罗'];
       // 缓存 key 带上 heroes / subOnly 口径：不同式神组合不能命中同一份结果
-      const cacheKeyEid =
-        `${args.eid}${args.subOnly ? '-sub' : ''}-` +
-        createHash('sha1').update(JSON.stringify([...heroesWanted].sort())).digest('hex').slice(0, 8);
+      const cacheKeyEid = analysisCacheKey(args.eid, heroesWanted, args.subOnly);
 
       // A5：优先返回未过期的分析缓存，避免重复分析反复请求藏宝阁
       if (!args.refresh) {
@@ -669,7 +783,8 @@ const server = http.createServer(async (req, res) => {
       });
     } catch (err) {
       log(`账号评分失败：${err.message}`);
-      json(res, 500, { ok: false, error: 'ANALYZE_FAILED', message: err.message });
+      // B3：把归类后的 code 交给前端，便于分别提示「下架 / 登录失效 / 滑块 / 计算中」
+      json(res, 500, { ok: false, error: err.code || 'ANALYZE_FAILED', message: err.message });
     }
     return;
   }

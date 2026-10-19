@@ -34,12 +34,33 @@ const BASE = 'https://yys.cbg.163.com';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /**
+ * 把藏宝阁接口的错误响应归类成前端能分别提示的 code（B3）。
+ *
+ * 为什么要分类：以前所有失败都只显示一句「分析失败」，
+ * 但「商品下架」「登录态失效」「要过滑块」「还在计算」需要用户做的事情完全不同。
+ */
+export function classifyApiError(obj) {
+  const code = String(obj?.status_code ?? '');
+  const msg = String(obj?.msg ?? '');
+  const text = `${code} ${msg}`;
+  if (/物品不存在|已下架|下架|不存在/.test(text)) return 'ITEM_NOT_FOUND';
+  if (code === 'CAPTCHA_AUTH' || Number(obj?.status) === 3) return 'CAPTCHA_AUTH';
+  if (code === 'SESSION_TIMEOUT') return 'SESSION_TIMEOUT';
+  if (code === 'MOBILE_AUTH') return 'MOBILE_AUTH';
+  if (/计算中/.test(msg)) return 'COMPUTE_PENDING';
+  return 'API_ERROR';
+}
+
+/**
  * 通过浏览器页面发 GET 并解析 JSON。
  *
  * `pageGet(path)` 由 server.mjs 注入 —— 它在**已登录的页面上下文里** fetch，
  * 所以自带 cookie，不会像 Node 裸 fetch 那样被当作未登录请求拦下。
+ *
+ * `counter` 用于统计本次分析实际打了多少个请求（B3 的「请求预算」）。
  */
-const makeGetter = (pageGet) => async (path) => {
+const makeGetter = (pageGet, counter) => async (path) => {
+  if (counter) counter.count += 1;
   const text = await pageGet(path);
   try {
     return JSON.parse(text);
@@ -457,25 +478,26 @@ async function computePlan(get, eid, serverid, heroId, planId, { tries = 2, gapM
     const c = await get(url);
     last = c;
     const sv = c?.data?.result?.suit_vals;
-    if (sv) return { sv, computing: false, blocked: false };
+    if (sv) return { sv, computing: false, blocked: false, errorCode: null };
 
     // 风控：立即放弃，重试没有意义且有害
     const code = String(c?.status_code ?? '');
     if (code === 'CAPTCHA_AUTH' || code === 'MOBILE_AUTH' || code === 'SESSION_TIMEOUT' || c?.status === 3) {
-      return { sv: null, computing: false, blocked: true, error: c?.msg || code || '触发风控' };
+      return { sv: null, computing: false, blocked: true, error: c?.msg || code || '触发风控', errorCode: classifyApiError(c) };
     }
     // 还在算
     if (c?.computing) {
       if (i < tries - 1) await sleep(gapMs);
       continue;
     }
-    return { sv: null, computing: false, blocked: false, error: c?.msg || code || '未知错误' };
+    return { sv: null, computing: false, blocked: false, error: c?.msg || code || '未知错误', errorCode: classifyApiError(c) };
   }
   return {
     sv: null,
     computing: Boolean(last?.computing),
     blocked: false,
     error: last?.msg || '未返回评分',
+    errorCode: last?.computing ? 'COMPUTE_PENDING' : classifyApiError(last),
   };
 }
 
@@ -484,7 +506,11 @@ async function scoreHeroes(get, eid, serverid, heroNames, onProgress) {
   const list = await get(
     `/cgi/api/get_yys_heroes_matching_plan?client_type=h5&eid=${encodeURIComponent(eid)}&obj_serverid=${serverid}`,
   );
-  if (list.status !== 1 || !list.data) throw new Error('方案清单接口失败：' + (list.msg || list.status_code || ''));
+  if (list.status !== 1 || !list.data) {
+    const err = new Error('方案清单接口失败：' + (list.msg || list.status_code || ''));
+    err.code = classifyApiError(list);
+    throw err;
+  }
 
   const all = Object.entries(list.data).map(([heroId, v]) => ({ heroId, name: v.name, plans: v.plans || [] }));
   const out = [];
@@ -499,6 +525,7 @@ async function scoreHeroes(get, eid, serverid, heroNames, onProgress) {
     let pending = 0;
     let blocked = false;
     let lastError = null;
+    let lastErrorCode = null;
     /**
      * 该账号是「冷计算」状态吗？
      *
@@ -516,21 +543,38 @@ async function scoreHeroes(get, eid, serverid, heroNames, onProgress) {
 
       // 一旦触发风控就别继续打了 —— 打下去只会让风控更久
       if (blocked) {
-        rows.push({ ...base, ...Object.fromEntries(METRIC_KEYS.map(([alias]) => [alias, null])) });
+        rows.push({
+          ...base,
+          pending: true,
+          errorCode: null,
+          ...Object.fromEntries(METRIC_KEYS.map(([alias]) => [alias, null])),
+        });
         pending += 1;
         continue;
       }
 
       const r = await computePlan(get, eid, serverid, h.heroId, p.id, coldAccount ? { tries: 1 } : undefined);
-      if (r.blocked) blocked = true;
+      if (r.blocked) {
+        blocked = true;
+        lastErrorCode = r.errorCode || 'CAPTCHA_AUTH';
+      }
       if (!r.sv) {
         if (r.computing) {
           pending += 1;
           // 第一套就要等 → 整个账号都是冷的，后面的别再等第二轮
           if (idx === 0) coldAccount = true;
-        } else if (r.error) lastError = r.error;
+        } else if (r.error) {
+          lastError = r.error;
+          lastErrorCode = r.errorCode || 'API_ERROR';
+        }
       }
-      rows.push({ ...base, ...Object.fromEntries(METRIC_KEYS.map(([alias, key]) => [alias, r.sv?.[key] ?? null])) });
+      rows.push({
+        ...base,
+        /** 这套还在站点排队计算？自动取分（B1）只会重试 pending 的方案 */
+        pending: !r.sv && Boolean(r.computing),
+        errorCode: !r.sv && !r.computing ? r.errorCode || null : null,
+        ...Object.fromEntries(METRIC_KEYS.map(([alias, key]) => [alias, r.sv?.[key] ?? null])),
+      });
       if (onProgress) onProgress(h.name, rows.length, h.plans.length);
       await sleep(coldAccount ? 500 : 900);
     }
@@ -546,6 +590,8 @@ async function scoreHeroes(get, eid, serverid, heroNames, onProgress) {
       /** 触发了风控（验证/登录态）：需要用户去浏览器里过一次验证，或等冷却 */
       blocked,
       error: lastError,
+      /** 错误分类（B3）：CAPTCHA_AUTH / SESSION_TIMEOUT / MOBILE_AUTH / API_ERROR… */
+      errorCode: lastErrorCode,
       best: scored[0] || null,
       worst: scored[scored.length - 1] || null,
       plans: rows,
@@ -560,12 +606,16 @@ async function scoreHeroes(get, eid, serverid, heroNames, onProgress) {
  */
 export async function analyzeAccount({ eid, serverid, heroes, subOnly = false, pageGet }) {
   if (typeof pageGet !== 'function') throw new Error('analyzeAccount 需要 pageGet（在页面上下文里发请求）');
-  const get = makeGetter(pageGet);
+  const startedAt = Date.now();
+  const counter = { count: 0 };
+  const get = makeGetter(pageGet, counter);
   const detail = await get(
     `/cgi/api/get_equip_detail?client_type=h5&serverid=${serverid}&eid=${encodeURIComponent(eid)}`,
   );
   if (detail.status !== 1 || !detail.equip) {
-    throw new Error(`详情接口失败：${detail.status_code ?? ''} ${detail.msg ?? ''}`);
+    const err = new Error(`详情接口失败：${detail.status_code ?? ''} ${detail.msg ?? ''}`);
+    err.code = classifyApiError(detail);
+    throw err;
   }
   const equip = detail.equip;
   const realEid = equip.eid || eid;
@@ -623,7 +673,97 @@ export async function analyzeAccount({ eid, serverid, heroes, subOnly = false, p
       all: speedAll.rows,
       subOnly: speedSub.rows,
     },
+    /** B3：本次分析实际消耗的请求数与耗时（缓存命中时是原分析的值） */
+    meta: {
+      requestCount: counter.count,
+      durationMs: Date.now() - startedAt,
+    },
+    /** 若某个式神触发风控，把分类 code 提到顶层，前端统一提示 */
+    errorCode: heroScores.find((h) => h.errorCode)?.errorCode ?? null,
     heroes: heroScores,
+  };
+}
+
+/**
+ * B1：只重试「还没出分」的方案——不重新拉详情、不重新拉方案清单。
+ *
+ * 输入是上一次分析的结果（服务端从 analysisCache 取），只对 pending 的方案
+ * 重新请求 compute_yys_heroes_plan，并把新分数合并回去。
+ *
+ * 风险控制：
+ *   - 每轮最多 maxRequests 个请求（默认 20），请求间 sleep gapMs；
+ *   - 一旦触发风控（CAPTCHA / 登录失效 / 手机验证）立刻停止并返回 blocked，
+ *     不会继续把接口打向风控。
+ */
+export async function rescoreAccount({ eid, serverid, previous, pageGet, maxRequests = 20, gapMs = 700 }) {
+  if (!previous || !Array.isArray(previous.heroes)) throw new Error('没有可用的上一次分析结果');
+  if (typeof pageGet !== 'function') throw new Error('rescoreAccount 需要 pageGet（在页面上下文里发请求）');
+
+  const startedAt = Date.now();
+  const counter = { count: 0 };
+  const get = makeGetter(pageGet, counter);
+  const heroes = previous.heroes.map((h) => ({
+    ...h,
+    plans: Array.isArray(h.plans) ? h.plans.map((p) => ({ ...p })) : [],
+  }));
+
+  let attempted = 0;
+  let blocked = false;
+  let blockedCode = null;
+
+  for (const h of heroes) {
+    if (h.missing || !h.heroId) continue;
+    // 上一轮可能因为风控被标记，重新取分时先复位，再按本轮结果重新判定
+    h.blocked = false;
+    h.error = null;
+    h.errorCode = null;
+
+    for (const plan of h.plans) {
+      if (blocked || attempted >= maxRequests) break;
+      // 已出分的不用再打；pending === false 是明确失败，不是「排队计算」
+      if (plan.score !== null && plan.score !== undefined) continue;
+      if (plan.pending === false) continue;
+
+      attempted += 1;
+      const r = await computePlan(get, eid, serverid, h.heroId, plan.planId, { tries: 1, gapMs: 0 });
+      if (r.sv) {
+        for (const [alias, key] of METRIC_KEYS) plan[alias] = r.sv[key] ?? null;
+        plan.pending = false;
+        plan.errorCode = null;
+      } else if (r.blocked) {
+        blocked = true;
+        blockedCode = r.errorCode || 'CAPTCHA_AUTH';
+        h.blocked = true;
+        h.errorCode = blockedCode;
+      } else if (r.computing) {
+        plan.pending = true;
+      } else {
+        plan.pending = false;
+        plan.errorCode = r.errorCode || 'API_ERROR';
+      }
+      await sleep(gapMs);
+    }
+
+    // 重新汇总这个式神的出分情况
+    const scored = h.plans.filter((p) => p.score !== null && p.score !== undefined);
+    h.scoredCount = scored.length;
+    h.computing = h.plans.filter((p) => p.score == null && p.pending !== false).length;
+    const sorted = [...scored].sort((a, b) => (b.score || 0) - (a.score || 0));
+    h.best = sorted[0] || null;
+    h.worst = sorted[sorted.length - 1] || null;
+  }
+
+  const stillPending = heroes.reduce((sum, h) => sum + (h.missing ? 0 : h.computing || 0), 0);
+  return {
+    heroes,
+    blocked,
+    errorCode: blockedCode,
+    meta: {
+      requestCount: counter.count,
+      durationMs: Date.now() - startedAt,
+      attempted,
+      stillPending,
+    },
   };
 }
 
