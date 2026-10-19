@@ -108,7 +108,7 @@ const HeroCard = ({ hero, onRetry }: { hero: HeroScore; onRetry?: () => void }) 
             {hero.blocked
               ? '藏宝阁要求安全验证 —— 在受控浏览器窗口里打开这个账号的商品页过一次验证（或等几分钟冷却），再点分析'
               : hero.computing
-                ? `${hero.computing} 套方案藏宝阁没返回评分（站点懒计算，实测约 6 成账号算不出，与御魂多少无关）。可点「重新分析」再试`
+                ? `${hero.computing} 套方案还在站点排队计算（懒计算，通常 20~60 秒出结果）。可点下方「自动取分」重试，或点「重新分析」。`
                 : hero.error
                   ? `没算出评分：${hero.error}`
                   : '这套账号没能算出评分'}
@@ -737,23 +737,23 @@ export const AccountScore = () => {
                 </div>
                 <div>
                   <span className="acct-k">签到</span>
-                  <b className="acct-v">{acct.signDays === null ? '—' : `${acct.signDays} 天`}</b>
+                  <b className="acct-v">{acct.signDays === null ? '—' : `${fmtInt(acct.signDays)} 天`}</b>
                 </div>
                 <div>
                   <span className="acct-k">风姿度</span>
-                  <b className="acct-v">{acct.fengzidu === null ? '—' : acct.fengzidu}</b>
+                  <b className="acct-v">{fmtInt(acct.fengzidu)}</b>
                 </div>
                 <div>
                   <span className="acct-k">御魂总数</span>
-                  <b className="acct-v">{acct.soulCount}</b>
+                  <b className="acct-v">{fmtInt(acct.soulCount)}</b>
                 </div>
                 <div>
                   <span className="acct-k">2 号位速度御魂</span>
-                  <b className="acct-v">{acct.mainSpeedSouls}</b>
+                  <b className="acct-v">{fmtInt(acct.mainSpeedSouls)}</b>
                 </div>
                 <div>
                   <span className="acct-k">收藏</span>
-                  <b className="acct-v">{acct.collectNum}</b>
+                  <b className="acct-v">{fmtInt(acct.collectNum)}</b>
                 </div>
               </div>
               {ov && (
@@ -767,14 +767,14 @@ export const AccountScore = () => {
                     <div>
                       <span className="acct-k">六星式神</span>
                       <b className="acct-v">
-                        {ov.sixStar} 只<span className="acct-note">满技能 {ov.fullSkillSixStar}</span>
+                        {ov.sixStar} 只 <span className="acct-note">· 满技能 {ov.fullSkillSixStar} 只</span>
                       </b>
                     </div>
                     <div>
                       <span className="acct-k">SSR / SP</span>
                       <b className="acct-v">
                         {ov.ssrOwned} / {ov.spOwned}
-                        <span className="acct-note">含重复</span>
+                        <span className="acct-note">（含重复）</span>
                       </b>
                     </div>
                     <div>
