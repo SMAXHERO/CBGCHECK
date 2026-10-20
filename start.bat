@@ -32,7 +32,7 @@ echo   [OK] Node.js !NODEVER!
 rem ---------- Check Python (module 3: soul report kernel) ----------
 where python >nul 2>nul
 if errorlevel 1 (
-  echo   [!]  Python not found - module 3 "御魂报告" will be unavailable.
+  echo   [!]  Python not found - module 3 "Soul Report" will be unavailable.
   echo        Install Python 3.9+ from https://www.python.org/downloads/
   echo        then run:  pip install requests
 ) else (
