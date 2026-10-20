@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { App } from 'antd';
+import { useLocation } from 'react-router-dom';
 import { ModuleTabs } from '@/components/ModuleTabs';
 import { useTheme } from '@/hooks/useTheme';
 import { EChart } from '@/components/charts/EChart';
@@ -109,6 +110,9 @@ export const SoulReport = () => {
   const [searchStatus, setSearchStatus] = useState<string | null>(null);
 
   const fileRef = useRef<HTMLInputElement | null>(null);
+  const location = useLocation();
+  /** 记住「从模块一表格自动带进来的订单号」，同一账号不重复触发 */
+  const autoRanRef = useRef<string | null>(null);
 
   /**
    * 内核可能比页面晚就绪（启动时 Python 要 ~1 秒），所以 meta 加载要可重试：
@@ -158,6 +162,23 @@ export const SoulReport = () => {
     }
   }, [applyReport, input, loadMeta, message, meta]);
 
+  /** 从模块一表格的「御魂」按钮直接进来：按订单号出报告，无需再解析输入框 */
+  const runOrdersn = useCallback(
+    async (ordersn: string, serverid: string) => {
+      if (!meta) void loadMeta();
+      setLoading(true);
+      setError(null);
+      try {
+        applyReport(await soulApi.report({ ordersn, serverid, refresh: false }));
+      } catch (e) {
+        setError(e instanceof Error ? e.message : String(e));
+      } finally {
+        setLoading(false);
+      }
+    },
+    [applyReport, loadMeta, meta],
+  );
+
   const runDemo = useCallback(async () => {
     if (!meta) void loadMeta();
     setLoading(true);
@@ -170,6 +191,27 @@ export const SoulReport = () => {
       setLoading(false);
     }
   }, [applyReport, loadMeta, meta]);
+
+  // 与模块二一样的入口联动：/soul?ordersn=…&serverid=… 自动开始分析（同一账号只触发一次）
+  // 另外支持 /soul?demo=1 直接载入演示数据，方便分享链接与自测
+  useEffect(() => {
+    const sp = new URLSearchParams(location.search);
+    const ordersn = sp.get('ordersn') || '';
+    const serverid = sp.get('serverid') || '';
+    const demo = sp.get('demo') === '1';
+    if (!ordersn && !demo) return;
+    const key = ordersn ? `${ordersn}|${serverid}` : 'demo';
+    if (autoRanRef.current === key) return;
+    autoRanRef.current = key;
+    if (demo) {
+      void runDemo();
+      return;
+    }
+    setInput(
+      serverid ? `https://yys.cbg.163.com/cgi/mweb/equip/${serverid}/${ordersn}` : ordersn,
+    );
+    void runOrdersn(ordersn, serverid);
+  }, [location.search, runDemo, runOrdersn]);
 
   const onPickFile = useCallback(
     async (file: File | null) => {

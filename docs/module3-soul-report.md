@@ -3,6 +3,8 @@
 > 页面：`#/soul`，实现：`cbg-web/src/pages/SoulReport.tsx`
 > 计算内核：`tools/cbg/soul-service/`（Python）
 > 代理：`tools/cbg/scraper-service/server.mjs` 的 `/api/soul/*`
+> 入口：模块一表格行内「御魂」按钮（`#/soul?ordersn=…&serverid=…`，与模块二「评分」同款联动）、
+> 直接粘贴链接/订单号、上传 yyx；`#/soul?demo=1` 直接载入演示数据。
 
 ---
 

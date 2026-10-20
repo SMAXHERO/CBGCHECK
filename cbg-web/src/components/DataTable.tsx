@@ -47,6 +47,10 @@ const highlightColor = (label: string): string => {
 export const scoreRouteFor = (row: Listing) =>
   `/score?eid=${encodeURIComponent(row.eid ?? '')}&serverid=${row.server_id ?? ''}`;
 
+/** 模块三「御魂报告」的路由，带上订单号与 serverid 直接出报告（与评分按钮一致的做法） */
+export const soulRouteFor = (row: Listing) =>
+  `/soul?ordersn=${encodeURIComponent(row.order_sn)}&serverid=${row.server_id ?? ''}`;
+
 export const DataTable = ({ rows, loading, columns: variant = 'full' }: Props) => {
   const selectedIds = useAppStore((s) => s.selectedIds);
   const setSelected = useAppStore((s) => s.setSelected);
@@ -95,6 +99,22 @@ export const DataTable = ({ rows, loading, columns: variant = 'full' }: Props) =
                   }}
                 >
                   评分
+                  <svg width="8" height="8" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M6 3h7v7M13 3 6 10" />
+                  </svg>
+                </button>
+              ) : null}
+              {r.order_sn && r.server_id ? (
+                <button
+                  type="button"
+                  className="cell-score-link"
+                  title="看这个账号的御魂报告（一速 / 头尾 / 组合搜索）"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(soulRouteFor(r));
+                  }}
+                >
+                  御魂
                   <svg width="8" height="8" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M6 3h7v7M13 3 6 10" />
                   </svg>
