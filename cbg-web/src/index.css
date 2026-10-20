@@ -1327,17 +1327,21 @@ body {
 /* =========================================================================
    模块切换 Tab
    -------------------------------------------------------------------------
-   两个模块各一个主色圆点：角色查询用主题色（珊瑚红），账号评分用青色，
-   切过去一眼知道自己在哪个模块。颜色跟着主题走，所以用变量。
+   三个模块各一个主色圆点：角色查询用主题色（珊瑚红），账号评分用青色，
+   御魂报告用金色。颜色跟着主题走，所以用变量。
    ========================================================================= */
 :root,
 :root[data-theme='dark'] {
   --mod-b: #2bb3a3;
   --mod-b-soft: rgba(43, 179, 163, 0.14);
+  --mod-c: #e8b44f;
+  --mod-c-soft: rgba(232, 180, 79, 0.14);
 }
 :root[data-theme='light'] {
   --mod-b: #0f9e8e;
   --mod-b-soft: rgba(15, 158, 142, 0.1);
+  --mod-c: #b8821f;
+  --mod-c-soft: rgba(184, 130, 31, 0.12);
 }
 
 .mod-tabs {
@@ -1384,6 +1388,9 @@ body {
 }
 .mod-dot.dot-b {
   background: var(--mod-b);
+}
+.mod-dot.dot-c {
+  background: var(--mod-c);
 }
 .mod-tab:not(.on) .mod-dot {
   opacity: 0.55;
@@ -1929,4 +1936,319 @@ body {
   font-size: 11.5px;
   color: var(--dim);
   line-height: 1.6;
+}
+
+/* =========================================================================
+   模块三：御魂报告
+   -------------------------------------------------------------------------
+   对应 pages/SoulReport.tsx。数据来自 Python 内核（tools/cbg/soul-service），
+   通过伴随服务 /api/soul/* 代理。这里的类名统一 soul- 前缀，避免和
+   模块一/二的样式互相影响。
+   ========================================================================= */
+.soul-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.soul-card {
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  min-width: 0;
+}
+.soul-h2 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0 0 10px;
+  color: var(--text);
+}
+.soul-p {
+  margin: 0 0 12px;
+  color: var(--dim);
+  font-size: 12.5px;
+  line-height: 1.75;
+}
+.soul-note {
+  color: var(--faint);
+  font-size: 11.5px;
+  line-height: 1.7;
+  margin: 8px 0 0;
+}
+.soul-input-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.soul-input {
+  flex: 1 1 380px;
+  min-width: 220px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--border-ctl);
+  background: var(--surface-2);
+  color: var(--text);
+  padding: 0 10px;
+  font-size: 12.5px;
+  outline: none;
+}
+.soul-input:focus {
+  border-color: var(--accent);
+}
+.btn-sm {
+  height: 26px;
+  padding: 0 10px;
+  font-size: 11.5px;
+  border-radius: 7px;
+}
+.soul-alert {
+  margin-top: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  border: 1px solid var(--border-soft);
+  background: var(--surface-2);
+  color: var(--text-mid);
+}
+.soul-alert.err {
+  border-color: var(--danger-border);
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+.soul-alert.info {
+  border-color: var(--border);
+  color: var(--link);
+}
+.soul-summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.soul-who {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  min-width: 0;
+}
+.soul-who b {
+  font-size: 15px;
+}
+.soul-who .dim {
+  color: var(--dim);
+}
+.soul-code {
+  font-size: 11px;
+  color: var(--dim);
+  background: var(--surface-3);
+  padding: 2px 6px;
+  border-radius: 5px;
+  white-space: nowrap;
+}
+.soul-tags {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.soul-tag {
+  font-size: 11px;
+  color: var(--dim);
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+.soul-tag.gold {
+  color: var(--mod-c);
+  border-color: var(--mod-c);
+  background: var(--mod-c-soft);
+}
+.soul-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+}
+.soul-kpi {
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+.soul-kpi-k {
+  font-size: 11.5px;
+  color: var(--dim);
+}
+.soul-kpi-v {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  margin-top: 2px;
+  color: var(--text);
+}
+.soul-kpi-v small {
+  font-size: 11px;
+  color: var(--faint);
+  font-weight: 400;
+  margin-left: 4px;
+}
+.soul-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+.soul-tab {
+  height: 26px;
+  padding: 0 12px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--dim);
+  font-size: 12px;
+  cursor: pointer;
+}
+.soul-tab:hover {
+  color: var(--text);
+  background: var(--surface-3);
+}
+.soul-tab.on {
+  background: var(--mod-c-soft);
+  border-color: var(--mod-c);
+  color: var(--mod-c);
+  font-weight: 600;
+}
+.soul-table-wrap {
+  overflow: auto;
+  max-height: 420px;
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+}
+.soul-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+.soul-table th,
+.soul-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border-soft);
+  text-align: left;
+  white-space: nowrap;
+}
+.soul-table th {
+  position: sticky;
+  top: 0;
+  background: var(--thead);
+  color: var(--dim);
+  font-weight: 500;
+  z-index: 1;
+}
+.soul-table tbody tr:hover td {
+  background: var(--row-hover);
+}
+.soul-table .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.soul-table .strong {
+  color: var(--text);
+  font-weight: 600;
+}
+.soul-table .dim {
+  color: var(--dim);
+}
+.soul-grid2 {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: 14px;
+}
+@media (max-width: 900px) {
+  .soul-grid2 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.soul-pos {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+.soul-pos-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+.soul-pos-k {
+  width: 52px;
+  color: var(--dim);
+  flex: none;
+}
+.soul-pos-track {
+  flex: 1;
+  height: 8px;
+  background: var(--surface-3);
+  border-radius: 5px;
+  overflow: hidden;
+}
+.soul-pos-track i {
+  display: block;
+  height: 100%;
+  border-radius: 5px;
+  background: linear-gradient(90deg, var(--mod-b), var(--mod-c));
+}
+.soul-pos-v {
+  width: 52px;
+  text-align: right;
+  color: var(--dim);
+  flex: none;
+}
+.soul-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.soul-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  align-items: end;
+}
+.soul-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11.5px;
+  color: var(--dim);
+}
+.soul-form input,
+.soul-form select {
+  height: 30px;
+  border-radius: 7px;
+  border: 1px solid var(--border-ctl);
+  background: var(--surface-2);
+  color: var(--text);
+  padding: 0 8px;
+  font-size: 12px;
+  outline: none;
+}
+.soul-form input:focus,
+.soul-form select:focus {
+  border-color: var(--accent);
+}
+.soul-empty {
+  color: var(--faint);
+  font-size: 12.5px;
+  padding: 18px;
+  text-align: center;
 }

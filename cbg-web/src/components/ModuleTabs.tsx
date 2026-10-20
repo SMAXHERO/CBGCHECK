@@ -20,6 +20,7 @@ export interface ModuleDef {
 export const MODULES: ModuleDef[] = [
   { to: '/', label: '角色查询', hint: '73 项条件实时筛选', dotClass: 'dot-a' },
   { to: '/score', label: '账号评分', hint: '御魂搭配评分 · 最快速', dotClass: 'dot-b' },
+  { to: '/soul', label: '御魂报告', hint: '御魂概览 / 一速 / 评分分布 / 组合搜索', dotClass: 'dot-c' },
 ];
 
 export const ModuleTabs = () => (

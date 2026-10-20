@@ -122,6 +122,36 @@ node tools/cbg/score_sampling.mjs --count 12 --price-min 500 --price-max 1500
 
 ---
 
+## 模块三：御魂报告
+
+把「照妖镜」那套**御魂仓库分析**做进了面板（`#/soul`）。数据来源二选一：
+
+| 输入 | 说明 |
+|---|---|
+| 藏宝阁商品链接 / 订单号 | 服务端拉取该账号御魂数据（缓存 24h，首次 5~15 秒） |
+| 上传 yyx / 痒痒熊导出文件 | 完全不联网，适合已经导出过的账号 |
+
+输出：
+
+| 区块 | 内容 |
+|---|---|
+| 概览 | 御魂总数、六星、散件一速、score/zscore 均值、score≥6 数量 |
+| score 分布 | 0~12 分直方图（`score = 有效属性成长次数`，-1 为未评定） |
+| 一速 | 散件一~五速、命中/抵抗一速、14 个套装一速（含具体御魂组合） |
+| 精确指标 | **头 / 尾 / 脚 / 17 速**——从 CBG 原始御魂档案逐条副属性计算（yyx 会把同类副属性合并，判定不了头尾） |
+| TOP 御魂 | 按速度排序的前 20 件，带 score/zscore |
+| 组合搜索 | 指定式神 / 指标 / 暴击率/速度下限 / 套装，异步搜索最优 6 件组合 |
+
+> **计算在哪**：模块三用了一个 Python 计算内核（`tools/cbg/soul-service/`，来自对 yys照妖镜 的
+> 逆向复刻，已与服务端数据逐项对拍）。伴随服务启动时会**自动拉起**它（默认端口 8792），
+> 前端只访问 `/api/soul/*`，由 Node 透明代理并统一 CORS。
+>
+> 需要 **Python ≥ 3.9 + `requests`**（`pip install requests`）。没装 Python 时模块一/二不受影响，
+> 模块三会显示「内核未就绪」。只想用模块三时可跳过浏览器：
+> `node tools/cbg/scraper-service/server.mjs --no-browser`。
+
+---
+
 ## 数据的来源与更新
 
 | 数据 | 来源 | 更新方式 |
@@ -173,12 +203,17 @@ python tools/cbg/sync_servers.py --write --include-ingame
 
 ## 快速开始
 
-环境要求：Node.js ≥ 20（用于面板与伴随服务），Python ≥ 3.9（可选，仅核对脚本用）。
+环境要求：Node.js ≥ 20（用于面板与伴随服务）；Python ≥ 3.9 + `requests`（模块三「御魂报告」的计算内核需要；
+不装则模块一/二照常可用，模块三提示未就绪）。
 
-**第一步：启动伴随服务**（会弹出一个独立的 Edge 窗口）
+**第一步：启动伴随服务**（会弹出一个独立的 Edge 窗口；模块三的 Python 内核会自动拉起）
 
 ```bash
+pip install requests          # 仅模块三需要
 node tools/cbg/scraper-service/server.mjs
+
+# 只想用模块三（御魂报告）、不想开浏览器：
+node tools/cbg/scraper-service/server.mjs --no-browser
 ```
 
 在那个窗口里**登录一次藏宝阁**。登录态存在 `tools/cbg/scraper-service/profile/`
@@ -271,9 +306,11 @@ node tools/cbg/scraper-service/server.mjs --max-pages 4 --delay 5000
 │   ├── src/
 │   │   ├── api/live.ts           伴随服务客户端（含取消查询）
 │   │   ├── api/account.ts        账号评分客户端与类型
+│   │   ├── api/soul.ts           御魂报告客户端与类型（模块三）
 │   │   ├── components/           条件面板、图表、表格、对比清单、打印视图
-│   │   ├── components/ModuleTabs.tsx  顶部模块切换（#/ 与 #/score）
+│   │   ├── components/ModuleTabs.tsx  顶部模块切换（#/、#/score、#/soul）
 │   │   ├── pages/AccountScore.tsx     ★ 模块二：账号评分页
+│   │   ├── pages/SoulReport.tsx       ★ 模块三：御魂报告页
 │   │   ├── config/defaults.ts    默认筛选条件
 │   │   ├── hooks/                实时数据源、条件 schema、主题
 │   │   └── utils/                参数换算、统计、导出
@@ -286,6 +323,8 @@ node tools/cbg/scraper-service/server.mjs --max-pages 4 --delay 5000
 ├── tools/cbg/
 │   ├── scraper-service/server.mjs          伴随服务（浏览器驱动 + HTTP API + 取消）
 │   ├── scraper-service/accountAnalyze.mjs  账号评分的服务端逻辑（速度表 + 逐方案算分）
+│   ├── scraper-service/soul-smoke.py       模块三联调冒烟测试（9 项）
+│   ├── soul-service/                       ★ 模块三计算内核（Python：报告/一速/评分/搜索）
 │   ├── account_score.mjs                   命令行：账号评分（须佐之男 / 阿修罗）
 │   ├── soul_speed_table.mjs                命令行：每种御魂 × 6 位置的最快速
 │   ├── score_sampling.mjs                  抽样统计：评分出分率（御魂数 vs 能否出分）

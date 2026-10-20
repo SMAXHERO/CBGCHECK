@@ -29,6 +29,23 @@ if errorlevel 1 (
 for /f "delims=" %%v in ('node -v') do set NODEVER=%%v
 echo   [OK] Node.js !NODEVER!
 
+rem ---------- Check Python (module 3: soul report kernel) ----------
+where python >nul 2>nul
+if errorlevel 1 (
+  echo   [!]  Python not found - module 3 "御魂报告" will be unavailable.
+  echo        Install Python 3.9+ from https://www.python.org/downloads/
+  echo        then run:  pip install requests
+) else (
+  for /f "delims=" %%v in ('python --version 2^>^&1') do set PYVER=%%v
+  python -c "import requests" >nul 2>nul
+  if errorlevel 1 (
+    echo   [!]  Python !PYVER! found, but "requests" is missing.
+    echo        Module 3 uses it:  pip install requests
+  ) else (
+    echo   [OK] Python !PYVER! ^(module 3 ready^)
+  )
+)
+
 rem ---------- Is the service already running? ----------
 set ALREADY=0
 powershell -NoProfile -Command "try{(Invoke-WebRequest -Uri 'http://127.0.0.1:8791/api/health' -UseBasicParsing -TimeoutSec 2)|Out-Null;exit 0}catch{exit 1}" >nul 2>nul

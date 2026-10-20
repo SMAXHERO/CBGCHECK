@@ -62,8 +62,21 @@ const CONFIG = {
   /** 自动取分（B1）单轮最多请求数，防止把接口打出风控 */
   rescoreMaxRequests: Number(arg('rescore-max', 20)),
   headless: hasFlag('headless'),
+  /** 只起 HTTP 服务，不拉浏览器（调试接口 / 只用模块三御魂报告时使用） */
+  noBrowser: hasFlag('no-browser'),
   browser: arg('browser', process.env.CBG_BROWSER ?? ''),
   profileDir: arg('profile', path.join(__dirname, 'profile')),
+
+  /**
+   * 模块三「御魂报告」计算内核（Python）。
+   *
+   * 为什么不把计算塞进 Node：评分/一速/组合搜索来自对 yys照妖镜 的逆向复刻，
+   * 已在 Python 侧逐项对拍验证（calc_demo / parse_equip）；直接复用比在 Node 重写稳。
+   * Node 只做两件事：拉起这个内核 + 把 /api/soul/* 反向代理过去（顺便统一 CORS）。
+   */
+  soulPort: Number(arg('soul-port', process.env.CBG_SOUL_PORT ?? 8792)),
+  soulPython: arg('soul-python', process.env.CBG_PYTHON ?? (process.platform === 'win32' ? 'python' : 'python3')),
+  soulDir: arg('soul-dir', path.join(__dirname, '..', 'soul-service')),
 };
 
 /**
@@ -173,21 +186,30 @@ function classify(code, msg) {
 /* ------------------------------ 启动浏览器 ------------------------------ */
 
 fs.mkdirSync(CONFIG.profileDir, { recursive: true });
-const browserPath = findBrowser();
-log(`浏览器：${browserPath}`);
 
-const browserArgs = [
-  ...(CONFIG.headless
-    ? ['--headless=new', '--disable-gpu', '--hide-scrollbars', '--window-size=520,1000']
-    : ['--window-size=520,1000', '--window-position=80,60']),
-  '--no-first-run',
-  '--no-default-browser-check',
-  `--remote-debugging-port=${CONFIG.cdpPort}`,
-  `--user-data-dir=${CONFIG.profileDir}`,
-  'about:blank',
-];
+function browserBuildArgs() {
+  return [
+    ...(CONFIG.headless
+      ? ['--headless=new', '--disable-gpu', '--hide-scrollbars', '--window-size=520,1000']
+      : ['--window-size=520,1000', '--window-position=80,60']),
+    '--no-first-run',
+    '--no-default-browser-check',
+    `--remote-debugging-port=${CONFIG.cdpPort}`,
+    `--user-data-dir=${CONFIG.profileDir}`,
+    'about:blank',
+  ];
+}
 
-const browser = spawn(browserPath, browserArgs, { stdio: 'ignore' });
+/**
+ * --no-browser：只起 HTTP 服务（含模块三内核），不拉起浏览器。
+ * 用途：在没有桌面/浏览器的环境里调试接口，或只想用模块三的御魂报告。
+ */
+let browser = null;
+if (!CONFIG.noBrowser) {
+  const bp = findBrowser();
+  log(`浏览器：${bp}`);
+  browser = spawn(bp, browserBuildArgs(), { stdio: 'ignore' });
+}
 
 async function waitForDevtools() {
   for (let i = 0; i < 100; i += 1) {
@@ -234,6 +256,12 @@ async function evalInPage(expression, timeoutMs) {
 }
 
 async function boot() {
+  if (CONFIG.noBrowser) {
+    state.status = 'offline';
+    state.message = '未启动浏览器（--no-browser）：模块一/二不可用，模块三「御魂报告」可用';
+    log(state.message);
+    return;
+  }
   try {
     await waitForDevtools();
     const targets = await (await fetch(`http://127.0.0.1:${CONFIG.cdpPort}/json/list`)).json();
@@ -471,6 +499,145 @@ function json(res, code, payload) {
   res.end(JSON.stringify(payload));
 }
 
+/* ------------------------------ 模块三：御魂报告内核 ------------------------------ */
+
+/**
+ * 模块三 = Node 代理 + Python 内核（tools/cbg/soul-service）。
+ *
+ * 前端只认一个地址（SCRAPER_BASE），所以 /api/soul/* 由本服务代理到内核，
+ * 这样：
+ *   - 浏览器不用再关心第二个端口，也不会踩跨源问题；
+ *   - 内核没起来时能返回结构化错误，而不是让前端 fetch 直接 reject；
+ *   - 上传（multipart）按原始字节转发，不经过 JSON 解析，2~3 MB 的 yyx 不会被破坏。
+ */
+const soul = {
+  proc: null,
+  ready: false,
+  message: '未启动',
+  port: CONFIG.soulPort,
+};
+
+function startSoulService() {
+  const script = path.join(CONFIG.soulDir, 'server.py');
+  if (!fs.existsSync(script)) {
+    soul.message = `找不到内核脚本：${script}`;
+    log(`[soul] ${soul.message}`);
+    return;
+  }
+
+  /**
+   * 内核日志写文件而不是接管道。
+   * 原因：管道 stdio 在部分受限环境（沙箱/无桌面 CI）会 EPERM；文件句柄则到处都能用，
+   * 而且日志能留档（soul-service.log 已被 .gitignore 忽略）。
+   */
+  let outFd = 'ignore';
+  const soulLog = path.join(__dirname, 'soul-service.log');
+  try {
+    outFd = fs.openSync(soulLog, 'a');
+  } catch {
+    /* 打不开就丢弃日志，不影响功能 */
+  }
+
+  try {
+    soul.proc = spawn(
+      CONFIG.soulPython,
+      [script, '--host', '127.0.0.1', '--port', String(CONFIG.soulPort), '--data-dir', path.join(CONFIG.soulDir, 'data')],
+      { cwd: CONFIG.soulDir, stdio: ['ignore', outFd, outFd] },
+    );
+  } catch (err) {
+    soul.message = `启动失败：${err.message}（可用 --no-browser 单独调试）`;
+    log(`[soul] ${soul.message}`);
+    return;
+  }
+  soul.proc.on('error', (err) => {
+    soul.ready = false;
+    soul.message = `内核无法启动：${err.message}（检查 Python 与 requests）`;
+    log(`[soul] ${soul.message}`);
+  });
+  soul.proc.on('exit', (code) => {
+    soul.ready = false;
+    soul.message = `内核已退出（code ${code}）`;
+    log(`[soul] ${soul.message}`);
+  });
+  log(`[soul] 正在启动内核（python=${CONFIG.soulPython}，日志 ${soulLog}）`);
+
+  // 轮询就绪（最多 ~20 秒）
+  (async () => {
+    for (let i = 0; i < 40; i += 1) {
+      try {
+        const r = await fetch(`http://127.0.0.1:${CONFIG.soulPort}/api/soul/health`);
+        if (r.ok) {
+          soul.ready = true;
+          soul.message = '就绪';
+          log(`[soul] 御魂报告内核已就绪（端口 ${CONFIG.soulPort}）`);
+          return;
+        }
+      } catch {}
+      await sleep(500);
+    }
+    soul.message = '启动超时（检查 Python/requests 是否可用）';
+    log(`[soul] ${soul.message}`);
+  })();
+}
+
+function stopSoulService() {
+  try {
+    soul.proc?.kill();
+  } catch {}
+}
+
+function readRaw(req, limit = 32 * 1024 * 1024) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    let size = 0;
+    req.on('data', (c) => {
+      size += c.length;
+      if (size > limit) {
+        reject(new Error('请求体过大'));
+        req.destroy();
+        return;
+      }
+      chunks.push(c);
+    });
+    req.on('end', () => resolve(Buffer.concat(chunks)));
+    req.on('error', reject);
+  });
+}
+
+async function proxySoul(req, res, url) {
+  const target = `http://127.0.0.1:${CONFIG.soulPort}${url.pathname}${url.search}`;
+  const headers = {};
+  const ct = req.headers['content-type'];
+  if (ct) headers['content-type'] = ct;
+
+  let body;
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    try {
+      body = await readRaw(req);
+    } catch (err) {
+      json(res, 413, { ok: false, error: 'BODY_TOO_LARGE', message: err.message });
+      return;
+    }
+  }
+
+  try {
+    const r = await fetch(target, { method: req.method, headers, body });
+    const buf = Buffer.from(await r.arrayBuffer());
+    res.writeHead(r.status, {
+      'content-type': r.headers.get('content-type') || 'application/json; charset=utf-8',
+      'cache-control': 'no-store',
+      ...CORS,
+    });
+    res.end(buf);
+  } catch (err) {
+    json(res, 503, {
+      ok: false,
+      error: 'SOUL_SERVICE_UNAVAILABLE',
+      message: `御魂报告内核未就绪（${soul.message}）：${err.message}`,
+    });
+  }
+}
+
 /**
  * 记录请求来源。
  *
@@ -511,6 +678,19 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'OPTIONS') {
     res.writeHead(204, CORS);
     res.end();
+    return;
+  }
+
+  /**
+   * 模块三：御魂报告 —— 全部转发给 Python 内核（tools/cbg/soul-service）。
+   *
+   * 前端只认本服务一个地址，所以这里做透明代理：
+   *   GET  /api/soul/health | meta | demo | report | precise
+   *   POST /api/soul/report/upload | search
+   * 上传请求按原始字节转发（multipart 不能被 JSON 解析）。
+   */
+  if (p.startsWith('/api/soul/')) {
+    await proxySoul(req, res, url);
     return;
   }
 
@@ -804,6 +984,10 @@ const server = http.createServer(async (req, res) => {
       analysisTtlMs: CONFIG.analysisTtlMs,
       lastSuccessAt: state.lastSuccessAt,
       lastTotal: state.lastTotal,
+      /** 模块三「御魂报告」内核状态（前端用它决定是否禁用入口/提示） */
+      soulReady: soul.ready,
+      soulPort: soul.port,
+      soulMessage: soul.message,
       busy: Boolean(state.job && state.job.running),
     });
     return;
@@ -913,11 +1097,12 @@ const server = http.createServer(async (req, res) => {
 
   if (p === '/api/shutdown' && req.method === 'POST') {
     json(res, 200, { ok: true });
-    log('收到退出请求，关闭浏览器…');
+    log('收到退出请求，关闭浏览器与御魂内核…');
     setTimeout(() => {
       try {
-        browser.kill();
+        browser?.kill();
       } catch {}
+      stopSoulService();
       process.exit(0);
     }, 200);
     return;
@@ -932,18 +1117,22 @@ server.listen(CONFIG.port, '127.0.0.1', () => {
   console.log(`    接口地址   http://127.0.0.1:${CONFIG.port}/api/health`);
   console.log(`    目标站点   https://${CONFIG.host}/`);
   console.log(`    浏览器调试端口 ${CONFIG.cdpPort}`);
+  console.log(`    御魂报告内核端口 ${CONFIG.soulPort}（/api/soul/*）`);
   console.log('');
   console.log('  首次使用：在弹出的浏览器窗口里登录藏宝阁（只需一次）。');
   console.log('  停止服务：Ctrl+C');
   console.log('');
 });
 
+// 模块三内核与浏览器并行启动（内核没起来只影响模块三，不影响前两个模块）
+startSoulService();
 boot();
 
 process.on('SIGINT', () => {
-  log('收到 Ctrl+C，关闭浏览器…');
+  log('收到 Ctrl+C，关闭浏览器与御魂内核…');
   try {
-    browser.kill();
+    browser?.kill();
   } catch {}
+  stopSoulService();
   process.exit(0);
 });

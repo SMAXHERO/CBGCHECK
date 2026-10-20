@@ -53,3 +53,13 @@ npm-debug.log*
 Thumbs.db
 .vscode/
 .idea/
+# 模块三御魂报告内核：本地缓存与 Python 字节码
+# data/ 下只保留演示数据，缓存不入库
+tools/cbg/soul-service/data/*
+!tools/cbg/soul-service/data/demo_yyx.json
+tools/cbg/soul-service/**/__pycache__/
+tools/cbg/scraper-service/soul-service.log
+
+# Python 字节码（所有工具目录）
+**/__pycache__/
+*.pyc
