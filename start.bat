@@ -51,11 +51,25 @@ set ALREADY=0
 powershell -NoProfile -Command "try{(Invoke-WebRequest -Uri 'http://127.0.0.1:8791/api/health' -UseBasicParsing -TimeoutSec 2)|Out-Null;exit 0}catch{exit 1}" >nul 2>nul
 if not errorlevel 1 set ALREADY=1
 
+rem ---------- Port occupied but service not answering? ----------
+if "!ALREADY!"=="0" (
+  powershell -NoProfile -Command "if (Get-NetTCPConnection -LocalPort 8791 -State Listen -ErrorAction SilentlyContinue) { exit 0 } else { exit 1 }" >nul 2>nul
+  if not errorlevel 1 (
+    echo.
+    echo   [X] Port 8791 is occupied, but /api/health does not answer.
+    echo       Close the program using 8791, or start with another port:
+    echo         node tools\cbg\scraper-service\server.mjs --port 8792
+    echo.
+    pause
+    exit /b 1
+  )
+)
+
 if "!ALREADY!"=="1" (
   echo   [i]  Service is already running - not starting a second one.
 ) else (
   echo   [OK] Starting the query service, please wait...
-  start "cbg-scraper-service" /min cmd /c "node tools\cbg\scraper-service\server.mjs --port 8791 --cdp-port 9334"
+  start "cbg-scraper-service" /min cmd /c "node tools\cbg\scraper-service\server.mjs --port 8791 --cdp-port 9334 1>> tools\cbg\scraper-service\server.out.log 2>> tools\cbg\scraper-service\server.err.log"
 )
 
 echo.
@@ -85,9 +99,21 @@ if "!ALREADY!"=="0" (
   if "!READY!"=="1" (
     echo   [OK] Service is ready.
   ) else (
-    echo   [!]  Service did not come up in time.
-    echo        Check the minimised window for the error message.
-    echo        Common causes: port 8791 in use, or Edge/Chrome not found.
+    echo   [!]  Service did not come up in time. Last log lines:
+    echo.
+    if exist tools\cbg\scraper-service\server.err.log (
+      echo   ---- server.err.log ----
+      powershell -NoProfile -Command "Get-Content 'tools\cbg\scraper-service\server.err.log' -Tail 15"
+    )
+    if exist tools\cbg\scraper-service\server.out.log (
+      echo   ---- server.out.log ----
+      powershell -NoProfile -Command "Get-Content 'tools\cbg\scraper-service\server.out.log' -Tail 10"
+    )
+    echo.
+    echo   Common causes: port 8791 in use, Edge/Chrome not found, Python/requests missing.
+    echo   Module 3 only: node tools\cbg\scraper-service\server.mjs --no-browser
+    echo.
+    pause
   )
 ) else (
   start "" "https://yys.cbg.163.com/"

@@ -206,9 +206,27 @@ function browserBuildArgs() {
  */
 let browser = null;
 if (!CONFIG.noBrowser) {
-  const bp = findBrowser();
-  log(`浏览器：${bp}`);
-  browser = spawn(bp, browserBuildArgs(), { stdio: 'ignore' });
+  try {
+    const bp = findBrowser();
+    log(`浏览器：${bp}`);
+    browser = spawn(bp, browserBuildArgs(), { stdio: 'ignore' });
+    /**
+     * spawn 的失败是异步的：没监听 'error' 会变成未捕获异常，整个服务直接退出。
+     * 没浏览器时降级为「只有模块三可用」，而不是拒绝启动。
+     */
+    browser.on('error', (err) => {
+      state.status = 'error';
+      state.browserReady = false;
+      state.message = `浏览器启动失败：${err.message}。模块一/二不可用，模块三仍可用（或加 --no-browser 跳过浏览器）`;
+      log(state.message);
+      browser = null;
+    });
+  } catch (err) {
+    state.status = 'error';
+    state.browserReady = false;
+    state.message = `没找到可用浏览器（Edge/Chrome）：${err.message}。模块一/二不可用，模块三仍可用（或加 --no-browser）`;
+    log(state.message);
+  }
 }
 
 async function waitForDevtools() {
@@ -259,6 +277,14 @@ async function boot() {
   if (CONFIG.noBrowser) {
     state.status = 'offline';
     state.message = '未启动浏览器（--no-browser）：模块一/二不可用，模块三「御魂报告」可用';
+    log(state.message);
+    return;
+  }
+  if (!browser) {
+    // 浏览器没起来（没装 Edge/Chrome 或 spawn 失败）：不要卡在等 DevTools 端口，直接降级
+    state.status = 'error';
+    state.browserReady = false;
+    state.message = state.message || '浏览器未启动：模块一/二不可用，模块三仍可用';
     log(state.message);
     return;
   }
@@ -1109,6 +1135,25 @@ const server = http.createServer(async (req, res) => {
   }
 
   json(res, 404, { ok: false, error: 'NOT_FOUND', path: p });
+});
+
+/**
+ * 端口被占用时给一条能看懂的提示，而不是抛未捕获异常。
+ * 背景：start.bat 用最小化窗口起服务，进程一崩窗口就消失，用户只看到「服务启动不了」。
+ */
+server.on('error', (err) => {
+  const port = CONFIG.port;
+  console.error('');
+  if (err.code === 'EADDRINUSE') {
+    console.error(`  [X] 端口 ${port} 已被占用。`);
+    console.error(`      可能已经有一个服务在跑：先看 http://127.0.0.1:${port}/api/health`);
+    console.error(`      如果确认要再起一个，请换端口：--port ${port + 1}`);
+  } else {
+    console.error(`  [X] 服务启动失败：${err.message}`);
+  }
+  console.error('');
+  stopSoulService();
+  process.exit(1);
 });
 
 server.listen(CONFIG.port, '127.0.0.1', () => {
