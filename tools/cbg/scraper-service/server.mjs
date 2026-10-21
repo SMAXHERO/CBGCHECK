@@ -216,22 +216,36 @@ function browserBuildArgs() {
  * 用途：在没有桌面/浏览器的环境里调试接口，或只想用模块三的御魂报告。
  */
 let browser = null;
+/** 主动退出/关闭服务时置位：避免「杀掉浏览器」被误判成失联而自动重启 */
+let stopping = false;
+
+/**
+ * 拉起浏览器进程。可以重复调用：浏览器窗口被用户关掉后，失联自愈会再调一次。
+ */
+function launchBrowser() {
+  const bp = findBrowser();
+  log(`浏览器：${bp}`);
+  const child = spawn(bp, browserBuildArgs(), { stdio: 'ignore' });
+  /**
+   * spawn 的失败是异步的：没监听 'error' 会变成未捕获异常，整个服务直接退出。
+   * 没浏览器时降级为「只有模块三/四可用」，而不是拒绝启动。
+   */
+  child.on('error', (err) => {
+    if (browser === child) browser = null;
+    markBrowserLost(`浏览器启动失败：${err.message}`);
+  });
+  child.on('exit', (code) => {
+    if (browser !== child) return;
+    browser = null;
+    markBrowserLost(`浏览器进程已退出（code=${code ?? 'unknown'}）`);
+  });
+  browser = child;
+  return child;
+}
+
 if (!CONFIG.noBrowser) {
   try {
-    const bp = findBrowser();
-    log(`浏览器：${bp}`);
-    browser = spawn(bp, browserBuildArgs(), { stdio: 'ignore' });
-    /**
-     * spawn 的失败是异步的：没监听 'error' 会变成未捕获异常，整个服务直接退出。
-     * 没浏览器时降级为「只有模块三可用」，而不是拒绝启动。
-     */
-    browser.on('error', (err) => {
-      state.status = 'need-browser';
-      state.browserReady = false;
-      state.message = `浏览器启动失败：${err.message}。服务已在线但模块一/二不可用（模块三/四仍可用），修复浏览器后重启服务即可`;
-      log(state.message);
-      browser = null;
-    });
+    launchBrowser();
   } catch (err) {
     state.status = 'need-browser';
     state.browserReady = false;
@@ -251,8 +265,9 @@ async function waitForDevtools() {
   throw new Error(`浏览器调试端口未就绪，确认 ${CONFIG.cdpPort} 没被占用`);
 }
 
-let ws;
+let ws = null;
 let msgId = 0;
+/** id -> { resolve, reject }；浏览器失联时要能立刻拒掉在途命令，而不是干等 60 秒超时 */
 const pending = new Map();
 
 /**
@@ -262,19 +277,30 @@ const pending = new Map();
  * 不设超时的话整个查询会无限期停在这一页——这正是「查询时间太长」的一种成因。
  * 超时时把 pending 条目清掉，避免 Map 无限增长。
  */
-const send = (method, params = {}, timeoutMs = 60000) =>
-  new Promise((resolve, reject) => {
+const send = (method, params = {}, timeoutMs = 60000) => {
+  if (!ws || ws.readyState !== 1) {
+    return Promise.reject(new Error('浏览器调试通道未就绪（可能窗口已关闭）：服务正在尝试重新拉起浏览器，请稍等几秒再试；若持续失败请重新运行 start.bat'));
+  }
+  const sock = ws;
+  return new Promise((resolve, reject) => {
     const id = ++msgId;
     const timer = setTimeout(() => {
       pending.delete(id);
       reject(new Error(`页面响应超时（${timeoutMs}ms）：${method}`));
     }, timeoutMs);
-    pending.set(id, (v) => {
-      clearTimeout(timer);
-      resolve(v);
+    pending.set(id, {
+      resolve: (v) => {
+        clearTimeout(timer);
+        resolve(v);
+      },
+      reject: (err) => {
+        clearTimeout(timer);
+        reject(err);
+      },
     });
-    ws.send(JSON.stringify({ id, method, params }));
+    sock.send(JSON.stringify({ id, method, params }));
   });
+};
 
 async function evalInPage(expression, timeoutMs) {
   const r = await send('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true }, timeoutMs);
@@ -305,35 +331,94 @@ async function boot() {
     return;
   }
   try {
-    await waitForDevtools();
-    const targets = await (await fetch(`http://127.0.0.1:${CONFIG.cdpPort}/json/list`)).json();
-    const page = targets.find((t) => t.type === 'page');
-    ws = new WebSocket(page.webSocketDebuggerUrl);
-    await new Promise((resolve, reject) => {
-      ws.onopen = resolve;
-      ws.onerror = () => reject(new Error('无法连接浏览器调试通道'));
-    });
-    ws.onmessage = (ev) => {
-      const msg = JSON.parse(ev.data);
-      if (msg.id && pending.has(msg.id)) {
-        pending.get(msg.id)(msg.result);
-        pending.delete(msg.id);
-      }
-    };
-    await send('Page.enable');
-    await send('Runtime.enable');
-    await send('Page.navigate', { url: `https://${CONFIG.host}/` });
-    await sleep(3000);
-    state.browserReady = true;
-    // 先给「待确认」而不是「已登录」：登录态只有真查一次才知道
-    state.status = 'ready';
-    state.message = '浏览器已就绪。若查询提示登录失效，请在浏览器窗口里登录一次。';
-    log(`浏览器就绪，已打开 https://${CONFIG.host}/`);
+    await startBrowserSession();
   } catch (err) {
     state.status = 'error';
     state.message = err.message;
     log(`启动失败：${err.message}`);
   }
+}
+
+/** 连上浏览器的调试通道并打开目标站点。浏览器重拉之后也走这里。 */
+async function startBrowserSession() {
+  await waitForDevtools();
+  const targets = await (await fetch(`http://127.0.0.1:${CONFIG.cdpPort}/json/list`)).json();
+  const page = targets.find((t) => t.type === 'page');
+  if (!page) throw new Error('浏览器里没有可用的页面标签');
+  const sock = new WebSocket(page.webSocketDebuggerUrl);
+  await new Promise((resolve, reject) => {
+    sock.onopen = resolve;
+    sock.onerror = () => reject(new Error('无法连接浏览器调试通道'));
+  });
+  sock.onmessage = (ev) => {
+    const msg = JSON.parse(ev.data);
+    const p = pending.get(msg.id);
+    if (msg.id && p) {
+      p.resolve(msg.result);
+      pending.delete(msg.id);
+    }
+  };
+  // 用户手动关掉浏览器窗口时，ws 会 close：立刻把状态降级并尝试自动重拉，
+  // 否则界面会一直停在「异常/页面响应超时」，只能整个服务重启。
+  sock.onclose = () => {
+    if (ws !== sock) return;
+    ws = null;
+    markBrowserLost('浏览器调试通道已断开');
+  };
+  ws = sock;
+  await send('Page.enable');
+  await send('Runtime.enable');
+  await send('Page.navigate', { url: `https://${CONFIG.host}/` });
+  await sleep(3000);
+  state.browserReady = true;
+  // 先给「待确认」而不是「已登录」：登录态只有真查一次才知道
+  state.status = 'ready';
+  state.message = '浏览器已就绪。若查询提示登录失效，请在浏览器窗口里登录一次。';
+  log(`浏览器就绪，已打开 https://${CONFIG.host}/`);
+}
+
+let relaunchTimer = null;
+let relaunchAttempts = 0;
+
+/** 浏览器失联（窗口被关、进程崩溃、调试通道断开）：降级状态 + 在途命令立即失败 + 自动重拉 */
+function markBrowserLost(reason) {
+  state.browserReady = false;
+  for (const p of pending.values()) p.reject(new Error(reason));
+  pending.clear();
+  if (stopping) return;
+  log(`浏览器失联：${reason}`);
+  if (CONFIG.noBrowser) {
+    state.status = 'need-browser';
+    state.message = reason;
+    return;
+  }
+  state.status = 'need-browser';
+  state.message = `${reason}；正在尝试自动重新拉起浏览器…（模块三/四不受影响）`;
+  scheduleRelaunch();
+}
+
+function scheduleRelaunch() {
+  if (relaunchTimer || stopping) return;
+  relaunchTimer = setTimeout(async () => {
+    relaunchTimer = null;
+    if (stopping) return;
+    relaunchAttempts += 1;
+    try {
+      if (!browser) launchBrowser();
+      await sleep(1200);
+      await startBrowserSession();
+      relaunchAttempts = 0;
+      log('浏览器已自动重新拉起');
+    } catch (err) {
+      log(`自动重新拉起失败（第 ${relaunchAttempts} 次）：${err.message}`);
+      if (relaunchAttempts < 3) {
+        scheduleRelaunch();
+      } else {
+        state.status = 'error';
+        state.message = `浏览器失联且自动重连失败：${err.message}。请关闭服务后重新运行 start.bat`;
+      }
+    }
+  }, 1500);
 }
 
 /* ------------------------------ 查询 ------------------------------ */
@@ -1273,6 +1358,7 @@ const server = http.createServer(async (req, res) => {
   if (p === '/api/shutdown' && req.method === 'POST') {
     json(res, 200, { ok: true });
     log('收到退出请求，关闭浏览器与内核…');
+    stopping = true; // 主动关闭时不要触发「失联自愈」
     setTimeout(() => {
       try {
         browser?.kill();
@@ -1326,7 +1412,17 @@ startSoulService();
 startInspectorService();
 boot();
 
+/**
+ * 每 5 秒看一眼浏览器通道：窗口被关掉时 ws 会 close（上面已处理），
+ * 但极端情况下（页面标签被关闭、CDP 会话被重置）可能不触发 close，这里兜底。
+ */
+setInterval(() => {
+  if (CONFIG.noBrowser || stopping) return;
+  if (state.browserReady && (!ws || ws.readyState !== 1)) markBrowserLost('浏览器连接已断开');
+}, 5000).unref();
+
 process.on('SIGINT', () => {
+  stopping = true;
   log('收到 Ctrl+C，关闭浏览器与内核…');
   try {
     browser?.kill();
