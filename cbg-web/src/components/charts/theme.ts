@@ -132,6 +132,22 @@ export const emptyOption = (t: ChartTheme, text = '当前条件下没有数据')
   },
 });
 
+/**
+ * 系统是否要求「减少动态效果」。matchMedia 不可用（SSR / 旧环境 / 测试桩）时返回 false，
+ * 即默认保留动画，不误伤正常用户。
+ */
+export const prefersReducedMotion = (): boolean =>
+  typeof window !== 'undefined' &&
+  typeof window.matchMedia === 'function' &&
+  window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/**
+ * 图表动画选项：减少动态时关闭 ECharts 入场/更新动画；否则返回空对象（保留 ECharts 默认）。
+ * EChart 组件会把它合并进每次 setOption 的 option 里，调用方显式写的 animation 仍优先。
+ */
+export const chartMotionOptions = (): { animation?: boolean; animationDuration?: number } =>
+  prefersReducedMotion() ? { animation: false, animationDuration: 0 } : {};
+
 /** 统一的数值轴样式 */
 export const valueAxis = (t: ChartTheme, name?: string) => ({
   type: 'value' as const,

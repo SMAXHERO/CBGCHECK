@@ -12,6 +12,7 @@ import {
 } from 'echarts/components';
 import { CanvasRenderer } from 'echarts/renderers';
 import type { EChartsCoreOption } from 'echarts/core';
+import { chartMotionOptions } from './theme';
 
 // 按需注册：只引入用到的图表与组件，产物比全量引入小 60% 以上
 echarts.use([
@@ -130,7 +131,9 @@ export const EChart = ({
   useEffect(() => {
     const chart = chartRef.current;
     if (!chart) return;
-    chart.setOption(option, { notMerge });
+    // 减少动态效果时关闭图表动画；调用方 option 里显式写的 animation 仍优先
+    const merged = { ...chartMotionOptions(), ...option } as EChartsCoreOption;
+    chart.setOption(merged, { notMerge });
   }, [option, notMerge]);
 
   // 绑定事件（每次 option 变化后重新绑定，保证闭包里的回调是最新的）

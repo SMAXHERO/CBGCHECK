@@ -42,7 +42,8 @@
 
   --text: #e9ecf2;
   --dim: #8f99ab;
-  --faint: #626c7e;
+  /* 提亮至 ≥4.5（P1-5）：原 #626c7e 在 surface 上仅 3.32 */
+  --faint: #818997;
   --text-mid: #c8cfdb;
   --text-strong: #d5dbe6;
 
@@ -50,6 +51,13 @@
   --accent-hover: #ff6d5a;
   --accent-soft: rgba(255, 90, 69, 0.14);
   --accent-shadow: rgba(255, 90, 69, 0.22);
+  /* 主色按钮底（P1-5）：白字压此色 ≥4.5；--accent 仅作填充/描边，不改品牌色 */
+  --accent-btn: #cc4837;
+  --accent-btn-hover: #b53f2f;
+  /* 危险按钮底（P1-5 补）：--danger #ff6b6b 压白字只有 2.79，实底改深一档到 4.62；
+     --danger 本身仍用于文字/描边，不改 */
+  --danger-btn: #c94a4a;
+  --danger-btn-hover: #b33f3f;
   --price-text: #ff8b74;
   --hover-tint: #39414f;
 
@@ -63,6 +71,12 @@
   --danger-border: rgba(255, 107, 107, 0.42);
   --link: #6aa9ff;
   --scroll-thumb: #2b313d;
+
+  /* 主色上恒定用白字/白滑块：主色两套主题都是珊瑚红 */
+  --on-accent: #ffffff;
+  --switch-knob: #ffffff;
+  /* 轻阴影（开关滑块、Tab 选中态），深浅主题共用 */
+  --shadow-soft: rgba(0, 0, 0, 0.18);
 
   --radius: 12px;
   --radius-sm: 9px;
@@ -88,7 +102,8 @@
 
   --text: #1f2329;
   --dim: #6b7280;
-  --faint: #9aa3b0;
+  /* 压暗至 ≥4.5（P1-5）：原 #9aa3b0 在 surface 上仅 2.55；兼顾 surface-2 取 #666c76 */
+  --faint: #666c76;
   --text-mid: #4b5563;
   --text-strong: #374151;
 
@@ -96,10 +111,17 @@
   --accent-hover: #f2452f;
   --accent-soft: rgba(255, 90, 69, 0.08);
   --accent-shadow: rgba(255, 90, 69, 0.18);
+  /* 主色按钮底（P1-5）：白字压此色 ≥4.5；--accent 不改 */
+  --accent-btn: #cc4837;
+  --accent-btn-hover: #b53f2f;
+  /* 危险按钮底（P1-5 补）：浅色下 --danger #d4380d 已达 4.80，沿用同值 */
+  --danger-btn: #d4380d;
+  --danger-btn-hover: #b52f0b;
   --price-text: #d4380d;
   --hover-tint: #e5e7eb;
 
-  --ok: #16a34a;
+  /* 压暗至 ≥4.5（P1-5）：原 #16a34a 在 surface 上仅 3.30 */
+  --ok: #12873d;
   --ok-soft: rgba(22, 163, 74, 0.09);
   --warn: #b45309;
   --warn-soft: rgba(180, 83, 9, 0.09);
@@ -107,8 +129,13 @@
   --danger: #d4380d;
   --danger-soft: rgba(212, 56, 13, 0.08);
   --danger-border: rgba(212, 56, 13, 0.35);
-  --link: #1677ff;
+  /* 压暗至 ≥4.5（P1-5）：原 #1677ff 在 surface 上仅 4.10 */
+  --link: #156fee;
   --scroll-thumb: #c9cfd8;
+
+  --on-accent: #ffffff;
+  --switch-knob: #ffffff;
+  --shadow-soft: rgba(0, 0, 0, 0.18);
 }
 
 * {
@@ -321,7 +348,7 @@ body {
     box-shadow: 0 2px 12px var(--accent-shadow);
   }
   50% {
-    box-shadow: 0 2px 22px var(--accent-shadow), 0 0 0 3px rgba(255, 90, 69, 0.14);
+    box-shadow: 0 2px 22px var(--accent-shadow), 0 0 0 3px var(--accent-soft);
   }
 }
 
@@ -385,8 +412,9 @@ body {
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: var(--accent);
-  color: #fff;
+  /* 同上：序号是白字，底色用 --accent-btn 才有 4.62:1 */
+  background: var(--accent-btn);
+  color: var(--on-accent);
   font-size: 11px;
   font-weight: 700;
   display: grid;
@@ -497,6 +525,10 @@ body {
   .cnt {
     flex: 1 0 100%;
   }
+  /* 窄屏按钮不参与压缩，靠 footer 的横向滚动兜底 */
+  .app-footer .btn {
+    flex: 0 0 auto;
+  }
 }
 
 /* =========================================================================
@@ -592,8 +624,9 @@ body {
   height: 18px;
   padding: 0 6px;
   border-radius: 99px;
-  background: var(--accent);
-  color: #fff;
+  /* 计数徽标是白字小号文本，底色用 --accent-btn（4.62:1），不用品牌色 --accent */
+  background: var(--accent-btn);
+  color: var(--on-accent);
   font-size: 10.5px;
   font-weight: 600;
   line-height: 18px;
@@ -710,9 +743,11 @@ body {
   color: var(--text);
 }
 .opt.on {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
+  /* 选中态是「白字压在实底上」，必须用 --accent-btn（#cc4837，白字 4.62:1）；
+     品牌色 --accent 只做填充装饰时用，直接压白字只有 3.09，达不到 AA 4.5 */
+  background: var(--accent-btn);
+  border-color: var(--accent-btn);
+  color: var(--on-accent);
   font-weight: 600;
 }
 .opt.more {
@@ -772,8 +807,8 @@ body {
   width: 17px;
   height: 17px;
   border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+  background: var(--switch-knob);
+  box-shadow: 0 1px 2px var(--shadow-soft);
   transition: left 0.18s;
 }
 .sw.on {
@@ -1032,6 +1067,25 @@ body {
   font-size: 11.5px;
   color: var(--warn);
 }
+/* 空态统一的修饰类：.state-box 是唯一基类，差异只通过修饰类表达（见 StatusBlock variant） */
+.state-box--compact {
+  padding: 18px 12px;
+  font-size: 12.5px;
+}
+.state-box--compact .big {
+  font-size: 13px;
+}
+.state-box--inline {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  text-align: left;
+  padding: 6px 2px;
+}
+.state-box--inline .spinner {
+  margin: 0;
+}
 .spinner {
   width: 18px;
   height: 18px;
@@ -1070,8 +1124,8 @@ body {
   border-color: var(--border-soft-2);
 }
 .btn-primary {
-  background: var(--accent);
-  color: #fff;
+  background: var(--accent-btn);
+  color: var(--on-accent);
   /* 用透明边框占位，而不是 border:0 —— 否则按钮比 .btn-ghost 矮 2px，底栏会显得参差 */
   border: 1px solid transparent;
   box-shadow: 0 2px 12px var(--accent-shadow);
@@ -1088,9 +1142,9 @@ body {
   border: 1px solid var(--danger-border);
 }
 .btn-danger:hover:not(:disabled) {
-  background: var(--danger);
-  color: #fff;
-  border-color: var(--danger);
+  background: var(--danger-btn);
+  color: var(--on-accent);
+  border-color: var(--danger-btn);
 }
 .btn-danger:disabled {
   opacity: 0.6;
@@ -1126,7 +1180,7 @@ body {
   font-size: 11.5px;
 }
 .btn-primary:hover:not(:disabled) {
-  background: var(--accent-hover);
+  background: var(--accent-btn-hover);
 }
 .btn:disabled {
   opacity: 0.45;
@@ -1379,7 +1433,7 @@ body {
   background: var(--surface);
   color: var(--text);
   font-weight: 600;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.16);
+  box-shadow: 0 1px 3px var(--shadow-soft);
 }
 .mod-dot {
   width: 7px;
@@ -1505,15 +1559,6 @@ body {
   line-height: 1.65;
 }
 
-.score-loading {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 12.5px;
-  color: var(--dim);
-  padding: 6px 2px;
-}
-
 /* 账号概览 */
 .acct-grid {
   display: grid;
@@ -1595,7 +1640,8 @@ body {
   background: var(--surface);
   color: var(--dim);
   border-radius: 7px;
-  height: 26px;
+  /* 26 → 28：命中区域不小于 28px（与其它小按钮一致） */
+  height: 28px;
   padding: 0 10px;
   font: inherit;
   font-size: 12px;
@@ -2007,7 +2053,7 @@ body {
   border-color: var(--accent);
 }
 .btn-sm {
-  height: 26px;
+  height: 28px;
   padding: 0 10px;
   font-size: 11.5px;
   border-radius: 7px;
@@ -2113,7 +2159,7 @@ body {
   flex-wrap: wrap;
 }
 .soul-tab {
-  height: 26px;
+  height: 28px;
   padding: 0 12px;
   border-radius: 7px;
   border: 1px solid var(--border);
@@ -2252,12 +2298,6 @@ body {
 .soul-form input:focus,
 .soul-form select:focus {
   border-color: var(--accent);
-}
-.soul-empty {
-  color: var(--faint);
-  font-size: 12.5px;
-  padding: 18px;
-  text-align: center;
 }
 
 /* =========================================================================
@@ -2464,5 +2504,152 @@ body {
 }
 .insp-check input {
   accent-color: var(--mod-d);
+}
+
+/* =========================================================================
+   键盘可及性
+   -------------------------------------------------------------------------
+   1. 交互元素键盘聚焦时显示 --accent 焦点环（鼠标点击不出现）；
+   2. 部分输入框在各自的 :focus 规则里关掉了 outline，这里用同等特异性
+      的 :focus-visible 规则重新给回，鼠标点击时仍保持原来的「边框变色」。
+   ========================================================================= */
+:focus-visible,
+.search-wrap-head input:focus-visible,
+.num-in:focus-visible,
+.expand-panel .sbox:focus-visible,
+.soul-input:focus-visible,
+.soul-form input:focus-visible,
+.soul-form select:focus-visible,
+.insp-select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+/* 折叠卡片的头是整个卡片的按钮，焦点环画在内侧，避免被 .card 的 overflow 裁掉 */
+.card-head:focus-visible {
+  outline-offset: -2px;
+}
+
+/* 读屏专用文本：只给辅助技术，不占版面 */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* 底栏左侧的快捷键提示：纯文字，不新增按钮、不改版式 */
+.kbd-hint {
+  flex: 0 0 auto;
+  font-size: 10.5px;
+  color: var(--faint);
+  white-space: nowrap;
+}
+/* 窄屏底栏本来就挤，提示直接让位（快捷键仍然可用） */
+@media (max-width: 1000px) {
+  .kbd-hint {
+    display: none;
+  }
+}
+
+/* 状态块（StatusBlock）：复用 .state-box 的视觉，只补提示行 */
+.state-hint {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--faint);
+}
+
+/* 顶层错误边界（ErrorBoundary）：用令牌，浅色主题下也不再是黑块 */
+.crash {
+  max-width: 860px;
+  margin: 24px auto;
+  padding: 20px 22px;
+  background: var(--surface-2);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  color: var(--text);
+  font: 13px/1.7 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.crash-title {
+  margin-bottom: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.crash-msg {
+  margin-bottom: 10px;
+  color: var(--price-text);
+  white-space: pre-wrap;
+}
+.crash-stack summary {
+  margin-bottom: 6px;
+  color: var(--dim);
+  cursor: pointer;
+}
+.crash-pre {
+  max-height: 320px;
+  padding: 10px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text-mid);
+  font-size: 11.5px;
+  white-space: pre-wrap;
+}
+.crash-retry {
+  margin-top: 12px;
+}
+
+/* 尊重系统「减少动态效果」：脉动、抖动、过渡全部关掉 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* =========================================================================
+   响应式补充（只修明显挤压，不做版式重设计）
+   ========================================================================= */
+@media (max-width: 640px) {
+  /* 看号分析的两列卡片最小列宽 300px，在 320px 屏会撑出卡片；单列 */
+  .insp-grid2 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* =========================================================================
+   打印兜底
+   -------------------------------------------------------------------------
+   正常走「打印 / PDF」时会加 body.print-mode，只保留 .print-view；这里再
+   兜一层：即使用浏览器 Ctrl+P 直接打印，按钮、条件 chips、浮层也不落到纸上。
+   ========================================================================= */
+@media print {
+  .btn,
+  .btn-sm,
+  .icon-btn,
+  .link-btn,
+  .seg-btn,
+  .insp-tab,
+  .soul-tab,
+  .card-head,
+  .chips,
+  .mod-tabs,
+  .ant-btn,
+  .ant-drawer,
+  .ant-message,
+  .ant-popover,
+  .ant-tooltip {
+    display: none !important;
+  }
 }
 
