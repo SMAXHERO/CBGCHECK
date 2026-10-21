@@ -5,6 +5,7 @@ import { HashRouter, useLocation } from 'react-router-dom';
 import { Dashboard } from './pages/Dashboard';
 import { AccountScore } from './pages/AccountScore';
 import { SoulReport } from './pages/SoulReport';
+import { InspectorReport } from './pages/InspectorReport';
 import { useTheme } from './hooks/useTheme';
 
 /**
@@ -37,7 +38,8 @@ const ModuleSwitch = () => {
   const { pathname } = useLocation();
   const scoreActive = pathname.startsWith('/score');
   const soulActive = pathname.startsWith('/soul');
-  const dashActive = !scoreActive && !soulActive;
+  const inspActive = pathname.startsWith('/inspector');
+  const dashActive = !scoreActive && !soulActive && !inspActive;
   return (
     <>
       <div className="module-pane" hidden={!dashActive}>
@@ -48,6 +50,9 @@ const ModuleSwitch = () => {
       </div>
       <div className="module-pane" hidden={!soulActive}>
         <SoulReport />
+      </div>
+      <div className="module-pane" hidden={!inspActive}>
+        <InspectorReport />
       </div>
     </>
   );

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>藏宝阁看号工具 · 模块四</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="logo">👁</span> 藏宝阁看号工具 <em>模块四 · 本地内核</em></div>
+    <div class="status" id="status">未加载数据</div>
+  </header>
+
+  <section class="query">
+    <input id="cbg-url" type="text" spellcheck="false"
+           placeholder="粘贴藏宝阁商品链接（https://yys.cbg.163.com/cgi/mweb/equip/17/2026…）或订单号" />
+    <button id="btn-read" class="primary">读取链接</button>
+    <button id="btn-demo" class="ghost">演示数据</button>
+  </section>
+
+  <nav class="tabs" id="tabs">
+    <button data-tab="overview" class="active">账号查询</button>
+    <button data-tab="speed">速度盘点</button>
+    <button data-tab="pve">PVE 预览</button>
+    <button data-tab="hero">式神技能</button>
+    <button data-tab="relics">御魂库存</button>
+    <button data-tab="calc">御魂计算器</button>
+  </nav>
+
+  <main id="view" class="view">
+    <div class="empty">粘贴藏宝阁商品链接后点「读取链接」，或先看「演示数据」。</div>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>

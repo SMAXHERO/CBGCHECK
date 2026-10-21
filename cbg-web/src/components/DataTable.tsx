@@ -51,6 +51,10 @@ export const scoreRouteFor = (row: Listing) =>
 export const soulRouteFor = (row: Listing) =>
   `/soul?ordersn=${encodeURIComponent(row.order_sn)}&serverid=${row.server_id ?? ''}`;
 
+/** 模块四「看号分析」的路由，订单号 + serverid 直接出整页分析 */
+export const inspectorRouteFor = (row: Listing) =>
+  `/inspector?ordersn=${encodeURIComponent(row.order_sn)}&serverid=${row.server_id ?? ''}`;
+
 export const DataTable = ({ rows, loading, columns: variant = 'full' }: Props) => {
   const selectedIds = useAppStore((s) => s.selectedIds);
   const setSelected = useAppStore((s) => s.setSelected);
@@ -105,20 +109,36 @@ export const DataTable = ({ rows, loading, columns: variant = 'full' }: Props) =
                 </button>
               ) : null}
               {r.order_sn && r.server_id ? (
-                <button
-                  type="button"
-                  className="cell-score-link"
-                  title="看这个账号的御魂报告（一速 / 头尾 / 组合搜索）"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigate(soulRouteFor(r));
-                  }}
-                >
-                  御魂
-                  <svg width="8" height="8" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M6 3h7v7M13 3 6 10" />
-                  </svg>
-                </button>
+                <>
+                  <button
+                    type="button"
+                    className="cell-score-link"
+                    title="看这个账号的御魂报告（一速 / 头尾 / 组合搜索）"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(soulRouteFor(r));
+                    }}
+                  >
+                    御魂
+                    <svg width="8" height="8" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M6 3h7v7M13 3 6 10" />
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    className="cell-score-link"
+                    title="看这个账号的完整分析（速度盘点 / PVE / 式神 / 库存 / 计算器）"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(inspectorRouteFor(r));
+                    }}
+                  >
+                    看号
+                    <svg width="8" height="8" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M6 3h7v7M13 3 6 10" />
+                    </svg>
+                  </button>
+                </>
               ) : null}
             </span>
           </div>

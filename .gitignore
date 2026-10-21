@@ -63,3 +63,5 @@ tools/cbg/scraper-service/soul-service.log
 # Python 字节码（所有工具目录）
 **/__pycache__/
 *.pyc
+tools/cbg/inspector-service/_edge-profile/
+tools/cbg/inspector-service/data/cache/

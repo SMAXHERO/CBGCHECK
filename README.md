@@ -4,18 +4,24 @@
 
 数据不是抓下来的静态文件，而是**每次点「查询」时实时拉取**。
 
-**两个模块**，顶部 Tab 切换（各有独立地址，可单独分享）：
+**四个模块**，顶部 Tab 切换（各有独立地址，可单独分享）：
 
 | 模块 | 地址 | 做什么 |
 |---|---|---|
-| **角色查询** | `#/` | 73 项条件筛账号、KPI、图表、明细表、导出；每行有「评分」按钮可直接进模块二 |
+| **角色查询** | `#/` | 73 项条件筛账号、KPI、图表、明细表、导出；每行有「评分 / 御魂 / 看号」三个入口直达其它模块 |
 | **账号评分** | `#/score` | 须佐/阿修罗御魂搭配评分 + 每种御魂 6 个位置最快速 + 速度核心（散件/招财一速、头速度，与官方卖点交叉校验）+ 速度分布 + 账号资产概览 + 冷计算「自动取分」+ 错误分类/请求预算（评分约 4 成账号可得，速度表 100% 可得）→ **[docs/module2-scoring.md](docs/module2-scoring.md)** |
+| **御魂报告** | `#/soul` | 照妖镜那套御魂仓库分析：score 分布、一速四表、精确头/尾/17 速、TOP 御魂、组合搜索 → **[docs/module3-soul-report.md](docs/module3-soul-report.md)** |
+| **看号分析** | `#/inspector` | 原站 yys-cbg-inspector 六页本地复刻：账号概览、速度盘点、PVE 预览（21 组最优）、式神技能、御魂库存、御魂计算器（极速/精确）→ **[docs/module4-inspector.md](docs/module4-inspector.md)** |
 
 > **切换模块不会清空数据**：两个模块页面保持挂载，切 Tab 只是切显示——已查到的结果、
 > 筛选条件、已分析的账号都会留在原地；只有点「查询 / 开始分析 / 刷新」才会重新请求藏宝阁。
 
-> **最近更新（2026-10-19）**
+> **最近更新（2026-10-21）**
 >
+> - **新增模块四「看号分析」**：本地复刻 yys-cbg-inspector 的六个页面（概览 / 速度 / PVE / 式神技能 / 库存 / 计算器），
+>   内核走藏宝阁直连，不依赖原站；PVE 21 组结果按账号缓存 24h；
+> - 模块一每行新增「御魂」「看号」入口，与「评分」一样直接带上订单号跳到对应模块；
+> - 模块四计算器新增「极速模式」（局部搜索，约 0.02~0.5 秒）与「精确模式」（分支限界，保证最优）；
 > - 模块切换保留已查询的数据，不再自动重查；
 > - 模块二新增「速度核心 / 速度分布 / 账号资产概览」，速度核心与官方卖点逐项交叉校验；
 > - 模块二分析结果本地缓存 10 分钟（`cache/analysis/`），重复打开秒回；
@@ -158,6 +164,36 @@ node tools/cbg/score_sampling.mjs --count 12 --price-min 500 --price-max 1500
 
 ---
 
+## 模块四：看号分析
+
+把「yys-cbg-inspector」（阴阳师藏宝阁看号工具）的六个页面**在本地完整复刻**（`#/inspector`）。
+它不依赖原站：给定商品链接 / 订单号，本地内核自己去藏宝阁拉 `equip_desc`，自己构建数据集并计算。
+
+| 页面 | 内容 |
+|---|---|
+| 账号概览 | 速度亮点（散件/招财一速、头尾）、满速御魂与各号位分布、账号资产、图鉴、御魂规模、PVE 套件评分 |
+| 速度盘点 | 满速御魂清单、11 个常用 PVP 四件套一速表（可按 4/6 号位主属性筛选）、散件一速 TOP5、各号位最高速 |
+| PVE 预览 | **7 普通套 × 3 逢魔套 = 21 组**最优组合，逐组伤害与面板；总平均值与站点一致（26,376） |
+| 式神技能 | 按稀有度分组技能等级、技能未达标、存在多号机的式神、联动式神 |
+| 御魂库存 | 号位 / 套装 / 主属性 / 副属性（可多选同时包含）过滤，按副属性速度排序 |
+| 御魂计算器 | 指定式神 + 指标 + 面板预设 + 满暴，搜索最优 6 件组合；极速模式约 0.02~0.5 秒，精确模式保证最优 |
+
+入口：
+
+- **从模块一直接进**：每行「账号」格子里第三个按钮「看号」（`#/inspector?ordersn=…&serverid=…`，自动出报告）。
+- 直接打开 `#/inspector` 粘贴链接，或 `#/inspector?demo=1` 看演示数据（基准账号 3397 件御魂，免服务免网络）。
+
+> **计算在哪**：模块四用了一个 Python 内核（`tools/cbg/inspector-service/`，来自对原站的逆向蒸馏，
+> 97 项数字与原站逐项对拍，PVE 21 组逐组一致）。伴随服务启动时**自动拉起**它（默认端口 8793），
+> 前端只访问 `/api/inspector/*`，由 Node 透明代理。内核**只用 Python 标准库**，不需要 `requests`。
+>
+> 数据链优先走**藏宝阁直连**（匿名 POST `get_equip_detail`，1~4 秒），失败时降级到原站 Server Action；
+> PVE 21 组按账号缓存 24 小时，首次约 30 秒（8 进程并行），之后约 2 秒。
+>
+> 算法口径、数据格式、接口清单与校准表见 **[docs/module4-inspector.md](docs/module4-inspector.md)**。
+
+---
+
 ## 数据的来源与更新
 
 | 数据 | 来源 | 更新方式 |
@@ -209,16 +245,17 @@ python tools/cbg/sync_servers.py --write --include-ingame
 
 ## 快速开始
 
-环境要求：Node.js ≥ 20（用于面板与伴随服务）；Python ≥ 3.9 + `requests`（模块三「御魂报告」的计算内核需要；
-不装则模块一/二照常可用，模块三提示未就绪）。
+环境要求：Node.js ≥ 20（用于面板与伴随服务）；Python ≥ 3.9（模块三「御魂报告」的内核另外需要
+`requests`，`pip install requests`；模块四「看号分析」的内核只用标准库）。
+不装 Python 则模块一/二照常可用，模块三/四显示「内核未就绪」。
 
-**第一步：启动伴随服务**（会弹出一个独立的 Edge 窗口；模块三的 Python 内核会自动拉起）
+**第一步：启动伴随服务**（会弹出一个独立的 Edge 窗口；模块三、四的 Python 内核会自动拉起）
 
 ```bash
 pip install requests          # 仅模块三需要
 node tools/cbg/scraper-service/server.mjs
 
-# 只想用模块三（御魂报告）、不想开浏览器：
+# 只想用不带浏览器的模块（御魂报告 / 看号分析），不想开浏览器：
 node tools/cbg/scraper-service/server.mjs --no-browser
 ```
 
@@ -306,6 +343,8 @@ node tools/cbg/scraper-service/server.mjs --max-pages 4 --delay 5000
 │   ├── getting-started.md        ★ 从零到能用的分步手册
 │   ├── filter-sources.md         筛选条件与区服清单的来源、为何会过期、怎么更新
 │   ├── module2-scoring.md        ★ 账号评分模块：三个接口、eid 怎么拿、速度怎么算
+│   ├── module3-soul-report.md    ★ 御魂报告模块：yyx 格式、score/zscore、精确头尾
+│   ├── module4-inspector.md      ★ 看号分析模块：数据链、schemaVersion 11、六页算法、校准表
 │   └── self-host.md              本机使用 / Fork 部署 / 多人使用的说明
 ├── .githooks/pre-push            推送前扫描密钥（安装：git config core.hooksPath .githooks）
 ├── cbg-web/                      面板（React + Vite + TypeScript + antd + ECharts）
@@ -313,10 +352,12 @@ node tools/cbg/scraper-service/server.mjs --max-pages 4 --delay 5000
 │   │   ├── api/live.ts           伴随服务客户端（含取消查询）
 │   │   ├── api/account.ts        账号评分客户端与类型
 │   │   ├── api/soul.ts           御魂报告客户端与类型（模块三）
+│   │   ├── api/inspector.ts      看号分析客户端与类型（模块四）
 │   │   ├── components/           条件面板、图表、表格、对比清单、打印视图
-│   │   ├── components/ModuleTabs.tsx  顶部模块切换（#/、#/score、#/soul）
+│   │   ├── components/ModuleTabs.tsx  顶部模块切换（#/、#/score、#/soul、#/inspector）
 │   │   ├── pages/AccountScore.tsx     ★ 模块二：账号评分页
 │   │   ├── pages/SoulReport.tsx       ★ 模块三：御魂报告页
+│   │   ├── pages/InspectorReport.tsx  ★ 模块四：看号分析页（六个内嵌 Tab）
 │   │   ├── config/defaults.ts    默认筛选条件
 │   │   ├── hooks/                实时数据源、条件 schema、主题
 │   │   └── utils/                参数换算、统计、导出
@@ -330,7 +371,9 @@ node tools/cbg/scraper-service/server.mjs --max-pages 4 --delay 5000
 │   ├── scraper-service/server.mjs          伴随服务（浏览器驱动 + HTTP API + 取消）
 │   ├── scraper-service/accountAnalyze.mjs  账号评分的服务端逻辑（速度表 + 逐方案算分）
 │   ├── scraper-service/soul-smoke.py       模块三联调冒烟测试（9 项）
+│   ├── scraper-service/inspector-smoke.py  模块四联调冒烟测试（12 项）
 │   ├── soul-service/                       ★ 模块三计算内核（Python：报告/一速/评分/搜索）
+│   ├── inspector-service/                  ★ 模块四计算内核（Python：抓取/数据集/六页分析/计算器）
 │   ├── account_score.mjs                   命令行：账号评分（须佐之男 / 阿修罗）
 │   ├── soul_speed_table.mjs                命令行：每种御魂 × 6 位置的最快速
 │   ├── score_sampling.mjs                  抽样统计：评分出分率（御魂数 vs 能否出分）

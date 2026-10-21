@@ -77,6 +77,17 @@ const CONFIG = {
   soulPort: Number(arg('soul-port', process.env.CBG_SOUL_PORT ?? 8792)),
   soulPython: arg('soul-python', process.env.CBG_PYTHON ?? (process.platform === 'win32' ? 'python' : 'python3')),
   soulDir: arg('soul-dir', path.join(__dirname, '..', 'soul-service')),
+
+  /**
+   * 模块四「看号分析」计算内核（Python）。
+   *
+   * 能力来自对 yys-cbg-inspector 的蒸馏复刻（速度盘点 / PVE 预览 / 式神技能 /
+   * 御魂库存 / 御魂计算器），已在 Python 侧用 97 项数字与页面逐项对拍。
+   * 与模块三同样：Node 只负责拉起内核 + 代理 /api/inspector/*。
+   */
+  inspectorPort: Number(arg('inspector-port', process.env.CBG_INSPECTOR_PORT ?? 8793)),
+  inspectorPython: arg('inspector-python', process.env.CBG_INSPECTOR_PYTHON ?? process.env.CBG_PYTHON ?? (process.platform === 'win32' ? 'python' : 'python3')),
+  inspectorDir: arg('inspector-dir', path.join(__dirname, '..', 'inspector-service')),
 };
 
 /**
@@ -664,6 +675,123 @@ async function proxySoul(req, res, url) {
   }
 }
 
+/* ------------------------------ 模块四：看号分析内核 ------------------------------ */
+
+/**
+ * 模块四 = Node 代理 + Python 内核（tools/cbg/inspector-service）。
+ *
+ * 和模块三同一套做法：前端只认 SCRAPER_BASE，/api/inspector/* 在这里转发。
+ * 计算器/PVE 是异步任务（POST 拿 jobId，再轮询 GET /job?id=），代理保持原样。
+ */
+const inspector = {
+  proc: null,
+  ready: false,
+  message: '未启动',
+  port: CONFIG.inspectorPort,
+};
+
+function startInspectorService() {
+  const script = path.join(CONFIG.inspectorDir, 'server.py');
+  if (!fs.existsSync(script)) {
+    inspector.message = `找不到内核脚本：${script}`;
+    log(`[inspector] ${inspector.message}`);
+    return;
+  }
+
+  let outFd = 'ignore';
+  const inspLog = path.join(__dirname, 'inspector-service.log');
+  try {
+    outFd = fs.openSync(inspLog, 'a');
+  } catch {
+    /* 打不开就丢弃日志 */
+  }
+
+  try {
+    inspector.proc = spawn(
+      CONFIG.inspectorPython,
+      [
+        script,
+        '--host', '127.0.0.1',
+        '--port', String(CONFIG.inspectorPort),
+        '--data-dir', path.join(CONFIG.inspectorDir, 'data'),
+      ],
+      { cwd: CONFIG.inspectorDir, stdio: ['ignore', outFd, outFd] },
+    );
+  } catch (err) {
+    inspector.message = `启动失败：${err.message}`;
+    log(`[inspector] ${inspector.message}`);
+    return;
+  }
+  inspector.proc.on('error', (err) => {
+    inspector.ready = false;
+    inspector.message = `内核无法启动：${err.message}（检查 Python）`;
+    log(`[inspector] ${inspector.message}`);
+  });
+  inspector.proc.on('exit', (code) => {
+    inspector.ready = false;
+    inspector.message = `内核已退出（code ${code}）`;
+    log(`[inspector] ${inspector.message}`);
+  });
+  log(`[inspector] 正在启动内核（python=${CONFIG.inspectorPython}，日志 ${inspLog}）`);
+
+  (async () => {
+    for (let i = 0; i < 40; i += 1) {
+      try {
+        const r = await fetch(`http://127.0.0.1:${CONFIG.inspectorPort}/api/inspector/health`);
+        if (r.ok) {
+          inspector.ready = true;
+          inspector.message = '就绪';
+          log(`[inspector] 看号分析内核已就绪（端口 ${CONFIG.inspectorPort}）`);
+          return;
+        }
+      } catch {}
+      await sleep(500);
+    }
+    inspector.message = '启动超时（检查 Python 是否可用）';
+    log(`[inspector] ${inspector.message}`);
+  })();
+}
+
+function stopInspectorService() {
+  try {
+    inspector.proc?.kill();
+  } catch {}
+}
+
+async function proxyInspector(req, res, url) {
+  const target = `http://127.0.0.1:${CONFIG.inspectorPort}${url.pathname}${url.search}`;
+  const headers = {};
+  const ct = req.headers['content-type'];
+  if (ct) headers['content-type'] = ct;
+
+  let body;
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    try {
+      body = await readRaw(req);
+    } catch (err) {
+      json(res, 413, { ok: false, error: 'BODY_TOO_LARGE', message: err.message });
+      return;
+    }
+  }
+
+  try {
+    const r = await fetch(target, { method: req.method, headers, body });
+    const buf = Buffer.from(await r.arrayBuffer());
+    res.writeHead(r.status, {
+      'content-type': r.headers.get('content-type') || 'application/json; charset=utf-8',
+      'cache-control': 'no-store',
+      ...CORS,
+    });
+    res.end(buf);
+  } catch (err) {
+    json(res, 503, {
+      ok: false,
+      error: 'INSPECTOR_SERVICE_UNAVAILABLE',
+      message: `看号分析内核未就绪（${inspector.message}）：${err.message}`,
+    });
+  }
+}
+
 /**
  * 记录请求来源。
  *
@@ -717,6 +845,18 @@ const server = http.createServer(async (req, res) => {
    */
   if (p.startsWith('/api/soul/')) {
     await proxySoul(req, res, url);
+    return;
+  }
+
+  /**
+   * 模块四：看号分析 —— 全部转发给 Python 内核（tools/cbg/inspector-service）。
+   *
+   *   GET  /api/inspector/health | meta | demo | report | relics
+   *   POST /api/inspector/pve | calc        → { jobId }
+   *   GET  /api/inspector/job?id=…          → { job }
+   */
+  if (p.startsWith('/api/inspector/')) {
+    await proxyInspector(req, res, url);
     return;
   }
 
@@ -1014,6 +1154,10 @@ const server = http.createServer(async (req, res) => {
       soulReady: soul.ready,
       soulPort: soul.port,
       soulMessage: soul.message,
+      /** 模块四「看号分析」内核状态 */
+      inspectorReady: inspector.ready,
+      inspectorPort: inspector.port,
+      inspectorMessage: inspector.message,
       busy: Boolean(state.job && state.job.running),
     });
     return;
@@ -1123,12 +1267,13 @@ const server = http.createServer(async (req, res) => {
 
   if (p === '/api/shutdown' && req.method === 'POST') {
     json(res, 200, { ok: true });
-    log('收到退出请求，关闭浏览器与御魂内核…');
+    log('收到退出请求，关闭浏览器与内核…');
     setTimeout(() => {
       try {
         browser?.kill();
       } catch {}
       stopSoulService();
+      stopInspectorService();
       process.exit(0);
     }, 200);
     return;
@@ -1153,6 +1298,7 @@ server.on('error', (err) => {
   }
   console.error('');
   stopSoulService();
+  stopInspectorService();
   process.exit(1);
 });
 
@@ -1163,21 +1309,24 @@ server.listen(CONFIG.port, '127.0.0.1', () => {
   console.log(`    目标站点   https://${CONFIG.host}/`);
   console.log(`    浏览器调试端口 ${CONFIG.cdpPort}`);
   console.log(`    御魂报告内核端口 ${CONFIG.soulPort}（/api/soul/*）`);
+  console.log(`    看号分析内核端口 ${CONFIG.inspectorPort}（/api/inspector/*）`);
   console.log('');
   console.log('  首次使用：在弹出的浏览器窗口里登录藏宝阁（只需一次）。');
   console.log('  停止服务：Ctrl+C');
   console.log('');
 });
 
-// 模块三内核与浏览器并行启动（内核没起来只影响模块三，不影响前两个模块）
+// 模块三/四内核与浏览器并行启动（内核没起来只影响对应模块，不影响前两个模块）
 startSoulService();
+startInspectorService();
 boot();
 
 process.on('SIGINT', () => {
-  log('收到 Ctrl+C，关闭浏览器与御魂内核…');
+  log('收到 Ctrl+C，关闭浏览器与内核…');
   try {
     browser?.kill();
   } catch {}
   stopSoulService();
+  stopInspectorService();
   process.exit(0);
 });
