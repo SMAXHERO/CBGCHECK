@@ -34,7 +34,8 @@ export const ModuleTabs = () => (
         className={({ isActive }) => `mod-tab${isActive ? ' on' : ''}`}
         title={m.hint}
       >
-        <i className={`mod-dot ${m.dotClass}`} />
+        {/* 装饰性圆点：选中状态由 NavLink 自动输出的 aria-current 表达 */}
+        <i className={`mod-dot ${m.dotClass}`} aria-hidden="true" />
         <span className="mod-label">{m.label}</span>
       </NavLink>
     ))}

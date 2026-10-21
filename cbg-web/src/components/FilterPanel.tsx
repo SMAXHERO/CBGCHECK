@@ -3,6 +3,7 @@ import type { SearchField, SearchSchema } from '@/api/searchSchema';
 import type { ServerIndex } from '@/utils/predicate';
 import { fid } from '@/utils/params';
 import { ConditionField } from './condition/ConditionField';
+import { StatusBlock } from './StatusBlock';
 
 /**
  * 筛选条件面板 —— 复刻 cbg-filter-kit/src/filter-panel.html 的交互与视觉。
@@ -85,6 +86,16 @@ export const FilterPanel = ({
     [schema, openSections],
   );
 
+  /** 分组折叠：鼠标点击与键盘（Enter / Space）共用同一入口 */
+  const toggleSection = (si: number) => {
+    setOpenSections((prev) => {
+      const next = new Set(prev);
+      if (next.has(si)) next.delete(si);
+      else next.add(si);
+      return next;
+    });
+  };
+
   return (
     <div>
       {inlineSearch && (
@@ -123,14 +134,17 @@ export const FilterPanel = ({
           <div className={`card${open ? ' open' : ''}`} key={`${section.label}-${si}`}>
             <div
               className="card-head"
-              onClick={() =>
-                setOpenSections((prev) => {
-                  const next = new Set(prev);
-                  if (next.has(si)) next.delete(si);
-                  else next.add(si);
-                  return next;
-                })
-              }
+              role="button"
+              tabIndex={0}
+              aria-expanded={open}
+              aria-controls={`filter-body-${si}`}
+              onClick={() => toggleSection(si)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  toggleSection(si);
+                }
+              }}
             >
               <span className="chev">
                 <svg width="13" height="13" viewBox="0 0 16 16">
@@ -147,7 +161,7 @@ export const FilterPanel = ({
               <span className="nm">{section.label || `分组 ${si + 1}`}</span>
               <span className={`badge${badgeCount[si] ? ' show' : ''}`}>{badgeCount[si]}</span>
             </div>
-            <div className="card-body">
+            <div className="card-body" id={`filter-body-${si}`}>
               {section.fields.map((field, fi) =>
                 vis.fields[fi] ? (
                   <ConditionField
@@ -167,11 +181,11 @@ export const FilterPanel = ({
       })}
 
       {effectiveQuery && visibility.every((v) => !v.show) && (
-        <div className="state-box">
+        <StatusBlock>
           没有匹配「{effectiveQuery}」的条件
           <br />
           试试「一速」「图鉴」「皮肤」「签到」
-        </div>
+        </StatusBlock>
       )}
     </div>
   );

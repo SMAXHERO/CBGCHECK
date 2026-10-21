@@ -34,59 +34,21 @@ export class ErrorBoundary extends Component<Props, State> {
     if (!error) return this.props.children;
 
     return (
-      <div
-        style={{
-          maxWidth: 860,
-          margin: '24px auto',
-          padding: '20px 22px',
-          background: '#1c2029',
-          border: '1px solid #ff5a45',
-          borderRadius: 12,
-          color: '#e9ecf2',
-          font: '13px/1.7 ui-monospace, SFMono-Regular, Menlo, monospace',
-        }}
-      >
-        <div style={{ fontSize: 15, fontWeight: 700, color: '#ff5a45', marginBottom: 8 }}>
-          页面渲染出错（已拦在错误边界）
-        </div>
-        <div style={{ color: '#ff8b74', marginBottom: 10, whiteSpace: 'pre-wrap' }}>
+      <div className="crash" role="alert">
+        <div className="crash-title">页面渲染出错（已拦在错误边界）</div>
+        <div className="crash-msg">
           {error.name}: {error.message}
         </div>
         {stack && (
-          <details open>
-            <summary style={{ cursor: 'pointer', color: '#8f99ab', marginBottom: 6 }}>
-              组件调用栈
-            </summary>
-            <pre
-              style={{
-                background: '#0f1218',
-                border: '1px solid #272c37',
-                borderRadius: 8,
-                padding: 10,
-                fontSize: 11.5,
-                overflow: 'auto',
-                maxHeight: 320,
-                color: '#c3cbd9',
-                whiteSpace: 'pre-wrap',
-              }}
-            >
-              {stack}
-            </pre>
+          <details open className="crash-stack">
+            <summary>组件调用栈</summary>
+            <pre className="crash-pre">{stack}</pre>
           </details>
         )}
-        <div style={{ marginTop: 12 }}>
+        <div className="crash-retry">
           <button
+            className="btn btn-primary"
             onClick={() => this.setState({ error: null, stack: null })}
-            style={{
-              padding: '7px 14px',
-              borderRadius: 8,
-              border: 0,
-              background: '#ff5a45',
-              color: '#fff',
-              fontWeight: 600,
-              cursor: 'pointer',
-              font: 'inherit',
-            }}
           >
             重试渲染
           </button>
