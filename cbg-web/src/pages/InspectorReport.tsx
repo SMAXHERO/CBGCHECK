@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { ModuleTabs } from '@/components/ModuleTabs';
-import { useTheme } from '@/hooks/useTheme';
+import { ModuleHeader } from '@/components/ModuleHeader';
 import {
   inspectorApi,
   type CalcResult,
@@ -9,8 +8,15 @@ import {
   type InspectorReport as InspectorReportData,
   type JobState,
   type RelicList,
-  type SpeedCell,
 } from '@/api/inspector';
+import { TABS, type TabKey } from './inspector/constants';
+import { fmt, fmtInt, parseCbgInput, pollJob } from './inspector/helpers';
+import { OverviewTab } from './inspector/OverviewTab';
+import { SpeedTab } from './inspector/SpeedTab';
+import { PveTab, type PveResult } from './inspector/PveTab';
+import { HeroTab } from './inspector/HeroTab';
+import { RelicsTab } from './inspector/RelicsTab';
+import { CalcTab } from './inspector/CalcTab';
 
 /**
  * 模块四：藏宝阁看号工具（站点 yys-cbg-inspector 的蒸馏版）。
@@ -22,88 +28,12 @@ import {
  *   ④ 式神技能：稀有度分组、未达标、多号机、联动式神
  *   ⑤ 御魂库存：号位/套装/主属性筛选
  *   ⑥ 御魂计算器：式神面板 + 主属性预设 + 满暴约束的最优六件
+ *
+ * 页面壳：所有 state / effect / 请求函数保留在此；六个标签页的 JSX 已迁至 ./inspector/ 下的视图组件，
+ * 本文件只负责按 tab 渲染对应视图并下传 props。拆分映射见 .pipeline/evidence/refactor-map.md。
  */
 
-const TABS = [
-  { key: 'overview', label: '账号概览' },
-  { key: 'speed', label: '速度盘点' },
-  { key: 'pve', label: 'PVE 预览' },
-  { key: 'hero', label: '式神技能' },
-  { key: 'relics', label: '御魂库存' },
-  { key: 'calc', label: '御魂计算器' },
-] as const;
-type TabKey = (typeof TABS)[number]['key'];
-
-const METRIC_LABELS: Record<string, string> = {
-  damage: '伤害（攻击 × 暴伤）',
-  healing: '治疗（生命 × 暴伤）',
-  defenseOutput: '防御输出（防御 × 暴伤）',
-  attack: '攻击',
-  health: '生命',
-  defense: '防御',
-  speed: '速度',
-  critRate: '暴击',
-  critDamage: '暴击伤害',
-  effectHit: '效果命中',
-  effectResistance: '效果抵抗',
-  hitResistance: '命中+抵抗',
-};
-
-const fmt = (n: number | null | undefined, d = 2) =>
-  n === null || n === undefined || Number.isNaN(Number(n)) ? '—' : Number(n).toFixed(d);
-const fmtInt = (n: number | null | undefined) =>
-  n === null || n === undefined ? '—' : Number(n).toLocaleString('zh-CN');
-const numText = (v: { raw?: number; text?: string } | number | null | undefined) =>
-  v === null || v === undefined
-    ? '—'
-    : typeof v === 'number'
-      ? fmtInt(v)
-      : v.text ?? fmtInt(v.raw);
-
-/** 从链接/订单号里解析（服务端会再解析一次，这里只为提前校验与提示） */
-function parseCbgInput(raw: string): { ordersn?: string; serverid?: string; url?: string } {
-  const s = raw.trim();
-  if (!s) return {};
-  const m = s.match(/\/equip\/(\d+)\/([0-9]{8,}-[0-9]+-[0-9A-Za-z]+)/);
-  if (m) return { serverid: m[1], ordersn: m[2], url: s };
-  if (/^[0-9]{8,}-[0-9]+-[0-9A-Za-z]+$/.test(s)) return { ordersn: s, serverid: s.split('-')[1] };
-  return {};
-}
-
-/** 轮询异步任务直到完成 */
-async function pollJob(id: string, onProgress: (job: JobState) => void): Promise<JobState> {
-  for (;;) {
-    const { job } = await inspectorApi.job(id);
-    onProgress(job);
-    if (job.status === 'done' || job.status === 'error') return job;
-    await new Promise((r) => setTimeout(r, 700));
-  }
-}
-
-const CellTable = ({ cells }: { cells: SpeedCell[] }) => (
-  <table className="insp-cells">
-    <tbody>
-      <tr>
-        {cells.map((cell) => (
-          <td key={cell.position}>
-            <b>{fmt(cell.value)}</b>
-            <span className="insp-cell-sub">
-              {cell.position}号位 · {cell.suitName}
-              {cell.labels.length > 0 ? ` · ${cell.labels.join('/')}` : ''}
-            </span>
-            <span className="insp-cell-main">
-              {cell.mainAttribute.label}
-              {cell.mainAttribute.isPercent ? ' %' : ''}
-            </span>
-          </td>
-        ))}
-      </tr>
-    </tbody>
-  </table>
-);
-
 export const InspectorReport = () => {
-  const { theme, toggle } = useTheme();
   const location = useLocation();
   const autoRanRef = useRef('');
   const fileDeepLink = useRef(false);
@@ -135,11 +65,7 @@ export const InspectorReport = () => {
 
   const [pveJob, setPveJob] = useState<JobState | null>(null);
   const [pveRunning, setPveRunning] = useState(false);
-  const [pveResult, setPveResult] = useState<{
-    hero: string;
-    average: number | null;
-    rows: { suit: string; omaSuit: string; damage: number; panel: Record<string, number> }[];
-  } | null>(null);
+  const [pveResult, setPveResult] = useState<PveResult | null>(null);
 
   const ordersn = report?.ordersn ?? '';
   const serverid = report?.serverid ?? '';
@@ -318,22 +244,12 @@ export const InspectorReport = () => {
 
   return (
     <div className="app-shell">
-      <header className="app-header">
-        <div className="head-in">
-          <h1>藏宝阁数据面板</h1>
-          <span className="pill-tag">阴阳师 · 看号</span>
-          <ModuleTabs />
-          <span className="head-meta">模块四：粘贴链接，本地算速度 / PVE / 式神 / 库存 / 配装</span>
-          <button
-            className="icon-btn"
-            onClick={toggle}
-            title={theme === 'dark' ? '切换到浅色主题' : '切换到深色主题'}
-            aria-label="切换主题"
-          >
-            {theme === 'dark' ? '☀' : '🌙'}
-          </button>
-        </div>
-      </header>
+      <ModuleHeader
+        title="藏宝阁数据面板"
+        badge="阴阳师 · 看号"
+        themeVariant="text"
+        meta="模块四：粘贴链接，本地算速度 / PVE / 式神 / 库存 / 配装"
+      />
 
       <div className="soul-body">
         <section className="soul-card">
@@ -359,8 +275,16 @@ export const InspectorReport = () => {
               演示数据
             </button>
           </div>
-          {loading && <div className="soul-alert info">正在抓取/解析，首次约 2~6 秒…</div>}
-          {error && <div className="soul-alert err">{error}</div>}
+          {loading && (
+            <div className="soul-alert info" role="status" aria-live="polite">
+              正在抓取/解析，首次约 2~6 秒…
+            </div>
+          )}
+          {error && (
+            <div className="soul-alert err" role="alert">
+              {error}
+            </div>
+          )}
         </section>
 
         {report && ov && (
@@ -395,13 +319,14 @@ export const InspectorReport = () => {
                 </span>
               </div>
 
-              <div className="insp-tabs">
+              <div className="insp-tabs" role="group" aria-label="看号分析视图">
                 {TABS.map((item) => (
                   <button
                     key={item.key}
                     type="button"
                     className={`insp-tab${tab === item.key ? ' on' : ''}`}
                     onClick={() => setTab(item.key)}
+                    aria-pressed={tab === item.key}
                   >
                     {item.label}
                   </button>
@@ -409,594 +334,64 @@ export const InspectorReport = () => {
               </div>
             </section>
 
-            {tab === 'overview' && (
-              <>
-                <section className="soul-card">
-                  <h3 className="insp-h3">账号数据</h3>
-                  <div className="insp-kpis">
-                    <div className="insp-kpi">
-                      <span>体力</span>
-                      <b>{numText(ov.stamina)}</b>
-                    </div>
-                    <div className="insp-kpi">
-                      <span>金币</span>
-                      <b>{numText(ov.money)}</b>
-                    </div>
-                    <div className="insp-kpi">
-                      <span>风姿度</span>
-                      <b>{fmtInt(ov.fengzidu)}</b>
-                    </div>
-                    <div className="insp-kpi">
-                      <span>斗技</span>
-                      <b>
-                        {ov.pvpStage}段 / {fmtInt(ov.pvpScore)}分
-                      </b>
-                    </div>
-                    <div className="insp-kpi">
-                      <span>勾玉</span>
-                      <b>{numText(ov.soulJade)}</b>
-                    </div>
-                    <div className="insp-kpi">
-                      <span>神秘符咒</span>
-                      <b>{fmtInt(ov.mysteryTalisman)}</b>
-                    </div>
-                    <div className="insp-kpi">
-                      <span>现世符咒</span>
-                      <b>{fmtInt(ov.realityTalisman)}</b>
-                    </div>
-                    <div className="insp-kpi">
-                      <span>抽卡能力</span>
-                      <b>{fmtInt(ov.summonPower)} 抽</b>
-                    </div>
-                    <div className="insp-kpi">
-                      <span>御行达摩</span>
-                      <b>{fmtInt(ov.yuxingDama)}</b>
-                    </div>
-                    <div className="insp-kpi">
-                      <span>典藏皮肤</span>
-                      <b>{fmtInt(ov.collectionSkinCount)}</b>
-                    </div>
-                  </div>
-                  <div className="insp-chips">
-                    <span className="insp-chip">
-                      图鉴 SSR <b>{ov.dex.ssr.owned}/{ov.dex.ssr.total}</b>
-                    </span>
-                    <span className="insp-chip">
-                      SP <b>{ov.dex.sp.owned}/{ov.dex.sp.total}</b>
-                    </span>
-                    <span className="insp-chip">
-                      UR <b>{ov.dex.ur.owned}/{ov.dex.ur.total}</b>
-                    </span>
-                    <span className="insp-chip">
-                      500天未收录 <b>{ov.dex.uncollected500Days}</b>
-                    </span>
-                    <span className="insp-chip">
-                      999天未收录 <b>{ov.dex.uncollected999Days}</b>
-                    </span>
-                    <span className="insp-chip">
-                      未收录券 <b>{ov.dex.uncollectedCoupon}</b>
-                    </span>
-                  </div>
-                </section>
+            {tab === 'overview' && <OverviewTab report={report} ov={ov} pve={pve} />}
 
-                <section className="soul-card">
-                  <h3 className="insp-h3">御魂规模</h3>
-                  <div className="insp-kpis">
-                    <div className="insp-kpi">
-                      <span>全部御魂</span>
-                      <b>{fmtInt(report.relics.totalInBag)}</b>
-                    </div>
-                    <div className="insp-kpi">
-                      <span>参与统计</span>
-                      <b>{fmtInt(report.relics.counted)}</b>
-                    </div>
-                    <div className="insp-kpi">
-                      <span>6 星满级</span>
-                      <b>{fmtInt(report.relics.maxLevelCount)}</b>
-                    </div>
-                    {Object.entries(report.relics.byPosition).map(([pos, count]) => (
-                      <div className="insp-kpi" key={pos}>
-                        <span>{pos} 号位</span>
-                        <b>{fmtInt(count)}</b>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-
-                <section className="soul-card">
-                  <h3 className="insp-h3">PVE 御魂评分</h3>
-                  <p className="soul-p">套件总评分 = 有效词条数之和（攻击加成/暴击/暴伤，2、4 号位仅攻击加成、6 号位仅暴击或暴伤）。</p>
-                  <div className="insp-grid2">
-                    <div>
-                      <div className="insp-sub">普通 PVE 套装</div>
-                      <table className="insp-table">
-                        <thead>
-                          <tr>
-                            <th>套装</th>
-                            <th>件数</th>
-                            <th>总评分</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {pve?.normalSuits.map((row) => (
-                            <tr key={row.suitName}>
-                              <td>{row.suitName}</td>
-                              <td>{row.relicCount}</td>
-                              <td>{row.totalScore}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                    <div>
-                      <div className="insp-sub">逢魔御魂</div>
-                      <table className="insp-table">
-                        <thead>
-                          <tr>
-                            <th>套装</th>
-                            <th>件数</th>
-                            <th>总评分</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {pve?.omaSuits.map((row) => (
-                            <tr key={row.suitName}>
-                              <td>{row.suitName}</td>
-                              <td>{row.relicCount}</td>
-                              <td>{row.totalScore}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                </section>
-              </>
-            )}
-
-            {tab === 'speed' && speed && (
-              <>
-                <section className="soul-card">
-                  <h3 className="insp-h3">满速御魂</h3>
-                  <div className="insp-kpis">
-                    <div className="insp-kpi">
-                      <span>满速总量</span>
-                      <b>{fmtInt(speed.fullSpeedCount)}</b>
-                    </div>
-                    {Object.entries(speed.fullSpeedByPosition).map(([pos, count]) => (
-                      <div className="insp-kpi" key={pos}>
-                        <span>{pos} 号位</span>
-                        <b>{fmtInt(count)}</b>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-
-                <section className="soul-card">
-                  <h3 className="insp-h3">散件一速 TOP5</h3>
-                  {speed.scatterTop.map((row) => (
-                    <div className="insp-row" key={row.rank}>
-                      <div className="insp-row-head">
-                        <span className="insp-rank">#{row.rank}</span>
-                        <b>{fmt(row.value)}</b>
-                      </div>
-                      <CellTable cells={row.cells} />
-                    </div>
-                  ))}
-                </section>
-
-                <section className="soul-card">
-                  <h3 className="insp-h3">常用 PVP 套件速度</h3>
-                  {speed.suitTable.map((row) => (
-                    <div className="insp-row" key={row.suit}>
-                      <div className="insp-row-head">
-                        <b>{row.suit}</b>
-                        <span className="insp-rank">{fmt(row.value)}</span>
-                      </div>
-                      <CellTable cells={row.cells} />
-                    </div>
-                  ))}
-                </section>
-
-                <section className="soul-card">
-                  <h3 className="insp-h3">满速御魂清单</h3>
-                  <table className="insp-table">
-                    <thead>
-                      <tr>
-                        <th>号位</th>
-                        <th>套装</th>
-                        <th>主属性</th>
-                        <th>速度副属性</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {speed.fullSpeedRelics.map((relic, index) => (
-                        <tr key={`${relic.position}-${relic.suitName}-${index}`}>
-                          <td>{relic.position}</td>
-                          <td>{relic.suitName}</td>
-                          <td>{relic.mainAttribute.label}</td>
-                          <td>{fmt(relic.value)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </section>
-              </>
-            )}
+            {tab === 'speed' && speed && <SpeedTab speed={speed} />}
 
             {tab === 'pve' && (
-              <>
-                <section className="soul-card">
-                  <h3 className="insp-h3">PVE 御魂组合</h3>
-                  <p className="soul-p">
-                    固定比较土蜘蛛、荒骷髅、鬼灵歌伎三种逢魔套；仅用账号内六星 +15 御魂；以满级须佐之男面板计算，普通两件套与逢魔一件套均计入。
-                    仅保留满暴方案，伤害指标 = 最终攻击 × 最终暴击伤害；不含技能、四件套效果与副本增益。
-                  </p>
-                  <div className="soul-input-row">
-                    <button className="btn btn-primary" onClick={() => void runPve()} disabled={pveRunning}>
-                      {pveRunning ? '计算中…' : '算 21 组最优组合'}
-                    </button>
-                    {pveResult && (
-                      <button className="btn" onClick={() => void runPve(true)} disabled={pveRunning}>
-                        重新计算
-                      </button>
-                    )}
-                    {pveJob?.progress && <span className="dim">{pveJob.progress}</span>}
-                  </div>
-                  <p className="soul-p dim">
-                    首次计算约 30 秒（8 进程并行），结果按账号缓存 24 小时，之后秒开。PVE 数字与站点逐组一致。
-                  </p>
-                  {pveResult && (
-                    <>
-                      <div className="insp-chips">
-                        <span className="insp-chip">
-                          总平均值 <b>{fmtInt(pveResult.average ? Math.round(pveResult.average) : 0)}</b>
-                        </span>
-                        <span className="insp-chip">
-                          已算出 <b>{pveResult.rows.length}</b> 组
-                        </span>
-                      </div>
-                      <table className="insp-table">
-                        <thead>
-                          <tr>
-                            <th>四件套</th>
-                            <th>逢魔</th>
-                            <th>伤害</th>
-                            <th>面板</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {pveResult.rows.map((row) => (
-                            <tr key={`${row.suit}-${row.omaSuit}`}>
-                              <td>{row.suit}</td>
-                              <td>{row.omaSuit}</td>
-                              <td>
-                                <b>{fmt(row.damage)}</b>
-                              </td>
-                              <td className="dim">
-                                攻 {fmtInt(row.panel.attack)} · 暴 {fmt(row.panel.critRate, 1)}% · 爆 {fmt(row.panel.critDamage, 1)}%
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </>
-                  )}
-                </section>
-
-                <section className="soul-card">
-                  <h3 className="insp-h3">高评分御魂数量</h3>
-                  <p className="soul-p">仅统计满级六星；有效词条 ≥5 才展示，按号位分组统计。</p>
-                  <table className="insp-table">
-                    <thead>
-                      <tr>
-                        <th>号位</th>
-                        <th>高评分件数</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {Object.entries(pve?.highScoreByPosition ?? {}).map(([pos, list]) => (
-                        <tr key={pos}>
-                          <td>{pos} 号位</td>
-                          <td>{list.length}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </section>
-              </>
+              <PveTab
+                pve={pve}
+                pveJob={pveJob}
+                pveRunning={pveRunning}
+                pveResult={pveResult}
+                onRun={(refresh) => void runPve(refresh)}
+              />
             )}
 
             {tab === 'hero' && heroSkills && (
-              <>
-                <section className="soul-card">
-                  <div className="insp-chips">
-                    <span className="insp-chip">
-                      御行达摩 <b>{heroSkills.yuxingDama}</b>
-                    </span>
-                    <span className="insp-chip">
-                      未达标 <b>{heroSkills.counts.deficient}</b>
-                    </span>
-                    <span className="insp-chip">
-                      多号机 <b>{heroSkills.counts.duplicates}</b>
-                    </span>
-                    <span className="insp-chip">
-                      联动 <b>{heroSkills.counts.collaboration}</b>
-                    </span>
-                    {Object.entries(heroSkills.counts.groups).map(([rarity, count]) => (
-                      <span className="insp-chip" key={rarity}>
-                        {rarity} <b>{count}</b>
-                      </span>
-                    ))}
-                  </div>
-                </section>
-
-                <section className="soul-card">
-                  <h3 className="insp-h3">技能未达标（{heroSkills.deficient.length} 组）</h3>
-                  <table className="insp-table">
-                    <thead>
-                      <tr>
-                        <th>式神</th>
-                        <th>等级</th>
-                        <th>技能</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {heroSkills.deficient.map((hero) => (
-                        <tr key={hero.instanceId}>
-                          <td>{hero.name}</td>
-                          <td>{hero.level}</td>
-                          <td>{hero.skillLevels.join('')}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </section>
-
-                <section className="soul-card">
-                  <h3 className="insp-h3">存在多号机的式神（{heroSkills.counts.duplicates} 只）</h3>
-                  <table className="insp-table">
-                    <thead>
-                      <tr>
-                        <th>式神</th>
-                        <th>等级</th>
-                        <th>技能</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {heroSkills.duplicates.map((hero) => (
-                        <tr key={hero.instanceId}>
-                          <td>{hero.name}</td>
-                          <td>{hero.level}</td>
-                          <td>{hero.skillLevels.join('')}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </section>
-
-                <section className="soul-card">
-                  <h3 className="insp-h3">联动式神（{heroSkills.counts.collaboration} 只）</h3>
-                  <table className="insp-table">
-                    <thead>
-                      <tr>
-                        <th>式神</th>
-                        <th>等级</th>
-                        <th>技能</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {heroSkills.collaboration.map((hero) => (
-                        <tr key={hero.instanceId}>
-                          <td>{hero.name}</td>
-                          <td>{hero.level}</td>
-                          <td>{hero.skillLevels.join('')}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </section>
-
-                <section className="soul-card">
-                  <h3 className="insp-h3">全部式神技能</h3>
-                  <div className="soul-input-row">
-                    <input
-                      className="soul-input"
-                      placeholder="搜索式神名"
-                      value={heroQuery}
-                      onChange={(e) => setHeroQuery(e.target.value)}
-                      spellCheck={false}
-                    />
-                    <select className="insp-select" value={heroRarity} onChange={(e) => setHeroRarity(e.target.value)}>
-                      <option value="">全部稀有度</option>
-                      {heroSkills.groups.map((group) => (
-                        <option key={group.rarity} value={group.rarity}>
-                          {group.rarity}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  {heroGroups.map((group) => (
-                    <div key={group.rarity}>
-                      <div className="insp-sub">{group.rarity}</div>
-                      <table className="insp-table">
-                        <thead>
-                          <tr>
-                            <th>式神</th>
-                            <th>等级</th>
-                            <th>技能</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {group.heroes.map((hero) => (
-                            <tr key={hero.instanceId}>
-                              <td>{hero.name}</td>
-                              <td>{hero.level}</td>
-                              <td>{hero.skillLevels.join('')}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  ))}
-                </section>
-              </>
+              <HeroTab
+                heroSkills={heroSkills}
+                heroGroups={heroGroups}
+                heroQuery={heroQuery}
+                heroRarity={heroRarity}
+                setHeroQuery={setHeroQuery}
+                setHeroRarity={setHeroRarity}
+              />
             )}
 
             {tab === 'relics' && (
-              <section className="soul-card">
-                <h3 className="insp-h3">御魂库存</h3>
-                <div className="soul-input-row">
-                  <select className="insp-select" value={relicPosition} onChange={(e) => setRelicPosition(e.target.value)}>
-                    <option value="">全部号位</option>
-                    {['1', '2', '3', '4', '5', '6'].map((pos) => (
-                      <option key={pos} value={pos}>
-                        {pos} 号位
-                      </option>
-                    ))}
-                  </select>
-                  <input
-                    className="soul-input"
-                    placeholder="套装名（多个用逗号，如 狂骨,破势）"
-                    value={relicSuits}
-                    onChange={(e) => setRelicSuits(e.target.value)}
-                    spellCheck={false}
-                  />
-                  <input
-                    className="soul-input"
-                    placeholder="主属性（如 攻击加成）"
-                    value={relicMain}
-                    onChange={(e) => setRelicMain(e.target.value)}
-                    spellCheck={false}
-                  />
-                  <button className="btn btn-primary" onClick={() => void reloadRelics()}>
-                    筛选
-                  </button>
-                </div>
-                {relics && (
-                  <>
-                    <div className="insp-chips">
-                      <span className="insp-chip">
-                        命中 <b>{fmtInt(relics.matched)}</b> / {fmtInt(relics.total)}
-                      </span>
-                    </div>
-                    <table className="insp-table">
-                      <thead>
-                        <tr>
-                          <th>号位</th>
-                          <th>套装</th>
-                          <th>主属性</th>
-                          <th>副属性</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {relics.items.map((relic) => (
-                          <tr key={relic.relicId}>
-                            <td>{relic.position}</td>
-                            <td>{relic.suitName}</td>
-                            <td>
-                              {relic.mainAttribute.label} {fmt(relic.mainAttribute.value, 0)}
-                              {relic.mainAttribute.isPercent ? '%' : ''}
-                            </td>
-                            <td className="dim">
-                              {relic.subAttributes
-                                .map((sub) => `${sub.label}+${fmt(sub.total)}×${sub.count}`)
-                                .join(' · ')}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </>
-                )}
-              </section>
+              <RelicsTab
+                relics={relics}
+                relicPosition={relicPosition}
+                relicSuits={relicSuits}
+                relicMain={relicMain}
+                setRelicPosition={setRelicPosition}
+                setRelicSuits={setRelicSuits}
+                setRelicMain={setRelicMain}
+                onFilter={() => void reloadRelics()}
+              />
             )}
 
             {tab === 'calc' && (
-              <section className="soul-card">
-                <h3 className="insp-h3">御魂计算器</h3>
-                <p className="soul-p">
-                  从账号内六星 +15 御魂里为指定式神搜最优六件。极速模式用局部搜索（约 0.5 秒），精确模式用分支限界（较慢，结果更优）。
-                </p>
-                <div className="soul-input-row">
-                  <select className="insp-select" value={calcHero} onChange={(e) => setCalcHero(e.target.value)}>
-                    {(meta?.heroes ?? [{ name: '须佐之男' } as { name: string }]).map((hero) => (
-                      <option key={hero.name} value={hero.name}>
-                        {hero.name}
-                      </option>
-                    ))}
-                  </select>
-                  <select className="insp-select" value={calcMetric} onChange={(e) => setCalcMetric(e.target.value)}>
-                    {(meta?.metrics ?? ['damage']).map((metric) => (
-                      <option key={metric} value={metric}>
-                        {METRIC_LABELS[metric] ?? metric}
-                      </option>
-                    ))}
-                  </select>
-                  <select className="insp-select" value={calcPreset} onChange={(e) => setCalcPreset(e.target.value)}>
-                    <option value="attack">攻攻爆</option>
-                    <option value="health">生生爆</option>
-                    <option value="speed">纯速度</option>
-                  </select>
-                  <label className="insp-check">
-                    <input type="checkbox" checked={calcFullCrit} onChange={(e) => setCalcFullCrit(e.target.checked)} />
-                    满暴
-                  </label>
-                  <label className="insp-check">
-                    <input type="checkbox" checked={calcFast} onChange={(e) => setCalcFast(e.target.checked)} />
-                    极速模式
-                  </label>
-                  <select className="insp-select" value={calcLimit} onChange={(e) => setCalcLimit(Number(e.target.value))}>
-                    {[1, 3, 5, 10].map((n) => (
-                      <option key={n} value={n}>
-                        取 {n} 条
-                      </option>
-                    ))}
-                  </select>
-                  <button className="btn btn-primary" onClick={() => void runCalc()} disabled={calcRunning}>
-                    {calcRunning ? '计算中…' : '开始计算'}
-                  </button>
-                </div>
-                {calcJob?.progress && <div className="dim">{calcJob.progress}</div>}
-                {calcResult && (
-                  <>
-                    <div className="insp-sub">
-                      {calcResult.hero} · {METRIC_LABELS[calcResult.metric] ?? calcResult.metric} ·{' '}
-                      {calcResult.fastMode ? '极速模式' : '精确模式'}
-                    </div>
-                    <table className="insp-table">
-                      <thead>
-                        <tr>
-                          <th>#</th>
-                          <th>评分</th>
-                          <th>面板</th>
-                          <th>套装</th>
-                          <th>御魂</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {calcResult.rows.map((row, index) => (
-                          <tr key={index}>
-                            <td>{index + 1}</td>
-                            <td>
-                              <b>{fmt(row.score)}</b>
-                            </td>
-                            <td className="dim">
-                              攻 {fmtInt(row.panel.attack)} · 暴 {fmt(row.panel.critRate, 1)}% · 爆 {fmt(row.panel.critDamage, 1)}%
-                            </td>
-                            <td>{row.suits.join(' / ')}</td>
-                            <td className="dim">
-                              {row.relics
-                                .map((r) => `${r.position}号${r.suitName ?? ''}(${r.mainAttribute?.label ?? ''})`)
-                                .join(' · ')}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </>
-                )}
-              </section>
+              <CalcTab
+                meta={meta}
+                calcHero={calcHero}
+                calcMetric={calcMetric}
+                calcPreset={calcPreset}
+                calcFullCrit={calcFullCrit}
+                calcFast={calcFast}
+                calcLimit={calcLimit}
+                setCalcHero={setCalcHero}
+                setCalcMetric={setCalcMetric}
+                setCalcPreset={setCalcPreset}
+                setCalcFullCrit={setCalcFullCrit}
+                setCalcFast={setCalcFast}
+                setCalcLimit={setCalcLimit}
+                calcJob={calcJob}
+                calcRunning={calcRunning}
+                calcResult={calcResult}
+                onRun={() => void runCalc()}
+              />
             )}
           </>
         )}

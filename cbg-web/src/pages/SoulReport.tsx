@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { App } from 'antd';
 import { useLocation } from 'react-router-dom';
-import { ModuleTabs } from '@/components/ModuleTabs';
-import { useTheme } from '@/hooks/useTheme';
+import { ModuleHeader } from '@/components/ModuleHeader';
+import { StatusBlock } from '@/components/StatusBlock';
 import { EChart } from '@/components/charts/EChart';
 import type { EChartsCoreOption } from 'echarts/core';
 import {
@@ -59,7 +59,7 @@ function parseCbgInput(raw: string): { ordersn?: string; serverid?: string; cbgU
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 const SpeedTable = ({ rows, tab }: { rows: SpeedRow[]; tab: SpeedTab }) => {
-  if (!rows.length) return <div className="soul-empty">暂无数据</div>;
+  if (!rows.length) return <StatusBlock variant="compact">暂无数据</StatusBlock>;
   return (
     <table className="soul-table">
       <thead>
@@ -86,7 +86,6 @@ const SpeedTable = ({ rows, tab }: { rows: SpeedRow[]; tab: SpeedTab }) => {
 
 export const SoulReport = () => {
   const { message } = App.useApp();
-  const { theme, toggle } = useTheme();
   const t = useChartTheme();
 
   const [meta, setMeta] = useState<SoulMeta | null>(null);
@@ -330,22 +329,12 @@ export const SoulReport = () => {
 
   return (
     <div className="app-shell">
-      <header className="app-header">
-        <div className="head-in">
-          <h1>藏宝阁数据面板</h1>
-          <span className="pill-tag">阴阳师 · 御魂</span>
-          <ModuleTabs />
-          <span className="head-meta">模块三：粘贴链接或上传 yyx，本地算御魂报告（不依赖站点前台）</span>
-          <button
-            className="icon-btn"
-            onClick={toggle}
-            title={theme === 'dark' ? '切换到浅色主题' : '切换到深色主题'}
-            aria-label="切换主题"
-          >
-            {theme === 'dark' ? '☀' : '🌙'}
-          </button>
-        </div>
-      </header>
+      <ModuleHeader
+        title="藏宝阁数据面板"
+        badge="阴阳师 · 御魂"
+        themeVariant="text"
+        meta="模块三：粘贴链接或上传 yyx，本地算御魂报告（不依赖站点前台）"
+      />
 
       <div className="soul-body">
         <section className="soul-card">
@@ -382,8 +371,16 @@ export const SoulReport = () => {
               onChange={(e) => void onPickFile(e.target.files?.[0] ?? null)}
             />
           </div>
-          {loading && <div className="soul-alert info">正在抓取/解析，首次约 5~15 秒…</div>}
-          {error && <div className="soul-alert err">{error}</div>}
+          {loading && (
+            <div className="soul-alert info" role="status" aria-live="polite">
+              正在抓取/解析，首次约 5~15 秒…
+            </div>
+          )}
+          {error && (
+            <div className="soul-alert err" role="alert">
+              {error}
+            </div>
+          )}
         </section>
 
         {report && ov && (
@@ -432,12 +429,13 @@ export const SoulReport = () => {
 
             <section className="soul-card">
               <h2 className="soul-h2">一速（散件 / 命中 / 抵抗 / 套装）</h2>
-              <div className="soul-tabs">
+              <div className="soul-tabs" role="group" aria-label="一速视图">
                 {SPEED_TABS.map((x) => (
                   <button
                     key={x.key}
                     className={`soul-tab${speedTab === x.key ? ' on' : ''}`}
                     onClick={() => setSpeedTab(x.key)}
+                    aria-pressed={speedTab === x.key}
                   >
                     {x.label}
                   </button>
@@ -622,7 +620,7 @@ export const SoulReport = () => {
               {searchRows && (
                 <div className="soul-table-wrap">
                   {searchRows.length === 0 ? (
-                    <div className="soul-empty">没有满足条件的组合（试试放宽限制）</div>
+                    <StatusBlock variant="compact">没有满足条件的组合（试试放宽限制）</StatusBlock>
                   ) : (
                     <table className="soul-table">
                       <thead>

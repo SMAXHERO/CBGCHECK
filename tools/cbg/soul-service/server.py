@@ -26,13 +26,16 @@ import os
 import sys
 import traceback
 import urllib.parse
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from http.server import BaseHTTPRequestHandler
 from typing import Any, Optional
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
+# tools/cbg 作为共享模块根（pycommon 位于其下），不依赖 cwd
+sys.path.insert(0, os.path.dirname(HERE))
 
 from service import Service, ServiceError  # noqa: E402
+from pycommon import add_server_args, cors_headers, read_body, send_json, serve  # noqa: E402
 
 WEB_DIR = os.path.join(HERE, "web")
 DATA_DIR = os.path.join(HERE, "data")
@@ -77,14 +80,7 @@ class Handler(BaseHTTPRequestHandler):
 
     # ------------------------------------------------------------ 响应
     def _json(self, code: int, obj: Any):
-        body = json.dumps(obj, ensure_ascii=False).encode("utf-8")
-        self.send_response(code)
-        self.send_header("Content-Type", "application/json; charset=utf-8")
-        self.send_header("Content-Length", str(len(body)))
-        self.send_header("Access-Control-Allow-Origin", self.allow_origin)
-        self.send_header("Cache-Control", "no-store")
-        self.end_headers()
-        self.wfile.write(body)
+        send_json(self, code, obj, origin=self.allow_origin, cache_control="no-store")
 
     def _file(self, path: str):
         if not os.path.isfile(path):
@@ -100,14 +96,15 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(data)
 
     def _body(self) -> bytes:
-        n = int(self.headers.get("Content-Length") or 0)
-        return self.rfile.read(n) if n else b""
+        return read_body(self)
 
     def do_OPTIONS(self):                       # noqa: N802
+        # 注意：soul 的 OPTIONS 不带 Cache-Control（与基线一致），故 cache_control=None
         self.send_response(204)
-        self.send_header("Access-Control-Allow-Origin", self.allow_origin)
-        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        cors_headers(self, origin=self.allow_origin,
+                     methods="GET, POST, OPTIONS",
+                     allow_headers="Content-Type",
+                     cache_control=None)
         self.end_headers()
 
     # ------------------------------------------------------------ 路由
@@ -198,8 +195,7 @@ class Handler(BaseHTTPRequestHandler):
 
 def main():
     ap = argparse.ArgumentParser(description="Soul Report Service")
-    ap.add_argument("--port", type=int, default=8790)
-    ap.add_argument("--host", default="127.0.0.1")
+    add_server_args(ap, default_port=8790)
     ap.add_argument("--data-dir", default=DATA_DIR)
     ap.add_argument("--allow-origin", default="*", help="生产建议改成你的域名")
     ap.add_argument("--min-gap", type=float, default=6.0, help="两次抓取最小间隔（秒）")
@@ -208,14 +204,14 @@ def main():
 
     Handler.service = Service(args.data_dir, ttl=args.ttl, min_gap=args.min_gap)
     Handler.allow_origin = args.allow_origin
-    srv = ThreadingHTTPServer((args.host, args.port), Handler)
-    print(f"Soul Report Service: http://{args.host}:{args.port}/")
-    print(f"API:  /api/soul/report?ordersn=...  |  /api/soul/demo  |  /api/soul/precise?ordersn=...")
-    print(f"缓存目录: {args.data_dir}  TTL={args.ttl}s  抓取最小间隔={args.min_gap}s")
-    try:
-        srv.serve_forever()
-    except KeyboardInterrupt:
-        print("\nbye")
+    banner = [
+        f"Soul Report Service: http://{args.host}:{args.port}/",
+        "API:  /api/soul/report?ordersn=...  |  /api/soul/demo  |  /api/soul/precise?ordersn=...",
+        f"缓存目录: {args.data_dir}  TTL={args.ttl}s  抓取最小间隔={args.min_gap}s",
+    ]
+    # 原行为：不注册信号（Ctrl-C 由 KeyboardInterrupt 处理）。
+    # 偏差：原 Ctrl-C 时打印 "bye"，共享 serve() 在中断时静默返回，故不再打印 "bye"（仅 stdout 文案，记入报告）。
+    serve(args.host, args.port, Handler, banner, install_signals=False)
 
 
 if __name__ == "__main__":

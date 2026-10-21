@@ -22,19 +22,21 @@ import argparse
 import json
 import mimetypes
 import os
-import signal
 import sys
 import threading
 import time
 import traceback
 import urllib.parse
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from http.server import BaseHTTPRequestHandler
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
+# tools/cbg 作为共享模块根（pycommon 位于其下），不依赖 cwd
+sys.path.insert(0, str(HERE.parent))
 
 from service import Service, ServiceError  # noqa: E402
+from pycommon import add_server_args, cors_headers, read_body, send_json, serve  # noqa: E402
 
 WEB_DIR = HERE / "web"
 
@@ -65,19 +67,11 @@ class Handler(BaseHTTPRequestHandler):
         sys.stderr.write("[%s] %s\n" % (time.strftime("%H:%M:%S"), fmt % args))
 
     def _cors(self):
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
-        self.send_header("Cache-Control", "no-store")
+        cors_headers(self, origin="*", methods="GET, POST, OPTIONS",
+                     allow_headers="Content-Type", cache_control="no-store")
 
     def send_json(self, payload, status=200):
-        body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
-        self.send_response(status)
-        self.send_header("Content-Type", "application/json; charset=utf-8")
-        self.send_header("Content-Length", str(len(body)))
-        self._cors()
-        self.end_headers()
-        self.wfile.write(body)
+        send_json(self, status, payload, origin="*", cache_control="no-store", extra_cors=True)
 
     def send_error_json(self, status, code, message):
         self.send_json({"ok": False, "error": {"code": code, "message": message}}, status)
@@ -130,8 +124,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):                                        # noqa: N802
         parsed = urllib.parse.urlsplit(self.path)
         path = parsed.path
-        length = int(self.headers.get("Content-Length") or 0)
-        raw = self.rfile.read(length) if length else b""
+        raw = read_body(self)
         try:
             body = json.loads(raw.decode("utf-8")) if raw.strip() else {}
             if not isinstance(body, dict):
@@ -241,8 +234,7 @@ class Handler(BaseHTTPRequestHandler):
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="CBGCHECK 模块四：藏宝阁看号工具本地内核")
-    parser.add_argument("--host", default="127.0.0.1")
-    parser.add_argument("--port", type=int, default=8793)
+    add_server_args(parser, default_port=8793)
     parser.add_argument("--data-dir", default=str(HERE / "data"))
     parser.add_argument("--ttl", type=int, default=int(os.environ.get("INSPECTOR_TTL") or 86400))
     parser.add_argument("--min-gap", type=float, default=3.0)
@@ -250,35 +242,24 @@ def main() -> int:
     args = parser.parse_args()
 
     service = Service(args.data_dir, ttl=args.ttl, min_gap=args.min_gap)
-    server = ThreadingHTTPServer((args.host, args.port), Handler)
-    server.app = App(service)
-    server.daemon_threads = True
-    server.app.via = args.via
+    app = App(service)
+    app.via = args.via
 
-    def _bye(signum, frame):                                  # noqa: ARG001
-        print("收到退出信号，正在关闭…", flush=True)
-        server.app.stopping.set()
-        threading.Thread(target=server.shutdown, daemon=True).start()
-
-    try:
-        signal.signal(signal.SIGINT, _bye)
-        signal.signal(signal.SIGTERM, _bye)
-    except (ValueError, OSError):
-        pass
-
-    print("=" * 62)
-    print(" CBGCHECK 模块四 · 藏宝阁看号工具本地内核")
-    print(f"   接口: http://{args.host}:{args.port}/api/inspector/health")
-    print(f"   网页: http://{args.host}:{args.port}/")
-    print(f"   缓存: {service.cache_dir}")
-    print("=" * 62, flush=True)
-    try:
-        server.serve_forever(poll_interval=0.3)
-    except KeyboardInterrupt:
-        pass
-    finally:
-        server.server_close()
-        print("内核已停止。", flush=True)
+    # 退出信号语义保持原样：先置 stopping，再异步 shutdown；由共享 serve() 完成注册与 serve_forever。
+    banner = [
+        "=" * 62,
+        " CBGCHECK 模块四 · 藏宝阁看号工具本地内核",
+        f"   接口: http://{args.host}:{args.port}/api/inspector/health",
+        f"   网页: http://{args.host}:{args.port}/",
+        f"   缓存: {service.cache_dir}",
+        "=" * 62,
+    ]
+    serve(args.host, args.port, Handler, banner,
+          on_shutdown=app.stopping.set,
+          daemon_threads=True,
+          poll_interval=0.3,
+          server_attrs={"app": app})
+    print("内核已停止。", flush=True)
     return 0
 
 

@@ -1,7 +1,7 @@
+import { useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 import { useAppStore } from '@/store/useAppStore';
-import { ModuleTabs } from '@/components/ModuleTabs';
-import { useTheme } from '@/hooks/useTheme';
+import { ModuleHeader } from '@/components/ModuleHeader';
 import { useRenderCount } from '@/hooks/useRenderCount';
 import { SCRAPER_BASE, type ServiceStatus } from '@/api/live';
 
@@ -88,16 +88,54 @@ export const DashboardLayout = ({
   const conditions = useAppStore((s) => s.conditions);
   const selectedIds = useAppStore((s) => s.selectedIds);
   const bumpReset = useAppStore((s) => s.bumpReset);
-  const { theme, toggle } = useTheme();
   const st = statusStyle(status);
+  /** 本布局的根节点：四个模块页常驻挂载、只切 hidden，快捷键必须只对当前模块生效 */
+  const rootRef = useRef<HTMLDivElement | null>(null);
+
+  /**
+   * 全局键盘动线：
+   *   - Ctrl/Cmd + Enter：查询；查询中则等价「取消查询」（取消中忽略）；
+   *   - Esc：查询中取消，否则不处理（不拦弹窗，antd 自己处理）。
+   * 输入类控件内不响应 Esc / 其它快捷键，但 Ctrl/Cmd+Enter 例外——
+   * 用户最常见的动作是「粘完条件直接查」。
+   */
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      // 当前模块被 App 用 hidden 藏起来时不响应（否则会在别的模块里误触发查询）
+      if (rootRef.current?.closest('[hidden]')) return;
+      const el = event.target as HTMLElement | null;
+      const tag = el?.tagName;
+      const editing =
+        Boolean(el?.isContentEditable) || tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+      const mod = event.ctrlKey || event.metaKey;
+
+      if (mod && event.key === 'Enter') {
+        // 等价于点「查询 / 取消查询」按钮：按钮禁用时同样不动作
+        event.preventDefault();
+        if (running) {
+          if (!cancelling) onCancel();
+        } else if (canQuery) {
+          onQuery();
+        }
+        return;
+      }
+      if (editing) return;
+      if (event.key === 'Escape' && running && !cancelling) {
+        event.preventDefault();
+        onCancel();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [running, cancelling, canQuery, onQuery, onCancel]);
 
   return (
-    <div className="app-shell">
-      <header className="app-header">
-        <div className="head-in">
-          <h1>{title}</h1>
-          {badge && <span className="pill-tag">{badge}</span>}
-          <ModuleTabs />
+    <div className="app-shell" ref={rootRef}>
+      <ModuleHeader
+        title={title}
+        badge={badge}
+        themeVariant="svg"
+        statusNode={
           <span
             className="status-pill"
             title={`数据来源：${SCRAPER_BASE}（本机伴随服务 + 已登录浏览器）`}
@@ -105,62 +143,38 @@ export const DashboardLayout = ({
             <i style={{ background: st.color }} />
             {st.label}
           </span>
-          {conditionSearch && (
-            <div className="search-wrap-head">
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 16 16"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.7"
-                strokeLinecap="round"
-              >
-                <circle cx="7" cy="7" r="4.5" />
-                <path d="M10.5 10.5 14 14" />
-              </svg>
-              <input
-                placeholder="搜索条件，例如「一速」「图鉴」「皮肤」"
-                spellCheck={false}
-                value={conditionSearch.value}
-                onChange={(e) => conditionSearch.onChange(e.target.value)}
-              />
+        }
+        conditionSearch={conditionSearch}
+        meta={meta}
+        chipsNode={
+          conditions.length > 0 ? (
+            <div className="chips">
+              {conditions.map((c) => (
+                <span className="chip" key={`${c.id}-${c.param}`}>
+                  <span>{c.label}</span>
+                  {c.display && <b>{c.display}</b>}
+                  <i
+                    className="x"
+                    role="button"
+                    tabIndex={0}
+                    title={`移除条件：${c.label}`}
+                    aria-label={`移除条件：${c.label}`}
+                    onClick={() => onRemoveCondition(c.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        onRemoveCondition(c.id);
+                      }
+                    }}
+                  >
+                    ✕
+                  </i>
+                </span>
+              ))}
             </div>
-          )}
-          {meta && <span className="head-meta">{meta}</span>}
-          <button
-            className="icon-btn"
-            onClick={toggle}
-            title={theme === 'dark' ? '切换到浅色主题' : '切换到深色主题'}
-            aria-label={theme === 'dark' ? '切换到浅色主题' : '切换到深色主题'}
-          >
-            {theme === 'dark' ? (
-              <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-                <path d="M13.5 9.6A5.8 5.8 0 0 1 6.4 2.5a5.9 5.9 0 1 0 7.1 7.1Z" />
-              </svg>
-            ) : (
-              <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-                <circle cx="8" cy="8" r="3.1" />
-                <path d="M8 1.4v1.6M8 13v1.6M1.4 8h1.6M13 8h1.6M3.3 3.3l1.2 1.2M11.5 11.5l1.2 1.2M12.7 3.3l-1.2 1.2M4.5 11.5l-1.2 1.2" />
-              </svg>
-            )}
-          </button>
-        </div>
-
-        {conditions.length > 0 && (
-          <div className="chips">
-            {conditions.map((c) => (
-              <span className="chip" key={`${c.id}-${c.param}`}>
-                <span>{c.label}</span>
-                {c.display && <b>{c.display}</b>}
-                <i className="x" title={`移除条件：${c.label}`} onClick={() => onRemoveCondition(c.id)}>
-                  ✕
-                </i>
-              </span>
-            ))}
-          </div>
-        )}
-      </header>
+          ) : null
+        }
+      />
 
       <div className="layout">
         <div className="side">{sidebar}</div>
@@ -168,7 +182,12 @@ export const DashboardLayout = ({
       </div>
 
       <footer className="app-footer">
-        <div className="cnt">
+        <span className="kbd-hint">Ctrl/⌘+Enter 查询 · Esc 取消</span>
+        <div className="cnt" aria-busy={running}>
+          {/* 读屏播报：进度文案变化时由常驻的 aria-live 区域读出 */}
+          <span className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+            {running ? (cancelling ? '正在停止查询' : (progressText ?? '正在查询')) : ''}
+          </span>
           {running ? (
             <span className="query-progress">
               <span className="mini-spinner" />
@@ -208,7 +227,7 @@ export const DashboardLayout = ({
             className="btn btn-danger"
             onClick={onCancel}
             disabled={cancelling}
-            title="停止本次查询，保留已取到的部分结果"
+            title="取消查询（Esc）· 保留已取到的部分结果"
           >
             {cancelling ? '正在停止…' : '取消查询'}
           </button>
@@ -217,6 +236,7 @@ export const DashboardLayout = ({
             className={`btn btn-primary${dirty ? ' pulse' : ''}`}
             onClick={onQuery}
             disabled={!canQuery}
+            title="查询（Ctrl+Enter）"
           >
             查询
           </button>

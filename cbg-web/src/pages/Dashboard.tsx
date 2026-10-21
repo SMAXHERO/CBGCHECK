@@ -3,10 +3,12 @@ import type { SearchParams } from '@/api/searchSchema';
 import { SCRAPER_BASE } from '@/api/live';
 import { CompareDrawer } from '@/components/CompareDrawer';
 import { DashboardLayout } from '@/components/DashboardLayout';
+import { ModuleHeader } from '@/components/ModuleHeader';
 import { DataTable } from '@/components/DataTable';
 import { FilterPanel } from '@/components/FilterPanel';
 import { KpiCards } from '@/components/KpiCards';
 import { PrintView } from '@/components/PrintView';
+import { StatusBlock } from '@/components/StatusBlock';
 import { PlatformPieChart } from '@/components/charts/PlatformPieChart';
 import { PriceHistogramChart } from '@/components/charts/PriceHistogramChart';
 import { PriceSignScatterChart } from '@/components/charts/PriceSignScatterChart';
@@ -15,8 +17,8 @@ import { useLiveDataset } from '@/hooks/useLiveDataset';
 import { useRenderCount } from '@/hooks/useRenderCount';
 import { useSearchConfig } from '@/hooks/useSearchConfig';
 import { useAppStore } from '@/store/useAppStore';
+import { useExport } from '@/hooks/useExport';
 import { listingExportColumns } from '@/utils/columns';
-import { exportCsv, exportExcel, printArea } from '@/utils/export';
 import { buildParams } from '@/utils/params';
 import { resolveDefaults } from '@/config/defaults';
 
@@ -191,19 +193,20 @@ export const Dashboard = ({ active = true }: { active?: boolean }) => {
       }`
     : null;
 
-  const exportDisabled = live.rows.length === 0;
+  const exporter = useExport({
+    rows: live.rows,
+    columns: listingExportColumns,
+    printAreaId: 'print-area',
+    printTitle: '藏宝阁筛选结果',
+  });
+  const exportDisabled = exporter.disabled;
 
   /* ------------------------- 服务不可用：只给指引，不显示旧数据 ------------------------- */
 
   if (live.status === 'offline') {
     return (
       <div className="app-shell">
-        <header className="app-header">
-          <div className="head-in">
-            <h1>藏宝阁数据面板</h1>
-            <span className="pill-tag">实时模式</span>
-          </div>
-        </header>
+        <ModuleHeader minimal title="藏宝阁数据面板" badge="实时模式" />
         <div className="layout" style={{ gridTemplateColumns: '1fr' }}>
           <div className="guide">
             <div className="guide-icon">🔌</div>
@@ -250,12 +253,7 @@ export const Dashboard = ({ active = true }: { active?: boolean }) => {
   if (live.status === 'need-browser') {
     return (
       <div className="app-shell">
-        <header className="app-header">
-          <div className="head-in">
-            <h1>藏宝阁数据面板</h1>
-            <span className="pill-tag">实时模式</span>
-          </div>
-        </header>
+        <ModuleHeader minimal title="藏宝阁数据面板" badge="实时模式" />
         <div className="layout" style={{ gridTemplateColumns: '1fr' }}>
           <div className="guide">
             <div className="guide-icon">🖥️</div>
@@ -298,12 +296,7 @@ export const Dashboard = ({ active = true }: { active?: boolean }) => {
     const isCaptcha = live.status === 'need-captcha';
     return (
       <div className="app-shell">
-        <header className="app-header">
-          <div className="head-in">
-            <h1>藏宝阁数据面板</h1>
-            <span className="pill-tag">实时模式</span>
-          </div>
-        </header>
+        <ModuleHeader minimal title="藏宝阁数据面板" badge="实时模式" />
         <div className="layout" style={{ gridTemplateColumns: '1fr' }}>
           <div className="guide">
             <div className="guide-icon">{isCaptcha ? '🧩' : '🔐'}</div>
@@ -378,9 +371,9 @@ export const Dashboard = ({ active = true }: { active?: boolean }) => {
             return next;
           })
         }
-        onExportExcel={() => exportExcel(live.rows, listingExportColumns)}
-        onExportCsv={() => exportCsv(live.rows, listingExportColumns)}
-        onPrint={() => printArea('print-area', '藏宝阁筛选结果')}
+        onExportExcel={exporter.exportExcel}
+        onExportCsv={exporter.exportCsv}
+        onPrint={exporter.print}
         onRestoreDefaults={restoreDefaults}
         exportDisabled={exportDisabled}
         sidebar={
@@ -394,10 +387,7 @@ export const Dashboard = ({ active = true }: { active?: boolean }) => {
               query={query}
             />
           ) : (
-            <div className="state-box">
-              <div className="spinner" />
-              正在加载筛选条件…
-            </div>
+            <StatusBlock loading>正在加载筛选条件…</StatusBlock>
           )
         }
       >
@@ -465,20 +455,15 @@ export const Dashboard = ({ active = true }: { active?: boolean }) => {
           )}
 
         {!live.hasQueried && !live.running && (
-          <div className="state-box">
-            <div className="big">还没有查询结果</div>
-            <div>在左侧选好条件，点右下角「查询」即可从藏宝阁实时获取。</div>
-          </div>
+          <StatusBlock title="还没有查询结果">
+            在左侧选好条件，点右下角「查询」即可从藏宝阁实时获取。
+          </StatusBlock>
         )}
 
         {live.running && (
-          <div className="state-box">
-            <div className="spinner" />
+          <StatusBlock loading hint="页间有 1.6 秒节流，是为了不触发站点风控，请耐心等">
             {progressText ?? '正在查询…'}
-            <div style={{ fontSize: 11, color: 'var(--faint)', marginTop: 6 }}>
-              页间有 1.6 秒节流，是为了不触发站点风控，请耐心等
-            </div>
-          </div>
+          </StatusBlock>
         )}
 
         {live.hasQueried && !live.running && (
@@ -531,7 +516,7 @@ export const Dashboard = ({ active = true }: { active?: boolean }) => {
                   命中 {live.rows.length} 条 ｜ 点击行加入对比清单 ｜ 点标题跳藏宝阁
                 </span>
                 <div className="right">
-                  <button className="link-btn" onClick={() => setCompact((v) => !v)}>
+                  <button className="link-btn" aria-pressed={compact} onClick={() => setCompact((v) => !v)}>
                     {compact ? '显示全部列' : '精简列（便于打印）'}
                   </button>
                 </div>

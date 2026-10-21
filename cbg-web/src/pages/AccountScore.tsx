@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { App, Spin } from 'antd';
+import { App } from 'antd';
 import { useLocation } from 'react-router-dom';
-import { ModuleTabs } from '@/components/ModuleTabs';
-import { useTheme } from '@/hooks/useTheme';
+import { ModuleHeader } from '@/components/ModuleHeader';
+import { StatusBlock } from '@/components/StatusBlock';
 import {
   accountApi,
   parseInput,
@@ -348,7 +348,6 @@ const SpeedStatsCard = ({ stats }: { stats: SpeedStats }) => {
 };
 
 export const AccountScore = () => {
-  const { theme, toggle } = useTheme();
   const { message } = App.useApp();
   const location = useLocation();
 
@@ -589,24 +588,12 @@ export const AccountScore = () => {
 
   return (
     <div className="app-shell">
-      <header className="app-header">
-        <div className="head-in">
-          <h1>藏宝阁数据面板</h1>
-          <span className="pill-tag">阴阳师 · 角色</span>
-          <ModuleTabs />
-          <span className="head-meta">
-            数据源 {SCRAPER_BASE.replace('http://', '')}（本机伴随服务代理，无需登录藏宝阁）
-          </span>
-          <button
-            className="icon-btn"
-            onClick={toggle}
-            title={theme === 'dark' ? '切换到浅色主题' : '切换到深色主题'}
-            aria-label="切换主题"
-          >
-            {theme === 'dark' ? '☀' : '🌙'}
-          </button>
-        </div>
-      </header>
+      <ModuleHeader
+        title="藏宝阁数据面板"
+        badge="阴阳师 · 角色"
+        themeVariant="text"
+        meta={`数据源 ${SCRAPER_BASE.replace('http://', '')}（本机伴随服务代理，无需登录藏宝阁）`}
+      />
 
       <div className="score-body">
         <section className="score-card">
@@ -682,13 +669,13 @@ export const AccountScore = () => {
         </section>
 
         {loading && (
-          <div className="score-loading">
-            <Spin /> <span>正在读取详情并逐个方案算分（方案多的会慢一些，约 10~20 秒）…</span>
-          </div>
+          <StatusBlock variant="inline" loading>
+            正在读取详情并逐个方案算分（方案多的会慢一些，约 10~20 秒）…
+          </StatusBlock>
         )}
 
         {errorInfo && !loading && (
-          <div className="score-need score-error">
+          <div className="score-need score-error" role="alert">
             <b>分析失败：</b>
             {errorInfo.text}
             {errorInfo.code && <code className="score-error-code">{errorInfo.code}</code>}
@@ -913,13 +900,14 @@ export const AccountScore = () => {
                 每种御魂在 6 个位置的最快速
                 <span className="score-badge">{speedRows.length} 种</span>
               </h2>
-              <div className="seg">
+              <div className="seg" role="group" aria-label="速度口径">
                 {SPEED_MODES.map((m) => (
                   <button
                     key={m.key}
                     className={`seg-btn${speedMode === m.key ? ' on' : ''}`}
                     onClick={() => setSpeedMode(m.key)}
                     title={m.hint}
+                    aria-pressed={speedMode === m.key}
                   >
                     {m.label}
                   </button>
