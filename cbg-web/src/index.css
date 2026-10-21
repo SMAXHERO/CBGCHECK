@@ -520,14 +520,25 @@ body {
   .app-footer {
     padding: 9px 10px;
     gap: 6px;
-    overflow-x: auto;
+    /* 窄屏不再用横向滚动兜底：滚出来的按钮等于"消失"（实测 500px 宽时
+       「查询」在 x=909，视口只有 500，用户只会看到一条统计文字）。
+       改成换行，主操作永远留在视线内。 */
+    flex-wrap: wrap;
+    overflow-x: visible;
   }
   .cnt {
     flex: 1 0 100%;
   }
-  /* 窄屏按钮不参与压缩，靠 footer 的横向滚动兜底 */
+  /* 按钮平分一行、不被压缩；放不下就整行换到下一行 */
   .app-footer .btn {
-    flex: 0 0 auto;
+    flex: 1 1 auto;
+    justify-content: center;
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+  /* 底栏变成两行，给内容留出高度，避免最后一行被压在底栏下面 */
+  .layout {
+    padding-bottom: 136px;
   }
 }
 
