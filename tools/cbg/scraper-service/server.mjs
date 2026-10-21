@@ -15,13 +15,18 @@
  *   node tools/cbg/scraper-service/server.mjs
  *   node tools/cbg/scraper-service/server.mjs --port 8791 --cdp-port 9334 --headless
  *
+ * 可选加固（不设置时保持旧行为：本机任意网页可调用，启动时打印告警）：
+ *   CBG_PANEL_TOKEN / --token             设置访问令牌（除 /api/health 外都要求 X-Panel-Token）
+ *   CBG_ALLOWED_ORIGINS / --allowed-origins  设置 CORS 来源白名单（逗号分隔）
+ * 详见 docs/security.md。
+ *
  * 首次使用需在弹出的浏览器窗口里登录一次藏宝阁；登录态保存在本目录 profile/ 下。
  */
 
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
-import { createHash } from 'node:crypto';
+import { createHash, timingSafeEqual } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { analyzeAccount, parseAccountInput, probeAccount, rescoreAccount } from './accountAnalyze.mjs';
@@ -88,6 +93,27 @@ const CONFIG = {
   inspectorPort: Number(arg('inspector-port', process.env.CBG_INSPECTOR_PORT ?? 8793)),
   inspectorPython: arg('inspector-python', process.env.CBG_INSPECTOR_PYTHON ?? process.env.CBG_PYTHON ?? (process.platform === 'win32' ? 'python' : 'python3')),
   inspectorDir: arg('inspector-dir', path.join(__dirname, '..', 'inspector-service')),
+
+  /**
+   * 可选访问令牌：设置后，除 /api/health 外的所有接口都要求
+   * X-Panel-Token 请求头（或 ?token=）与之匹配，否则 401 JSON。
+   *
+   * 默认不设 = 完全保持旧行为（本机开放）。安全优先的用户可以设置；
+   * 注意内置网页面板目前不会自动携带该头，设置前先看 docs/security.md。
+   */
+  panelToken: String(arg('token', process.env.CBG_PANEL_TOKEN ?? '')).trim(),
+
+  /**
+   * 可选 CORS 来源白名单，逗号分隔（如 https://user.github.io,http://127.0.0.1:5173）。
+   *
+   * 设置后只对这些 Origin 回显 Access-Control-Allow-Origin 并加 Vary: Origin；
+   * 不设 = 沿用 `*` 的宽松行为（启动时显式告警）。
+   * 允许写 null：file:// 页面发出的 Origin 头就是字符串 "null"。
+   */
+  allowedOrigins: String(arg('allowed-origins', process.env.CBG_ALLOWED_ORIGINS ?? ''))
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean),
 };
 
 /**
@@ -614,15 +640,107 @@ async function runSearch(values, maxPages) {
 
 /* ------------------------------ HTTP ------------------------------ */
 
+function normalizeOrigin(value) {
+  // Origin 的 scheme/host 大小写不敏感；末尾斜杠只可能是用户手误
+  return String(value || '').trim().replace(/\/+$/, '').toLowerCase();
+}
+
+/** 配置了才非空。为空 = 保持改造前的 `*` 行为。 */
+const ALLOWED_ORIGINS = new Set(CONFIG.allowedOrigins.map(normalizeOrigin));
+
+/** 默认 CORS：与改造前一致；仅在设置令牌时补上 x-panel-token，让预检能过。 */
 const CORS = {
   'access-control-allow-origin': '*',
   'access-control-allow-methods': 'GET, POST, OPTIONS',
-  'access-control-allow-headers': 'content-type',
+  'access-control-allow-headers': CONFIG.panelToken ? 'content-type, x-panel-token' : 'content-type',
   'access-control-max-age': '600',
 };
 
+/**
+ * 每个请求的 CORS 头。
+ * - 未配置白名单：原样返回 `*`（旧行为，任何来源都能读）；
+ * - 已配置：只回显白名单里的 Origin，并统一加 Vary: Origin（避免代理/CDN 缓存串源）。
+ *   不在白名单的请求仍会被处理，只是浏览器拿不到 ACAO、读不到响应。
+ */
+function corsHeadersFor(req) {
+  if (ALLOWED_ORIGINS.size === 0) return CORS;
+  const headers = {
+    'access-control-allow-methods': 'GET, POST, OPTIONS',
+    'access-control-allow-headers': CORS['access-control-allow-headers'],
+    'access-control-max-age': '600',
+    vary: 'Origin',
+  };
+  const origin = req.headers.origin;
+  if (origin && ALLOWED_ORIGINS.has(normalizeOrigin(origin))) {
+    // 回显浏览器发来的原始值（不要用配置值，保持大小写一致）
+    headers['access-control-allow-origin'] = String(origin);
+  }
+  return headers;
+}
+
+/* ------------------------ 可选访问令牌 ------------------------ */
+
+/**
+ * 恒定时间比较：两侧先各做 SHA-256，再 timingSafeEqual。
+ * 这样比较耗时与令牌内容、长度都无关（直接比字符串会泄露前缀匹配时间）。
+ */
+function tokenMatches(supplied) {
+  const a = createHash('sha256').update(String(supplied)).digest();
+  const b = createHash('sha256').update(String(CONFIG.panelToken)).digest();
+  return timingSafeEqual(a, b);
+}
+
+/**
+ * 未设置 CBG_PANEL_TOKEN 时一律放行（默认旧行为）。
+ * /api/health 永远放行——面板靠它判断服务在不在，令牌不该把探活也挡住。
+ */
+function isAuthorized(req, url) {
+  if (!CONFIG.panelToken) return true;
+  const header = req.headers['x-panel-token'];
+  const fromHeader = Array.isArray(header) ? header[0] : header;
+  const supplied =
+    typeof fromHeader === 'string' && fromHeader.length > 0
+      ? fromHeader
+      : url.searchParams.get('token') || '';
+  return supplied.length > 0 && tokenMatches(supplied);
+}
+
+/* --------------------- URL 白名单（防 SSRF） --------------------- */
+
+/**
+ * 用户粘贴的地址只允许指向藏宝阁（https + *.163.com）。
+ *
+ * 说明：现有实现并不会把 url 原样拿去做网络请求——/api/account/analyze 只从中
+ * 正则提取 eid/ordersn，/api/inspector/* 由 Python 内核解析（内核自带同一主机白名单）。
+ * 这里在 Node 入口再校验一次：成本极低，而且以后若有人改成「按 url 直连」，
+ * 不会顺势多出一个 SSRF 面。
+ *
+ * 返回 null 表示通过；返回字符串表示拒绝原因。
+ * 没有 scheme 的（相对路径 / 裸 eid）不按 URL 处理，保持旧行为。
+ */
+function validateCbgUrl(raw) {
+  const s = String(raw || '').trim();
+  if (!s) return null;
+  if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(s)) return null;
+  let parsed;
+  try {
+    parsed = new URL(s);
+  } catch {
+    return '地址格式不正确，请粘贴藏宝阁页面链接';
+  }
+  if (parsed.protocol !== 'https:') {
+    return '仅支持 https 链接（http 链接请改成 https）';
+  }
+  const host = parsed.hostname.toLowerCase();
+  if (!host.endsWith('.163.com')) {
+    return '仅支持藏宝阁域名（*.163.com）的链接';
+  }
+  return null;
+}
+
 function json(res, code, payload) {
-  res.writeHead(code, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', ...CORS });
+  // CORS 头在请求入口统一 setHeader（见 createServer），这里不重复设置
+  res.writeHead(code, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
   res.end(JSON.stringify(payload));
 }
 
@@ -753,7 +871,6 @@ async function proxySoul(req, res, url) {
     res.writeHead(r.status, {
       'content-type': r.headers.get('content-type') || 'application/json; charset=utf-8',
       'cache-control': 'no-store',
-      ...CORS,
     });
     res.end(buf);
   } catch (err) {
@@ -862,6 +979,32 @@ async function proxyInspector(req, res, url) {
       json(res, 413, { ok: false, error: 'BODY_TOO_LARGE', message: err.message });
       return;
     }
+
+    /**
+     * /api/inspector/pve 与 /api/inspector/calc 的 url 在 POST body 里。
+     * Python 内核本来就校验主机，这里在 Node 层再拦一次（以后内核若少校验也不会变成 SSRF）。
+     * 只在 1MB 内、且确实是 JSON 时解析，避免给大 body 增加无谓开销。
+     */
+    if (
+      req.method === 'POST' &&
+      (url.pathname === '/api/inspector/pve' || url.pathname === '/api/inspector/calc') &&
+      /^application\/json/i.test(String(ct || '')) &&
+      body.length <= MAX_JSON_BODY_BYTES
+    ) {
+      let payload = null;
+      try {
+        payload = JSON.parse(body.toString('utf8'));
+      } catch {}
+      const rawUrl =
+        payload && typeof payload === 'object' ? payload.url || payload.cbgUrl || payload.cbg_url : '';
+      if (rawUrl) {
+        const bad = validateCbgUrl(rawUrl);
+        if (bad) {
+          json(res, 400, { ok: false, error: 'BAD_URL', message: bad });
+          return;
+        }
+      }
+    }
   }
 
   try {
@@ -870,7 +1013,6 @@ async function proxyInspector(req, res, url) {
     res.writeHead(r.status, {
       'content-type': r.headers.get('content-type') || 'application/json; charset=utf-8',
       'cache-control': 'no-store',
-      ...CORS,
     });
     res.end(buf);
   } catch (err) {
@@ -898,30 +1040,91 @@ function logOrigin(req, p) {
   log(`← ${req.method} ${p}  origin=${origin}  ua=${ua}`);
 }
 
+/** JSON 接口请求体上限：1 MB（与旧实现阈值一致，但超限改为明确回 413 而不是断连接）。 */
+const MAX_JSON_BODY_BYTES = 1024 * 1024;
+
+/**
+ * 读取 JSON 请求体。
+ * - 超限：reject 一个带 code 的错误，由 readJsonBody() 统一回 413；
+ * - 非法 JSON：保持旧行为（按空对象处理），不改变各接口的容错语义。
+ */
 function readBody(req) {
-  return new Promise((resolve) => {
-    let data = '';
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    let size = 0;
     req.on('data', (c) => {
-      data += c;
-      if (data.length > 1e6) req.destroy();
+      size += c.length;
+      if (size > MAX_JSON_BODY_BYTES) {
+        const err = new Error('请求体过大');
+        err.code = 'BODY_TOO_LARGE';
+        // 不立即 destroy：先把 413 写回客户端，再由 readJsonBody() 在响应结束后断开
+        req.removeAllListeners('data');
+        req.pause();
+        reject(err);
+        return;
+      }
+      chunks.push(c);
     });
     req.on('end', () => {
+      const data = Buffer.concat(chunks).toString('utf8');
       try {
         resolve(data ? JSON.parse(data) : {});
       } catch {
         resolve({});
       }
     });
+    req.on('error', reject);
   });
+}
+
+/** readBody 的包装：失败时直接把 413/400 写给客户端，并返回 null 让调用方提前结束。 */
+async function readJsonBody(req, res) {
+  try {
+    return await readBody(req);
+  } catch (err) {
+    if (err.code === 'BODY_TOO_LARGE') {
+      // 请求体没读完，keep-alive 复用会串包：显式 close，并在响应发完后断开
+      res.setHeader('connection', 'close');
+      res.once('finish', () => req.destroy());
+      json(res, 413, {
+        ok: false,
+        error: 'BODY_TOO_LARGE',
+        message: `请求体过大，JSON 接口上限 ${MAX_JSON_BODY_BYTES / 1024 / 1024} MB`,
+      });
+    } else {
+      json(res, 400, { ok: false, error: 'BAD_BODY', message: err.message });
+    }
+    return null;
+  }
 }
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://127.0.0.1');
   const p = url.pathname;
 
+  /**
+   * CORS 在入口统一设置一次：json() 与两个代理都直接 writeHead，
+   * 不再各自拼 CORS 常量，避免白名单模式下某条路径漏改而回显 `*`。
+   * 未配置白名单时 corsHeadersFor() 返回的仍是改造前那份常量（行为不变）。
+   */
+  for (const [name, value] of Object.entries(corsHeadersFor(req))) {
+    res.setHeader(name, value);
+  }
+
+  // 预检请求不携带自定义头，不能要求令牌；来源不在白名单时不会回 ACAO，浏览器照样拦。
   if (req.method === 'OPTIONS') {
-    res.writeHead(204, CORS);
+    res.writeHead(204);
     res.end();
+    return;
+  }
+
+  // 可选访问令牌：/api/health 永远放行（面板靠它探活），其余接口一律校验。
+  if (p !== '/api/health' && !isAuthorized(req, url)) {
+    json(res, 401, {
+      ok: false,
+      error: 'UNAUTHORIZED',
+      message: '需要访问令牌：请在请求头带 X-Panel-Token，或在 query 里带 token 参数',
+    });
     return;
   }
 
@@ -946,6 +1149,16 @@ const server = http.createServer(async (req, res) => {
    *   GET  /api/inspector/job?id=…          → { job }
    */
   if (p.startsWith('/api/inspector/')) {
+    // GET 类接口（report/speed/relics）的 url 在 query 里；POST /pve 的在 body 里，
+    // 由 proxyInspector() 读取 body 后校验。两处都只放行 https + *.163.com。
+    const rawUrl = url.searchParams.get('url');
+    if (rawUrl) {
+      const badUrl = validateCbgUrl(rawUrl);
+      if (badUrl) {
+        json(res, 400, { ok: false, error: 'BAD_URL', message: badUrl });
+        return;
+      }
+    }
     await proxyInspector(req, res, url);
     return;
   }
@@ -1022,7 +1235,8 @@ const server = http.createServer(async (req, res) => {
   if (p === '/api/account/rescore') {
     let args;
     if (req.method === 'POST') {
-      const body = await readBody(req);
+      const body = await readJsonBody(req, res);
+      if (!body) return;
       args = {
         eid: body.eid,
         serverid: body.serverid,
@@ -1114,7 +1328,8 @@ const server = http.createServer(async (req, res) => {
   if (p === '/api/account/analyze') {
     let args;
     if (req.method === 'POST') {
-      const body = await readBody(req);
+      const body = await readJsonBody(req, res);
+      if (!body) return;
       args = {
         url: body.url,
         eid: body.eid,
@@ -1137,6 +1352,12 @@ const server = http.createServer(async (req, res) => {
     try {
       // 允许用户只粘一个地址，服务端自己拆 eid / serverid
       if (args.url) {
+        // 防 SSRF：完整 URL 只允许 https + 藏宝阁域名；相对路径 / 裸 eid 不受影响
+        const badUrl = validateCbgUrl(args.url);
+        if (badUrl) {
+          json(res, 400, { ok: false, error: 'BAD_URL', message: badUrl });
+          return;
+        }
         const parsed = parseAccountInput(args.url);
         if (parsed.needsEid) {
           json(res, 400, {
@@ -1282,7 +1503,8 @@ const server = http.createServer(async (req, res) => {
       }
     }
 
-    const body = await readBody(req);
+    const body = await readJsonBody(req, res);
+    if (!body) return;
     const values = body.values && typeof body.values === 'object' ? body.values : {};
     const jobId = `job_${Date.now()}`;
     state.job = { id: jobId, running: true, pages: 0, count: 0, total: null, error: null, startedAt: Date.now(), origin: req.headers.origin || null };
@@ -1401,6 +1623,17 @@ server.listen(CONFIG.port, '127.0.0.1', () => {
   console.log(`    浏览器调试端口 ${CONFIG.cdpPort}`);
   console.log(`    御魂报告内核端口 ${CONFIG.soulPort}（/api/soul/*）`);
   console.log(`    看号分析内核端口 ${CONFIG.inspectorPort}（/api/inspector/*）`);
+  // 安全状态必须一眼可见：默认宽松是为了不破坏旧用法，但不能让用户以为已经加固过
+  if (CONFIG.panelToken) {
+    console.log('    访问令牌   已启用（请求头 X-Panel-Token 或 query token；/api/health 除外）');
+  } else {
+    console.log('    [!] 未设置 CBG_PANEL_TOKEN：本机任意网页都可调用该服务（默认行为，未加口令）');
+  }
+  if (CONFIG.allowedOrigins.length) {
+    console.log(`    CORS 白名单 ${CONFIG.allowedOrigins.join(', ')}`);
+  } else {
+    console.log('    [!] 未设置 CBG_ALLOWED_ORIGINS：CORS 允许任意来源（Access-Control-Allow-Origin: *）');
+  }
   console.log('');
   console.log('  首次使用：在弹出的浏览器窗口里登录藏宝阁（只需一次）。');
   console.log('  停止服务：Ctrl+C');

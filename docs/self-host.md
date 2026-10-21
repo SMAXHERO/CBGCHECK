@@ -137,6 +137,53 @@ npm run dev
 - 不用的时候把伴随服务关掉（`Ctrl+C`），这样即使授权还在也无处可查
 - 想撤销授权：地址栏左侧的站点设置里可以改
 
+### 可选：启用访问令牌与来源白名单
+
+默认零配置：任何来源的页面都能调用服务。想收紧时用环境变量开启，**不需要改代码**，
+不设置就与旧版完全一致（启动日志会打印 `[!]` 提醒）。
+
+Windows cmd（只对当前窗口生效）：
+
+```bat
+set CBG_PANEL_TOKEN=换成你的随机口令
+set CBG_ALLOWED_ORIGINS=https://smaxhero.github.io,http://127.0.0.1:5173
+node tools\cbg\scraper-service\server.mjs
+```
+
+PowerShell：
+
+```powershell
+$env:CBG_PANEL_TOKEN = "换成你的随机口令"
+$env:CBG_ALLOWED_ORIGINS = "https://smaxhero.github.io,http://127.0.0.1:5173"
+node tools\cbg\scraper-service\server.mjs
+```
+
+也可以用 CLI：`--token <口令>`、`--allowed-origins <逗号分隔列表>`。
+想长期生效（双击 `start.bat` 也能读到）用 `setx`，然后重开终端：
+
+```bat
+setx CBG_PANEL_TOKEN "换成你的随机口令"
+setx CBG_ALLOWED_ORIGINS "https://smaxhero.github.io,http://127.0.0.1:5173"
+```
+
+开启后可以这样验证（`/api/health` 永远免令牌，用来探活）：
+
+```bash
+curl http://127.0.0.1:8791/api/health
+# 不带令牌：401 {"ok":false,"error":"UNAUTHORIZED",...}
+curl http://127.0.0.1:8791/api/result
+# 带令牌：200
+curl -H "X-Panel-Token: 你的口令" http://127.0.0.1:8791/api/result
+```
+
+两点注意：
+
+- **内置网页面板没有令牌输入框**：开启令牌后，面板的请求会收到 401。纯浏览器使用建议只配置
+  `CBG_ALLOWED_ORIGINS`；令牌更适合脚本 / 自建代理 / 后续接入的客户端。
+- 白名单里写 `null` 可以放行 `file://` 页面；不配置白名单时仍沿用 `*` 的宽松行为。
+
+细节与 SSRF、请求体上限等改动见 [security.md](security.md)。
+
 ---
 
 ## 四、想改代码 / 提 PR
