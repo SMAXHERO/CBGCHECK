@@ -1,0 +1,8 @@
+{
+  "planVersion": "v2",
+  "frozenAt": "2026-10-21T21:20:00+08:00",
+  "planSha256": "497595444181887df7478ab7d8d9aaa6f64eb060f1afaf8f1515b835229e0447",
+  "acceptanceSha256": "d3c8754f3773bd11bc64bbba5420b92bddf1513876b4b330b618f3d1ee12e925",
+  "supersedes": {"planVersion":"v1","planSha256":"fae6355b5f70e246f282a99e1c23150d57a09d12e5fef41af4984b66d1cca624","acceptanceSha256":"fcac2edad119c724fa2e60ff8d7d4c290a8f3ed83b133311b4104ba504e882cc"},
+  "reason": "C6 spec defect: see plan.md §11 and evidence/C8-review.md"
+}

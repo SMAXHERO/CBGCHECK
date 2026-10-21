@@ -1,0 +1,11 @@
+ M cbg-web/src/api/account.ts
+ M cbg-web/src/api/inspector.ts
+ M cbg-web/src/api/live.ts
+ M cbg-web/src/api/soul.ts
+ M cbg-web/src/components/DashboardLayout.tsx
+ M cbg-web/src/components/ErrorBoundary.tsx
+ M cbg-web/src/components/FilterPanel.tsx
+ M cbg-web/src/components/ModuleTabs.tsx
+ M cbg-web/src/index.css
+?? cbg-web/src/api/client.ts
+?? cbg-web/src/components/StatusBlock.tsx

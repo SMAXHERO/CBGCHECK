@@ -1,0 +1,4 @@
+minimal ModuleHeader calls in Dashboard = 3 (expect 3)
+forbidden tokens inside minimal branch = none
+hand-written app-header in Dashboard = 0 (expect 0)
+MINIMAL_GUARD_OK

@@ -1,0 +1,12 @@
+== className 集合差异（原有但新缺失，应为空）==
+ ''}`}
+== className 集合差异（新增，应为空）==
+className={`insp-tab${tab === item.key ? ' on' : ''}`}
+className={`soul-tag${report.cached ? ' gold' : ''}`}
+== 原文件 className 条数 / 新文件 className 条数 ==
+42
+43
+== 中文文案：原有但新缺失（应为空）==
+grep: character value in \x{} or \o{} is too large
+grep: character value in \x{} or \o{} is too large
+== 中文文案：新增（应为空）==

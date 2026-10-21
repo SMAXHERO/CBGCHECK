@@ -1,0 +1,28 @@
+
+ RUN  v5.0.5 D:/deepseek_work/github-work/cbg-web
+      Coverage enabled with v8
+
+ ✓ src/utils/__tests__/sort.test.ts (8 tests) 11ms
+ ✓ src/utils/__tests__/predicate.test.ts (36 tests) 11ms
+ ✓ src/utils/__tests__/params.test.ts (41 tests) 11ms
+ ✓ src/utils/__tests__/format.test.ts (29 tests) 8ms
+ ✓ src/utils/__tests__/columns.test.ts (20 tests) 10ms
+ ✓ src/utils/__tests__/analytics.test.ts (34 tests) 11ms
+
+ Test Files  6 passed (6)
+      Tests  168 passed (168)
+   Start at  21:32:12
+   Duration  204ms (import 33%, worker 32%, tests 24%, transform 10%)
+
+ % Coverage report from v8
+--------------|---------|----------|---------|---------|------------------------
+File          | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s      
+--------------|---------|----------|---------|---------|------------------------
+All files     |     100 |    95.73 |     100 |     100 |                        
+ analytics.ts |     100 |    91.78 |     100 |     100 | 53,58,66,150,182-183   
+ columns.ts   |     100 |      100 |     100 |     100 |                        
+ format.ts    |     100 |      100 |     100 |     100 |                        
+ params.ts    |     100 |     94.4 |     100 |     100 | ...159,207,214-215,219 
+ predicate.ts |     100 |    98.57 |     100 |     100 | 30                     
+ sort.ts      |     100 |      100 |     100 |     100 |                        
+--------------|---------|----------|---------|---------|------------------------

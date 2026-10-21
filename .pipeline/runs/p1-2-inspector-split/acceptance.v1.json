@@ -1,0 +1,208 @@
+{
+  "version": "1.0",
+  "planVersion": "v1",
+  "frozenAt": "2026-10-21T21:10:00+08:00",
+  "artifacts": [
+    { "id": "A1", "path": "cbg-web/src/pages/InspectorReport.tsx", "type": "code", "profile": "code" },
+    { "id": "A2", "path": "cbg-web/src/pages/inspector/constants.ts", "type": "code", "profile": "code" },
+    { "id": "A3", "path": "cbg-web/src/pages/inspector/helpers.tsx", "type": "code", "profile": "code" },
+    { "id": "A4", "path": "cbg-web/src/pages/inspector/OverviewTab.tsx", "type": "code", "profile": "code" },
+    { "id": "A5", "path": "cbg-web/src/pages/inspector/SpeedTab.tsx", "type": "code", "profile": "code" },
+    { "id": "A6", "path": "cbg-web/src/pages/inspector/PveTab.tsx", "type": "code", "profile": "code" },
+    { "id": "A7", "path": "cbg-web/src/pages/inspector/HeroTab.tsx", "type": "code", "profile": "code" },
+    { "id": "A8", "path": "cbg-web/src/pages/inspector/RelicsTab.tsx", "type": "code", "profile": "code" },
+    { "id": "A9", "path": "cbg-web/src/pages/inspector/CalcTab.tsx", "type": "code", "profile": "code" },
+    { "id": "A10", "path": ".pipeline/evidence/refactor-map.md", "type": "doc", "profile": "doc" },
+    { "id": "A11", "path": ".pipeline/evidence/InspectorReport.orig.tsx", "type": "code", "profile": "code" }
+  ],
+  "requirements": [
+    {
+      "id": "R1",
+      "desc": "纯搬家：6 个 Tab 的 JSX 整段迁出到独立视图组件，原文件行号区间与新位置在 refactor-map 中一一对应，JSX 文本保真",
+      "artifacts": ["A1", "A4", "A5", "A6", "A7", "A8", "A9", "A10", "A11"],
+      "checks": ["C1", "C2", "C3"]
+    },
+    {
+      "id": "R2",
+      "desc": "类型检查通过：tsc -b 退出 0",
+      "artifacts": ["A1", "A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9"],
+      "checks": ["C4"]
+    },
+    {
+      "id": "R3",
+      "desc": "构建通过：vite build 退出 0",
+      "artifacts": ["A1", "A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9"],
+      "checks": ["C5"]
+    },
+    {
+      "id": "R4",
+      "desc": "行数约束：页面主文件与每个新文件 ≤ 250 行",
+      "artifacts": ["A1", "A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9"],
+      "checks": ["C6"]
+    },
+    {
+      "id": "R5",
+      "desc": "禁止路径未被触碰：src/api、src/index.css、src/store、src/utils、src/components、src/App.tsx 无本次改动",
+      "artifacts": ["A1"],
+      "checks": ["C7"]
+    },
+    {
+      "id": "R6",
+      "desc": "无新增依赖：package.json 与 lock 文件 sha256 与开工前基线一致",
+      "artifacts": ["A1"],
+      "checks": ["C8"]
+    },
+    {
+      "id": "R7",
+      "desc": "导出与调用方式不变：InspectorReport 具名导出保留，App.tsx 引用未变",
+      "artifacts": ["A1"],
+      "checks": ["C9"]
+    },
+    {
+      "id": "R8",
+      "desc": "无循环依赖：子组件与 helpers/constants 不反向 import 页面壳",
+      "artifacts": ["A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9"],
+      "checks": ["C10"]
+    },
+    {
+      "id": "R9",
+      "desc": "拆分映射证据存在且覆盖 6 个 Tab",
+      "artifacts": ["A10", "A11"],
+      "checks": ["C2", "C11"]
+    },
+    {
+      "id": "R10",
+      "desc": "不改 class 名与文案：拆分后 className / 中文文案集合与原文件一致",
+      "artifacts": ["A1", "A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9"],
+      "checks": ["C12"]
+    }
+  ],
+  "checks": [
+    {
+      "id": "C1",
+      "level": "L1",
+      "desc": "原文件副本存在且行数为 1015（证据基线）",
+      "command": "wc -l .pipeline/evidence/InspectorReport.orig.tsx",
+      "cwd": "D:\\deepseek_work\\github-work",
+      "timeoutSec": 30,
+      "expect": { "exitCode": 0, "stdoutContains": "1015" },
+      "evidence": ".pipeline/evidence/InspectorReport.orig.tsx"
+    },
+    {
+      "id": "C2",
+      "level": "L1",
+      "desc": "refactor-map.md 存在且列出全部 6 个 Tab 块（overview/speed/pve/hero/relics/calc）",
+      "command": "grep -c -E \"overview|speed|pve|hero|relics|calc\" .pipeline/evidence/refactor-map.md",
+      "cwd": "D:\\deepseek_work\\github-work",
+      "timeoutSec": 30,
+      "expect": { "exitCode": 0, "artifactExists": ".pipeline/evidence/refactor-map.md" },
+      "evidence": ".pipeline/evidence/refactor-map.md"
+    },
+    {
+      "id": "C3",
+      "level": "L2",
+      "desc": "JSX 文本保真：每个 Tab 原文件区间去缩进后的文本，在对应新组件中逐行存在（允许仅 props 名替换）",
+      "command": "python -c \"import sys;print('jsx-fidelity: see evidence')\"",
+      "cwd": "D:\\deepseek_work\\github-work",
+      "timeoutSec": 120,
+      "expect": { "exitCode": 0, "artifactExists": ".pipeline/evidence/jsx-fidelity.txt", "rubric": { "criteria": "每个 Tab 的 JSX 行在新组件中保留；差异仅为 state/handler 改为 props 访问" } },
+      "evidence": ".pipeline/evidence/jsx-fidelity.txt"
+    },
+    {
+      "id": "C4",
+      "level": "L1",
+      "desc": "TypeScript 类型检查通过",
+      "command": "npx tsc -b",
+      "cwd": "D:\\deepseek_work\\github-work\\cbg-web",
+      "timeoutSec": 300,
+      "expect": { "exitCode": 0 },
+      "evidence": ".pipeline/evidence/L1-tsc.log"
+    },
+    {
+      "id": "C5",
+      "level": "L1",
+      "desc": "Vite 生产构建通过",
+      "command": "npx vite build",
+      "cwd": "D:\\deepseek_work\\github-work\\cbg-web",
+      "timeoutSec": 600,
+      "expect": { "exitCode": 0 },
+      "evidence": ".pipeline/evidence/L1-vite-build.log"
+    },
+    {
+      "id": "C6",
+      "level": "L2",
+      "desc": "页面主文件与 inspector/ 下每个新文件行数 ≤ 250",
+      "command": "wc -l cbg-web/src/pages/InspectorReport.tsx cbg-web/src/pages/inspector/*.ts cbg-web/src/pages/inspector/*.tsx",
+      "cwd": "D:\\deepseek_work\\github-work",
+      "timeoutSec": 30,
+      "expect": { "exitCode": 0, "rubric": { "criteria": "输出中每一个非 total 行的行数 ≤ 250" } },
+      "evidence": ".pipeline/evidence/L2-linecount.txt"
+    },
+    {
+      "id": "C7",
+      "level": "L2",
+      "desc": "禁止路径无改动：git status 中不出现 src/api、src/index.css、src/store、src/utils、src/components、src/App.tsx 的本次新增修改（以开工前基线对比）",
+      "command": "git status --short -- cbg-web/src/api cbg-web/src/index.css cbg-web/src/store cbg-web/src/utils cbg-web/src/components cbg-web/src/App.tsx",
+      "cwd": "D:\\deepseek_work\\github-work",
+      "timeoutSec": 60,
+      "expect": { "exitCode": 0, "rubric": { "criteria": "输出与 .pipeline/evidence/forbidden-baseline.txt 完全一致（开工前快照）" } },
+      "evidence": ".pipeline/evidence/git-status-after.txt"
+    },
+    {
+      "id": "C8",
+      "level": "L2",
+      "desc": "无新增依赖：package.json 与 lock 文件 sha256 与基线一致",
+      "command": "sha256sum cbg-web/package.json cbg-web/package-lock.json",
+      "cwd": "D:\\deepseek_work\\github-work",
+      "timeoutSec": 60,
+      "expect": { "exitCode": 0, "rubric": { "criteria": "与 .pipeline/evidence/pkg-baseline.sha256 一致" } },
+      "evidence": ".pipeline/evidence/pkg-after.sha256"
+    },
+    {
+      "id": "C9",
+      "level": "L2",
+      "desc": "导出与调用不变：InspectorReport.tsx 含 export const InspectorReport；App.tsx 未改动且仍引用该符号",
+      "command": "grep -n \"export const InspectorReport\" cbg-web/src/pages/InspectorReport.tsx",
+      "cwd": "D:\\deepseek_work\\github-work",
+      "timeoutSec": 30,
+      "expect": { "exitCode": 0, "stdoutContains": "export const InspectorReport" },
+      "evidence": ".pipeline/evidence/L2-export.txt"
+    },
+    {
+      "id": "C10",
+      "level": "L2",
+      "desc": "无循环依赖：inspector/ 下任何文件均不 import 页面壳 InspectorReport",
+      "command": "grep -rn \"pages/InspectorReport\\|from '\\.\\./InspectorReport'\\|from '\\./InspectorReport'\" cbg-web/src/pages/inspector/",
+      "cwd": "D:\\deepseek_work\\github-work",
+      "timeoutSec": 30,
+      "expect": { "exitCode": 1, "rubric": { "criteria": "grep 无匹配（退出码 1 表示无匹配即通过）" } },
+      "evidence": ".pipeline/evidence/L2-cycle.txt"
+    },
+    {
+      "id": "C11",
+      "level": "L3",
+      "desc": "拆分映射审计：A 抽检 refactor-map 中至少 3 个行号区间与原文件 orig 副本一致，覆盖 6 个 Tab 且无遗漏行段",
+      "command": null,
+      "cwd": "D:\\deepseek_work\\github-work",
+      "timeoutSec": 600,
+      "expect": { "rubric": { "criteria": "行号区间与 orig 副本吻合；6 个 Tab 块全部列出；hook/handler 留存位置已标注", "passLine": "平均分 ≥ 4 且任一维 ≥ 3" } },
+      "evidence": ".pipeline/evidence/refactor-map.md"
+    },
+    {
+      "id": "C12",
+      "level": "L3",
+      "desc": "黑盒 diff 审查：拆分后 className 与中文文案集合与原文件一致；无新增视觉/交互改动",
+      "command": null,
+      "cwd": "D:\\deepseek_work\\github-work",
+      "timeoutSec": 600,
+      "expect": { "rubric": { "criteria": "抽取原/新文件中的 className 字符串与中文文案，比对集合相等；差异必须可由搬家解释", "passLine": "平均分 ≥ 4 且任一维 ≥ 3" } },
+      "evidence": ".pipeline/evidence/jsx-fidelity.txt"
+    }
+  ],
+  "passCriteria": {
+    "L1": "all",
+    "L2": "all",
+    "L3": "all",
+    "maxFixRounds": 2
+  }
+}

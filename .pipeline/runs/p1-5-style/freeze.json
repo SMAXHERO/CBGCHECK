@@ -1,0 +1,46 @@
+{
+  "version": "1.0",
+  "planVersion": "v1",
+  "frozenAt": "2026-10-21T22:10:00+08:00",
+  "author": "模型 A (lead)",
+  "executor": "模型 B",
+  "structure": "flat",
+  "note": "扁平结构：executor 按 plan.md 第 3 节产物清单与 acceptance.json 的 artifacts/checks 验证，无嵌套 schema。",
+  "allowedPaths": [
+    "cbg-web/src/index.css",
+    "cbg-web/src/components/StatusBlock.tsx",
+    "cbg-web/src/components/FilterPanel.tsx",
+    "cbg-web/src/pages/AccountScore.tsx",
+    "cbg-web/src/pages/SoulReport.tsx",
+    "cbg-web/src/pages/Dashboard.tsx",
+    "cbg-web/src/components/charts/theme.ts",
+    "cbg-web/src/components/charts/EChart.tsx",
+    "cbg-web/src/utils/__tests__/contrast.test.ts",
+    ".pipeline/runs/p1-5-style/"
+  ],
+  "forbiddenPaths": [
+    "cbg-web/src/api",
+    "cbg-web/src/store",
+    "cbg-web/vite.config.mjs",
+    "cbg-web/vitest.config.ts",
+    "cbg-web/package.json",
+    "cbg-web/package-lock.json",
+    ".pipeline/templates"
+  ],
+  "forbiddenActions": [
+    "npm install",
+    "git commit",
+    "git push",
+    "adding new dependencies"
+  ],
+  "frozenDeliverables": [
+    "plan.md",
+    "acceptance.json",
+    "freeze.json",
+    "evidence/assumptions.md",
+    "evidence/contrast-before-after.md",
+    "evidence/state-unify-map.md",
+    "evidence/reduced-motion-audit.md"
+  ],
+  "baselineTests": 176
+}

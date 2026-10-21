@@ -92,6 +92,8 @@ npm run preview      # http://127.0.0.1:4173
 | `npm run seed` | 从原始爬取结果生成数据快照 |
 | `npm run fetch` | 数据管道（dry-run，不联网） |
 | `npm run preview:style` | 重新生成纯静态样式示例（`public/design/style-preview.html`） |
+| `npm test` | 跑单元测试（vitest，209 个用例，约 0.3 秒；含纯函数与设计令牌对比度） |
+| `npm run test:coverage` | 同上并输出覆盖率（阈值 lines ≥80 / branches ≥70） |
 
 ---
 
@@ -533,6 +535,26 @@ Warning: [antd: compatible] antd v5 support React is 16 ~ 18.
 | 7 | 切换主题 | body 底色、表格、图表坐标轴同时变化 |
 | 8 | 刷新页面 | 对比清单与主题保留，条件清空 |
 | 9 | `npm run build` | 类型检查与构建均通过 |
+| 10 | `npm test` | 209 个用例全绿（含对比度断言） |
+
+---
+
+### 纯函数层的回归基线
+
+`src/utils/` 下的纯函数（predicate / params / analytics / format / sort / columns）已有 vitest 用例，
+覆盖倍率（×100 / ×10000）、区间与边界、排序稳定性、分位数与分桶等易错语义。
+**测试如实编码"当前行为"**，因此已知疑点（缺价口径、尾速字段复用、段位复用积分等）也被固化为断言，
+详见 `.pipeline/runs/p1-3-vitest/evidence/findings.md`；修掉这些行为时要同步改对应用例。
+
+注意：在受限沙箱里跑 `npx vitest` / `npx tsc -b` 可能因 esbuild 子进程或 tsbuildinfo 写入报 `EPERM`，
+需要在有写权限的环境（或放开该权限）下执行。
+
+### 设计令牌的对比度基线
+
+`src/utils/__tests__/contrast.test.ts` 会解析 `src/index.css` 两个主题块，按 WCAG 2.1 校验：
+普通文本 ≥ 4.5、大文本/UI ≥ 3.0；并额外做**规则级静态扫描**——任何「白字压实底」的规则，
+底色必须是 `--accent-btn` 或 `--danger-btn`（品牌色 `--accent` 直接压白字只有 3.09:1）。
+改配色时这条测试会直接拦住回归；确实无法达标的组合只能进 `EXCEPTIONS` 并写理由。
 
 ---
 

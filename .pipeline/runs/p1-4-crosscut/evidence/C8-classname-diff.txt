@@ -1,0 +1,5 @@
+DashboardLayout.tsx: classMissing=[] textMissing=[]
+AccountScore.tsx: classMissing=[] textMissing=[]
+SoulReport.tsx: classMissing=[] textMissing=[]
+InspectorReport.tsx: classMissing=[] textMissing=[]
+CLASSNAME_FIDELITY_OK

@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/acceptance.schema.json",
+  "title": "Acceptance Contract",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "version",
+    "planVersion",
+    "frozenAt",
+    "artifacts",
+    "requirements",
+    "checks",
+    "passCriteria"
+  ],
+  "properties": {
+    "version": {
+      "const": "1.0"
+    },
+    "planVersion": {
+      "type": "string",
+      "pattern": "^v[0-9]+$"
+    },
+    "frozenAt": {
+      "type": "string"
+    },
+    "artifacts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["id", "path", "type"],
+        "properties": {
+          "id": { "type": "string" },
+          "path": { "type": "string" },
+          "type": {
+            "enum": ["code", "doc", "data", "config", "mixed"]
+          },
+          "profile": { "type": "string" }
+        }
+      }
+    },
+    "requirements": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["id", "desc", "artifacts", "checks"],
+        "properties": {
+          "id": { "type": "string" },
+          "desc": { "type": "string" },
+          "artifacts": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "checks": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    },
+    "checks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["id", "level", "desc", "expect"],
+        "properties": {
+          "id": { "type": "string" },
+          "level": {
+            "enum": ["L1", "L2", "L3"]
+          },
+          "desc": { "type": "string" },
+          "command": {
+            "type": ["string", "null"]
+          },
+          "cwd": { "type": "string" },
+          "timeoutSec": { "type": "integer", "minimum": 1 },
+          "expect": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "exitCode": { "type": "integer" },
+              "stdoutContains": { "type": "string" },
+              "stderrContains": { "type": "string" },
+              "artifactExists": { "type": "string" },
+              "rubric": { "type": "object" }
+            }
+          },
+          "evidence": { "type": "string" }
+        }
+      }
+    },
+    "passCriteria": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["L1", "L2", "L3"],
+      "properties": {
+        "L1": { "enum": ["all", "none", "manual"] },
+        "L2": { "enum": ["all", "none", "manual"] },
+        "L3": { "enum": ["all", "none", "manual"] },
+        "maxFixRounds": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}

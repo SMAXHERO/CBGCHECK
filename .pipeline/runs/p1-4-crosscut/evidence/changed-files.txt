@@ -1,0 +1,36 @@
+ M README.md
+ M cbg-web/README.md
+ M cbg-web/package-lock.json
+ M cbg-web/package.json
+ M cbg-web/src/api/account.ts
+ M cbg-web/src/api/inspector.ts
+ M cbg-web/src/api/live.ts
+ M cbg-web/src/api/soul.ts
+ M cbg-web/src/components/DashboardLayout.tsx
+ M cbg-web/src/components/ErrorBoundary.tsx
+ M cbg-web/src/components/FilterPanel.tsx
+ M cbg-web/src/components/ModuleTabs.tsx
+ M cbg-web/src/index.css
+ M cbg-web/src/pages/AccountScore.tsx
+ M cbg-web/src/pages/Dashboard.tsx
+ M cbg-web/src/pages/InspectorReport.tsx
+ M cbg-web/src/pages/SoulReport.tsx
+ M cbg-web/src/utils/predicate.ts
+ M docs/getting-started.md
+ M docs/self-host.md
+ M tools/cbg/inspector-service/server.py
+ M tools/cbg/scraper-service/server.mjs
+ M tools/cbg/soul-service/server.py
+?? .pipeline/
+?? cbg-web/coverage/
+?? cbg-web/src/api/client.ts
+?? cbg-web/src/components/ModuleHeader.tsx
+?? cbg-web/src/components/StatusBlock.tsx
+?? cbg-web/src/components/__tests__/
+?? cbg-web/src/hooks/useExport.ts
+?? cbg-web/src/pages/inspector/
+?? cbg-web/src/utils/__tests__/
+?? cbg-web/vitest.config.ts
+?? docs/optimization-plan.md
+?? docs/security.md
+?? tools/cbg/pycommon/

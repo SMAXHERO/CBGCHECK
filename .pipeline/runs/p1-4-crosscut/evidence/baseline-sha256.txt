@@ -1,0 +1,10 @@
+40eb178223f35b07eb60bb17412e7a3362fb79ab79381497d410ca5234a651dc *cbg-web/src/components/DashboardLayout.tsx
+6f688314f6445f8eed80f4f1e36a5e488ad2d8bde22a6d6d69c8e2e93ce39efd *cbg-web/src/pages/AccountScore.tsx
+017f81b2336a050b66d691fab9d86f79477f75ba70300b02984cee399957e46b *cbg-web/src/pages/SoulReport.tsx
+be5d36105cbd7c7eb150812fe6d6196210e44a7e4776ab6c5539ea30a404fef2 *cbg-web/src/pages/InspectorReport.tsx
+3af8f1d06d60838d91e9b800a8fe872642286b1eea7c7373a98d07b967a11bea *cbg-web/src/pages/Dashboard.tsx
+fc79b185964e3b2a8475c5e24027ee49c8c853af521f911af145eb6a4aecca34 *cbg-web/src/components/StatusBlock.tsx
+6dc6e103c02e85dd5cf1f62eadb526daa8654df46e3a894b822fad47d2c073e2 *cbg-web/src/index.css
+8c9b9ef1a6c3bf126d7599a04fbc14ec8836fbc6fe8badae15002890cf42649f *cbg-web/vite.config.mjs
+sha256sum: cbg-web/src/api: Is a directory
+sha256sum: cbg-web/src/store: Is a directory

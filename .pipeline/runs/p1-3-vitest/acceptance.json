@@ -1,0 +1,199 @@
+{
+  "version": "1.0",
+  "planVersion": "v1",
+  "frozenAt": "2026-10-21T21:20:00+08:00",
+  "artifacts": [
+    { "id": "A1", "path": "cbg-web/vitest.config.ts", "type": "config" },
+    { "id": "A2", "path": "cbg-web/src/utils/__tests__/predicate.test.ts", "type": "code" },
+    { "id": "A3", "path": "cbg-web/src/utils/__tests__/params.test.ts", "type": "code" },
+    { "id": "A4", "path": "cbg-web/src/utils/__tests__/analytics.test.ts", "type": "code" },
+    { "id": "A5", "path": "cbg-web/src/utils/__tests__/format.test.ts", "type": "code" },
+    { "id": "A6", "path": "cbg-web/src/utils/__tests__/sort.test.ts", "type": "code" },
+    { "id": "A7", "path": "cbg-web/src/utils/__tests__/columns.test.ts", "type": "code" },
+    { "id": "A8", "path": "cbg-web/package.json", "type": "config" },
+    { "id": "A9", "path": ".pipeline/runs/p1-3-vitest/evidence/test-inventory.md", "type": "doc" },
+    { "id": "A10", "path": ".pipeline/runs/p1-3-vitest/evidence/coverage-summary.txt", "type": "data" },
+    { "id": "A11", "path": ".pipeline/runs/p1-3-vitest/evidence/findings.md", "type": "doc" }
+  ],
+  "requirements": [
+    {
+      "id": "R1",
+      "desc": "vitest 独立配置可用：alias @→src、environment=node、include 限定 utils 测试、coverage provider=v8 且只统计目标 utils 文件",
+      "artifacts": ["A1", "A8"],
+      "checks": ["C1", "C2", "C9"]
+    },
+    {
+      "id": "R2",
+      "desc": "predicate.ts 测试：条件有效性判定、参数支持分类、倍率与区间语义、ServerIndex 行为，全部通过",
+      "artifacts": ["A2"],
+      "checks": ["C3"]
+    },
+    {
+      "id": "R3",
+      "desc": "params.ts 测试：条件↔接口参数双向转换、×100/×10000 倍率、区服多值、区间、往返一致性，全部通过",
+      "artifacts": ["A3"],
+      "checks": ["C3"]
+    },
+    {
+      "id": "R4",
+      "desc": "analytics.ts 测试：KPI、分位数、直方图分桶、速度分段、平台占比、散点抽样，全部通过",
+      "artifacts": ["A4"],
+      "checks": ["C3"]
+    },
+    {
+      "id": "R5",
+      "desc": "format/sort/columns（选做）测试全部通过",
+      "artifacts": ["A5", "A6", "A7"],
+      "checks": ["C3"]
+    },
+    {
+      "id": "R6",
+      "desc": "覆盖率达标：目标 utils 文件 lines≥80%、branches≥70%",
+      "artifacts": ["A10"],
+      "checks": ["C4"]
+    },
+    {
+      "id": "R7",
+      "desc": "既有类型检查/构建不被破坏：npx tsc -b 通过",
+      "artifacts": ["A2", "A3", "A4", "A5", "A6", "A7"],
+      "checks": ["C5"]
+    },
+    {
+      "id": "R8",
+      "desc": "依赖未变：cbg-web/package.json 的 dependencies/devDependencies 与基线一致；仅 scripts 新增 test/test:coverage",
+      "artifacts": ["A8"],
+      "checks": ["C6", "C7"]
+    },
+    {
+      "id": "R9",
+      "desc": "src 实现代码未改：src/utils 下 6 个实现文件 SHA256 与 baseline.sha256 一致",
+      "artifacts": ["A2", "A3", "A4", "A5", "A6", "A7"],
+      "checks": ["C8"]
+    },
+    {
+      "id": "R10",
+      "desc": "产出文档齐全：test-inventory.md 与 findings.md 存在；findings.md 为非空（无缺陷则写'无'）",
+      "artifacts": ["A9", "A11"],
+      "checks": ["C10"]
+    }
+  ],
+  "checks": [
+    {
+      "id": "C1",
+      "level": "L1",
+      "desc": "vitest 配置文件存在且包含 environment=node 与 @ alias",
+      "command": "node -e \"const s=require('fs').readFileSync('vitest.config.ts','utf8');if(!/environment:\\s*'node'/.test(s)||!/'@'/.test(s)){process.exit(1)}\"",
+      "cwd": "D:\\deepseek_work\\github-work\\cbg-web",
+      "timeoutSec": 30,
+      "expect": { "exitCode": 0 },
+      "evidence": ".pipeline/runs/p1-3-vitest/evidence/C1.log"
+    },
+    {
+      "id": "C2",
+      "level": "L1",
+      "desc": "vitest.config.ts 的 coverage.include 只限定 utils 目标文件（不得包含 api/components/pages）",
+      "command": "node -e \"const s=require('fs').readFileSync('vitest.config.ts','utf8');if(/components|pages|api\\//.test(s)){process.exit(1)}if(!/src\\/utils\\/predicate\\.ts/.test(s)){process.exit(2)}\"",
+      "cwd": "D:\\deepseek_work\\github-work\\cbg-web",
+      "timeoutSec": 30,
+      "expect": { "exitCode": 0 },
+      "evidence": ".pipeline/runs/p1-3-vitest/evidence/C2.log"
+    },
+    {
+      "id": "C3",
+      "level": "L1",
+      "desc": "npx vitest run 全绿（所有 utils 测试通过，无 skipped 失败）",
+      "command": "npx vitest run",
+      "cwd": "D:\\deepseek_work\\github-work\\cbg-web",
+      "timeoutSec": 300,
+      "expect": { "exitCode": 0, "stdoutContains": "Test Files" },
+      "evidence": ".pipeline/runs/p1-3-vitest/evidence/C3-vitest-run.log"
+    },
+    {
+      "id": "C4",
+      "level": "L1",
+      "desc": "npx vitest run --coverage 达到阈值（lines≥80%、branches≥70%，按 vitest.config.ts thresholds 判定）",
+      "command": "npx vitest run --coverage",
+      "cwd": "D:\\deepseek_work\\github-work\\cbg-web",
+      "timeoutSec": 300,
+      "expect": { "exitCode": 0, "stdoutContains": "All files" },
+      "evidence": ".pipeline/runs/p1-3-vitest/evidence/coverage-summary.txt"
+    },
+    {
+      "id": "C5",
+      "level": "L1",
+      "desc": "npx tsc -b 仍通过（测试文件也被类型检查）",
+      "command": "npx tsc -b",
+      "cwd": "D:\\deepseek_work\\github-work\\cbg-web",
+      "timeoutSec": 300,
+      "expect": { "exitCode": 0 },
+      "evidence": ".pipeline/runs/p1-3-vitest/evidence/C5-tsc.log"
+    },
+    {
+      "id": "C6",
+      "level": "L1",
+      "desc": "package.json 的 dependencies 与 devDependencies 未变：与 baseline 工作区版本比对（SHA256 不做全文比对，改用 node 解析后比对依赖映射）",
+      "command": "node -e \"const p=require('./package.json');const e={dependencies:{'@ant-design/icons':'^6.0.0','@ant-design/v5-patch-for-react-19':'^1.0.3','@tanstack/react-query':'^5.62.7',antd:'^5.28.1',echarts:'^6.0.0',react:'^19.1.0','react-dom':'^19.1.0','react-router-dom':'^7.1.1',xlsx:'^0.18.5',zustand:'^5.0.2'},devDependencies:{'@types/node':'^22.10.2','@types/react':'^19.1.0','@types/react-dom':'^19.1.0','@vitejs/plugin-react':'^5.0.0','@vitest/coverage-v8':'^5.0.5',typescript:'^5.7.2',vite:'^7.0.0',vitest:'^5.0.5'}};const a=JSON.stringify({dependencies:p.dependencies,devDependencies:p.devDependencies});const b=JSON.stringify({dependencies:e.dependencies,devDependencies:e.devDependencies});if(a!==b){console.error('DEP MISMATCH');process.exit(1)}\"",
+      "cwd": "D:\\deepseek_work\\github-work\\cbg-web",
+      "timeoutSec": 30,
+      "expect": { "exitCode": 0 },
+      "evidence": ".pipeline/runs/p1-3-vitest/evidence/C6.log"
+    },
+    {
+      "id": "C7",
+      "level": "L1",
+      "desc": "package.json scripts 含 test 与 test:coverage 且值正确；无其它 scripts 被删除（对照 HEAD 的 scripts 键）",
+      "command": "node -e \"const p=require('./package.json');if(p.scripts.test!=='vitest run'||p.scripts['test:coverage']!=='vitest run --coverage'){process.exit(1)}for(const k of ['dev','build','preview','typecheck','seed','fetch','preview:style']){if(!p.scripts[k]){console.error('missing '+k);process.exit(2)}}\"",
+      "cwd": "D:\\deepseek_work\\github-work\\cbg-web",
+      "timeoutSec": 30,
+      "expect": { "exitCode": 0 },
+      "evidence": ".pipeline/runs/p1-3-vitest/evidence/C7.log"
+    },
+    {
+      "id": "C8",
+      "level": "L1",
+      "desc": "src/utils 六个实现文件 SHA256 与 baseline.sha256 完全一致（证明未改源码）",
+      "command": "pwsh -NoProfile -Command \"$bad=0; Get-Content '.pipeline\\runs\\p1-3-vitest\\evidence\\baseline.sha256' | Select-Object -First 6 | ForEach-Object { $parts=$_ -split '\\s+',2; $h=(Get-FileHash ('..\\..\\..\\' + $parts[1]) -Algorithm SHA256).Hash.ToLower(); if($h -ne $parts[0]){ Write-Output ('CHANGED ' + $parts[1]); $bad++ } }; if($bad -gt 0){ exit 1 } else { Write-Output 'SRC_UNCHANGED' }\"",
+      "cwd": "D:\\deepseek_work\\github-work",
+      "timeoutSec": 60,
+      "expect": { "exitCode": 0, "stdoutContains": "SRC_UNCHANGED" },
+      "evidence": ".pipeline/runs/p1-3-vitest/evidence/C8-src-check.txt"
+    },
+    {
+      "id": "C9",
+      "level": "L2",
+      "desc": "测试文件仅位于 cbg-web/src/utils/__tests__/ 下且后缀为 .test.ts（无其它新增测试位置）",
+      "command": "pwsh -NoProfile -Command \"$f=Get-ChildItem -Recurse -Filter '*.test.*' -Path 'src' | Where-Object { $_.FullName -notmatch '\\\\src\\\\utils\\\\__tests__\\\\' }; if($f){ $f | ForEach-Object { Write-Output $_.FullName }; exit 1 } else { Write-Output 'OK' }\"",
+      "cwd": "D:\\deepseek_work\\github-work\\cbg-web",
+      "timeoutSec": 60,
+      "expect": { "exitCode": 0, "stdoutContains": "OK" },
+      "evidence": ".pipeline/runs/p1-3-vitest/evidence/C9.log"
+    },
+    {
+      "id": "C10",
+      "level": "L2",
+      "desc": "evidence/test-inventory.md 与 evidence/findings.md 存在且非空",
+      "command": "pwsh -NoProfile -Command \"foreach($f in @('.pipeline\\runs\\p1-3-vitest\\evidence\\test-inventory.md','.pipeline\\runs\\p1-3-vitest\\evidence\\findings.md')){ if(!(Test-Path $f) -or ((Get-Item $f).Length -eq 0)){ Write-Output ('MISSING ' + $f); exit 1 } }; Write-Output 'OK'\"",
+      "cwd": "D:\\deepseek_work\\github-work",
+      "timeoutSec": 30,
+      "expect": { "exitCode": 0, "stdoutContains": "OK" },
+      "evidence": ".pipeline/runs/p1-3-vitest/evidence/C10.log"
+    },
+    {
+      "id": "C11",
+      "level": "L3",
+      "desc": "评审：测试是否如实编码当前行为（非臆测期望）、边界覆盖是否充分、findings.md 中的疑点是否描述清晰可复现",
+      "command": null,
+      "expect": {
+        "artifactExists": ".pipeline/runs/p1-3-vitest/evidence/test-inventory.md",
+        "rubric": { "accuracy": 4, "completeness": 4, "clarity": 4 }
+      },
+      "evidence": ".pipeline/runs/p1-3-vitest/evidence/C11-review.md"
+    }
+  ],
+  "passCriteria": {
+    "L1": "all",
+    "L2": "all",
+    "L3": "all",
+    "maxFixRounds": 2
+  }
+}

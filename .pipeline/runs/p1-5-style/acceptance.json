@@ -1,0 +1,223 @@
+{
+  "version": "1.0",
+  "planVersion": "v1",
+  "frozenAt": "2026-10-21T22:10:00+08:00",
+  "artifacts": [
+    { "id": "A1", "path": "cbg-web/src/index.css", "type": "code", "profile": "web-css" },
+    { "id": "A2", "path": "cbg-web/src/components/StatusBlock.tsx", "type": "code", "profile": "web-tsx" },
+    { "id": "A3", "path": "cbg-web/src/components/FilterPanel.tsx", "type": "code", "profile": "web-tsx" },
+    { "id": "A4", "path": "cbg-web/src/pages/AccountScore.tsx", "type": "code", "profile": "web-tsx" },
+    { "id": "A5", "path": "cbg-web/src/pages/SoulReport.tsx", "type": "code", "profile": "web-tsx" },
+    { "id": "A6", "path": "cbg-web/src/pages/Dashboard.tsx", "type": "code", "profile": "web-tsx" },
+    { "id": "A7", "path": "cbg-web/src/components/charts/theme.ts", "type": "code", "profile": "web-tsx" },
+    { "id": "A8", "path": "cbg-web/src/components/charts/EChart.tsx", "type": "code", "profile": "web-tsx" },
+    { "id": "A9", "path": "cbg-web/src/utils/__tests__/contrast.test.ts", "type": "code", "profile": "web-test" },
+    { "id": "A10", "path": ".pipeline/runs/p1-5-style/evidence/contrast-before-after.md", "type": "doc" },
+    { "id": "A11", "path": ".pipeline/runs/p1-5-style/evidence/state-unify-map.md", "type": "doc" },
+    { "id": "A12", "path": ".pipeline/runs/p1-5-style/evidence/reduced-motion-audit.md", "type": "doc" }
+  ],
+  "requirements": [
+    {
+      "id": "R1",
+      "desc": "空态/加载统一：.state-box 为唯一基类，StatusBlock 支持 variant，score-loading/soul-empty 删除且无引用",
+      "artifacts": ["A1", "A2", "A3", "A4", "A5", "A6"],
+      "checks": ["C1", "C2", "C3", "C4", "C5", "C6"]
+    },
+    {
+      "id": "R2",
+      "desc": "减少动态效果覆盖图表层：theme.ts 导出 prefersReducedMotion/chartMotionOptions，EChart 引用；CSS reduce 段覆盖 spinner/pulse/shake/mini-spinner",
+      "artifacts": ["A7", "A8", "A1", "A12"],
+      "checks": ["C7", "C8", "C9"]
+    },
+    {
+      "id": "R3",
+      "desc": "对比度自动化测试存在且全绿；无法达标项在例外清单中有 reason；before/after 报告产出",
+      "artifacts": ["A1", "A9", "A10"],
+      "checks": ["C10", "C11", "C12"]
+    },
+    {
+      "id": "R4",
+      "desc": "回归：vitest 全绿（不少于基线用例数）、tsc -b 通过、vite build 通过、不新增依赖",
+      "artifacts": ["A1", "A2", "A7", "A8", "A9"],
+      "checks": ["C13", "C14", "C15", "C16"]
+    },
+    {
+      "id": "R5",
+      "desc": "禁止路径未被修改：src/api、src/store、vite.config.mjs、vitest.config.ts、package.json、package-lock.json、.pipeline/templates",
+      "artifacts": [],
+      "checks": ["C17"]
+    }
+  ],
+  "checks": [
+    {
+      "id": "C1",
+      "level": "L1",
+      "desc": "旧类名无引用（TSX 与 CSS 全部为 0 命中）",
+      "command": "grep -rn \"score-loading\\|soul-empty\" cbg-web/src | wc -l",
+      "cwd": "D:\\deepseek_work\\github-work",
+      "timeoutSec": 30,
+      "expect": { "stdoutContains": "0" },
+      "evidence": ".pipeline/runs/p1-5-style/evidence/C1.log"
+    },
+    {
+      "id": "C2",
+      "level": "L1",
+      "desc": "StatusBlock 含 variant 类型并输出 state-box--${variant} 修饰类",
+      "command": "grep -c \"state-box--\" cbg-web/src/components/StatusBlock.tsx",
+      "cwd": "D:\\deepseek_work\\github-work",
+      "timeoutSec": 30,
+      "expect": { "stdoutContains": "1" },
+      "evidence": ".pipeline/runs/p1-5-style/evidence/C2.log"
+    },
+    {
+      "id": "C3",
+      "level": "L1",
+      "desc": "CSS 中定义了 compact 与 inline 两个修饰类",
+      "command": "grep -c \"\\.state-box--compact\\|\\.state-box--inline\" cbg-web/src/index.css",
+      "cwd": "D:\\deepseek_work\\github-work",
+      "timeoutSec": 30,
+      "expect": { "stdoutContains": "2" },
+      "evidence": ".pipeline/runs/p1-5-style/evidence/C3.log"
+    },
+    {
+      "id": "C4",
+      "level": "L1",
+      "desc": "4 个调用点已迁移：AccountScore 使用 variant=\"inline\"，SoulReport 使用 variant=\"compact\"",
+      "command": "grep -rln \"variant=\\\"inline\\\"\\|variant=\\\"compact\\\"\" cbg-web/src/pages cbg-web/src/components | wc -l",
+      "cwd": "D:\\deepseek_work\\github-work",
+      "timeoutSec": 30,
+      "expect": { "stdoutContains": "2" },
+      "evidence": ".pipeline/runs/p1-5-style/evidence/C4.log"
+    },
+    {
+      "id": "C5",
+      "level": "L1",
+      "desc": "state-box 基类被 FilterPanel 与 Dashboard/StatusBlock 使用（统一基类）",
+      "command": "grep -rln \"state-box\\|StatusBlock\" cbg-web/src/components cbg-web/src/pages | wc -l",
+      "cwd": "D:\\deepseek_work\\github-work",
+      "timeoutSec": 30,
+      "expect": { "exitCode": 0 },
+      "evidence": ".pipeline/runs/p1-5-style/evidence/C5.log"
+    },
+    {
+      "id": "C6",
+      "level": "L1",
+      "desc": "state-unify-map.md 已产出并记录 4 处迁移与删除确认",
+      "command": null,
+      "expect": { "artifactExists": ".pipeline/runs/p1-5-style/evidence/state-unify-map.md" },
+      "evidence": ".pipeline/runs/p1-5-style/evidence/state-unify-map.md"
+    },
+    {
+      "id": "C7",
+      "level": "L1",
+      "desc": "theme.ts 导出 prefersReducedMotion 与 chartMotionOptions",
+      "command": "grep -c \"export const prefersReducedMotion\\|export const chartMotionOptions\" cbg-web/src/components/charts/theme.ts",
+      "cwd": "D:\\deepseek_work\\github-work",
+      "timeoutSec": 30,
+      "expect": { "stdoutContains": "2" },
+      "evidence": ".pipeline/runs/p1-5-style/evidence/C7.log"
+    },
+    {
+      "id": "C8",
+      "level": "L1",
+      "desc": "EChart.tsx 引用 chartMotionOptions（图表层尊重 reduce）",
+      "command": "grep -c \"chartMotionOptions\" cbg-web/src/components/charts/EChart.tsx",
+      "cwd": "D:\\deepseek_work\\github-work",
+      "timeoutSec": 30,
+      "expect": { "stdoutContains": "1" },
+      "evidence": ".pipeline/runs/p1-5-style/evidence/C8.log"
+    },
+    {
+      "id": "C9",
+      "level": "L1",
+      "desc": "reduce 段覆盖 spinner/mini-spinner/pulse/shake 且无 animation 简写在 reduce 后覆盖；reduced-motion-audit.md 已产出",
+      "command": null,
+      "expect": { "artifactExists": ".pipeline/runs/p1-5-style/evidence/reduced-motion-audit.md", "rubric": { "coverage": 4, "accuracy": 4 } },
+      "evidence": ".pipeline/runs/p1-5-style/evidence/reduced-motion-audit.md"
+    },
+    {
+      "id": "C10",
+      "level": "L1",
+      "desc": "对比度测试文件存在且包含阈值 4.5 与 3.0、例外清单带 reason",
+      "command": "grep -c \"4.5\\|3.0\" cbg-web/src/utils/__tests__/contrast.test.ts",
+      "cwd": "D:\\deepseek_work\\github-work",
+      "timeoutSec": 30,
+      "expect": { "exitCode": 0 },
+      "evidence": ".pipeline/runs/p1-5-style/evidence/C10.log"
+    },
+    {
+      "id": "C11",
+      "level": "L1",
+      "desc": "对比度单测全绿",
+      "command": "npx vitest run src/utils/__tests__/contrast.test.ts",
+      "cwd": "D:\\deepseek_work\\github-work\\cbg-web",
+      "timeoutSec": 180,
+      "expect": { "exitCode": 0 },
+      "evidence": ".pipeline/runs/p1-5-style/evidence/C11.log"
+    },
+    {
+      "id": "C12",
+      "level": "L1",
+      "desc": "contrast-before-after.md 已产出，含 before/after 表与例外清单理由",
+      "command": null,
+      "expect": { "artifactExists": ".pipeline/runs/p1-5-style/evidence/contrast-before-after.md" },
+      "evidence": ".pipeline/runs/p1-5-style/evidence/contrast-before-after.md"
+    },
+    {
+      "id": "C13",
+      "level": "L2",
+      "desc": "全量 vitest 回归：不少于 176 用例且全绿",
+      "command": "npx vitest run",
+      "cwd": "D:\\deepseek_work\\github-work\\cbg-web",
+      "timeoutSec": 300,
+      "expect": { "exitCode": 0, "stdoutContains": "passed" },
+      "evidence": ".pipeline/runs/p1-5-style/evidence/C13.log"
+    },
+    {
+      "id": "C14",
+      "level": "L2",
+      "desc": "TypeScript 类型检查通过",
+      "command": "npx tsc -b",
+      "cwd": "D:\\deepseek_work\\github-work\\cbg-web",
+      "timeoutSec": 300,
+      "expect": { "exitCode": 0 },
+      "evidence": ".pipeline/runs/p1-5-style/evidence/C14.log"
+    },
+    {
+      "id": "C15",
+      "level": "L2",
+      "desc": "vite 生产构建通过",
+      "command": "npx vite build",
+      "cwd": "D:\\deepseek_work\\github-work\\cbg-web",
+      "timeoutSec": 600,
+      "expect": { "exitCode": 0 },
+      "evidence": ".pipeline/runs/p1-5-style/evidence/C15.log"
+    },
+    {
+      "id": "C16",
+      "level": "L2",
+      "desc": "未新增依赖：package.json 与 package-lock.json 相对基线无 diff",
+      "command": "git diff --quiet -- cbg-web/package.json cbg-web/package-lock.json && echo CLEAN",
+      "cwd": "D:\\deepseek_work\\github-work",
+      "timeoutSec": 30,
+      "expect": { "exitCode": 0, "stdoutContains": "CLEAN" },
+      "evidence": ".pipeline/runs/p1-5-style/evidence/C16.log"
+    },
+    {
+      "id": "C17",
+      "level": "L2",
+      "desc": "禁止路径未修改（src/api、src/store、vite.config.mjs、vitest.config.ts、.pipeline/templates）",
+      "command": "git diff --name-only -- cbg-web/src/api cbg-web/src/store cbg-web/vite.config.mjs cbg-web/vitest.config.ts .pipeline/templates | wc -l",
+      "cwd": "D:\\deepseek_work\\github-work",
+      "timeoutSec": 30,
+      "expect": { "stdoutContains": "0" },
+      "evidence": ".pipeline/runs/p1-5-style/evidence/C17.log"
+    }
+  ],
+  "passCriteria": {
+    "L1": "all",
+    "L2": "all",
+    "L3": "none",
+    "maxFixRounds": 2
+  }
+}

@@ -1,0 +1,201 @@
+{
+  "version": "1.0",
+  "planVersion": "v1",
+  "frozenAt": "2026-10-21T21:50:00+08:00",
+  "artifacts": [
+    { "id": "A1", "path": "cbg-web/src/components/ModuleHeader.tsx", "type": "code", "profile": "react-component" },
+    { "id": "A2", "path": "cbg-web/src/components/DashboardLayout.tsx", "type": "code", "profile": "react-component" },
+    { "id": "A3", "path": "cbg-web/src/pages/AccountScore.tsx", "type": "code", "profile": "react-component" },
+    { "id": "A4", "path": "cbg-web/src/pages/SoulReport.tsx", "type": "code", "profile": "react-component" },
+    { "id": "A5", "path": "cbg-web/src/pages/InspectorReport.tsx", "type": "code", "profile": "react-component" },
+    { "id": "A6", "path": "cbg-web/src/pages/Dashboard.tsx", "type": "code", "profile": "react-component" },
+    { "id": "A7", "path": "cbg-web/src/components/StatusBlock.tsx", "type": "code", "profile": "react-component" },
+    { "id": "A8", "path": "cbg-web/src/hooks/useExport.ts", "type": "code", "profile": "react-component" },
+    { "id": "A11", "path": "cbg-web/src/components/__tests__/ModuleHeader.test.tsx", "type": "code", "profile": "vitest" },
+    { "id": "A12", "path": ".pipeline/runs/p1-4-crosscut/evidence/refactor-map.md", "type": "doc" },
+    { "id": "A13", "path": ".pipeline/runs/p1-4-crosscut/evidence/dom-fidelity.md", "type": "doc" },
+    { "id": "A14", "path": ".pipeline/runs/p1-4-crosscut/evidence/assumptions.md", "type": "doc" }
+  ],
+  "requirements": [
+    {
+      "id": "R1",
+      "desc": "顶部栏统一为 ModuleHeader，四个入口（DashboardLayout、AccountScore、SoulReport、InspectorReport）各使用一次，且 DOM/className 保真",
+      "artifacts": ["A1", "A2", "A3", "A4", "A5"],
+      "checks": ["C5", "C6", "C7", "C8", "C12"]
+    },
+    {
+      "id": "R2",
+      "desc": "主题切换 SVG/按钮单源：svg 图标只在 ModuleHeader 出现",
+      "artifacts": ["A1", "A2"],
+      "checks": ["C9"]
+    },
+    {
+      "id": "R3",
+      "desc": "导出逻辑内聚：exportCsv/exportExcel/printArea 的直接调用只在 utils/export.ts 与 hooks/useExport.ts；Dashboard 只调用 hook",
+      "artifacts": ["A6", "A8"],
+      "checks": ["C10"]
+    },
+    {
+      "id": "R4",
+      "desc": "行为与视觉零变化：tsc、vite build 通过；171 个 vitest 用例全绿；禁止路径未改",
+      "artifacts": ["A1", "A2", "A3", "A4", "A5", "A6", "A7", "A8"],
+      "checks": ["C1", "C2", "C3", "C4", "C11"]
+    },
+    {
+      "id": "R5",
+      "desc": "证据产出完整：refactor-map 与 dom-fidelity 含改造前后对比与调用点清单",
+      "artifacts": ["A12", "A13", "A14"],
+      "checks": ["C13", "C14"]
+    }
+  ],
+  "checks": [
+    {
+      "id": "C1",
+      "level": "L1",
+      "desc": "TypeScript 项目引用构建通过（零类型错误）",
+      "command": "npx tsc -b",
+      "cwd": "D:\\deepseek_work\\github-work\\cbg-web",
+      "timeoutSec": 300,
+      "expect": { "exitCode": 0 },
+      "evidence": "evidence/C1-tsc.log"
+    },
+    {
+      "id": "C2",
+      "level": "L1",
+      "desc": "Vite 生产构建通过",
+      "command": "npx vite build",
+      "cwd": "D:\\deepseek_work\\github-work\\cbg-web",
+      "timeoutSec": 600,
+      "expect": { "exitCode": 0 },
+      "evidence": "evidence/C2-build.log"
+    },
+    {
+      "id": "C3",
+      "level": "L1",
+      "desc": "vitest 全量：171 个用例全部通过（0 failed）。若环境 EPERM spawn 无法执行，则 passCriteria 降级见 C3 备注，不得伪造",
+      "command": "npx vitest run",
+      "cwd": "D:\\deepseek_work\\github-work\\cbg-web",
+      "timeoutSec": 600,
+      "expect": { "exitCode": 0, "stdoutContains": "171 passed" },
+      "evidence": "evidence/C3-vitest.log"
+    },
+    {
+      "id": "C4",
+      "level": "L1",
+      "desc": "ModuleHeader 结构单测通过（新增 A11；含 svg/text/minimal 三种模式的 className 断言）",
+      "command": "npx vitest run src/components/__tests__/ModuleHeader.test.tsx",
+      "cwd": "D:\\deepseek_work\\github-work\\cbg-web",
+      "timeoutSec": 300,
+      "expect": { "exitCode": 0 },
+      "evidence": "evidence/C4-moduleheader.log"
+    },
+    {
+      "id": "C5",
+      "level": "L1",
+      "desc": "收敛指标：pages/*.tsx 与 DashboardLayout.tsx 中不再手写 className=\"app-header\"（仅允许出现在 ModuleHeader.tsx）。期望 grep 命中数为 0",
+      "command": "grep -rn \"app-header\" src/pages src/components/DashboardLayout.tsx | grep -v ModuleHeader | wc -l",
+      "cwd": "D:\\deepseek_work\\github-work\\cbg-web",
+      "timeoutSec": 60,
+      "expect": { "stdoutContains": "0" },
+      "evidence": "evidence/C5-app-header.txt"
+    },
+    {
+      "id": "C6",
+      "level": "L1",
+      "desc": "收敛指标：pages/*.tsx 与 DashboardLayout.tsx 中不再手写 className=\"icon-btn\"（仅允许在 ModuleHeader.tsx）。期望命中数为 0",
+      "command": "grep -rn \"icon-btn\" src/pages src/components/DashboardLayout.tsx | wc -l",
+      "cwd": "D:\\deepseek_work\\github-work\\cbg-web",
+      "timeoutSec": 60,
+      "expect": { "stdoutContains": "0" },
+      "evidence": "evidence/C6-icon-btn.txt"
+    },
+    {
+      "id": "C7",
+      "level": "L2",
+      "desc": "收敛指标：ModuleHeader 在 4 个主入口各被使用一次（DashboardLayout、AccountScore、SoulReport、InspectorReport），加上 Dashboard 守卫态 minimal 调用（允许豁免，见 plan Q6）。期望：四个入口文件各含 1 次 <ModuleHeader 且 import 语句存在",
+      "command": "node -e \"const fs=require('fs');const f=['src/components/DashboardLayout.tsx','src/pages/AccountScore.tsx','src/pages/SoulReport.tsx','src/pages/InspectorReport.tsx'];let ok=true;for(const p of f){const c=fs.readFileSync(p,'utf8');const n=(c.match(/<ModuleHeader[\\s>\\/]/g)||[]).length;console.log(p,n);if(n!==1)ok=false;}process.exit(ok?0:1);\"",
+      "cwd": "D:\\deepseek_work\\github-work\\cbg-web",
+      "timeoutSec": 60,
+      "expect": { "exitCode": 0 },
+      "evidence": "evidence/C7-moduleheader-usage.txt"
+    },
+    {
+      "id": "C8",
+      "level": "L2",
+      "desc": "className 保真：每个主入口改造前后的 className 集合完全一致（由 dom-fidelity.md 中的快照对比与 C8 脚本给出 diff 为空）。改造前快照由执行者在第 6 步 sha256 与 className 抽取存证",
+      "command": "node ../.pipeline/runs/p1-4-crosscut/evidence/check-classnames.mjs",
+      "cwd": "D:\\deepseek_work\\github-work\\cbg-web",
+      "timeoutSec": 120,
+      "expect": { "exitCode": 0, "stdoutContains": "CLASSNAME_FIDELITY_OK" },
+      "evidence": "evidence/C8-classname-diff.txt"
+    },
+    {
+      "id": "C9",
+      "level": "L1",
+      "desc": "收敛指标：svg 主题图标（路径 d=\"M13.5 9.6A5.8\" 月亮标记）只出现在 ModuleHeader.tsx 中；DashboardLayout.tsx 与 pages/ 下不再包含该 SVG path",
+      "command": "grep -rln \"M13.5 9.6A5.8\" src | tr '\\n' ' '",
+      "cwd": "D:\\deepseek_work\\github-work\\cbg-web",
+      "timeoutSec": 60,
+      "expect": { "stdoutContains": "ModuleHeader.tsx" },
+      "evidence": "evidence/C9-svg-single-source.txt"
+    },
+    {
+      "id": "C10",
+      "level": "L1",
+      "desc": "收敛指标：exportCsv|exportExcel|printArea 的调用（非定义、非 import）只出现在 hooks/useExport.ts；pages/Dashboard.tsx 不再直接调用它们。期望 Dashboard 中命中数为 0",
+      "command": "grep -n \"exportCsv(\\|exportExcel(\\|printArea(\" src/pages/Dashboard.tsx | wc -l",
+      "cwd": "D:\\deepseek_work\\github-work\\cbg-web",
+      "timeoutSec": 60,
+      "expect": { "stdoutContains": "0" },
+      "evidence": "evidence/C10-export-callsites.txt"
+    },
+    {
+      "id": "C11",
+      "level": "L1",
+      "desc": "禁止路径未改：index.css、src/api/、src/store/、vite.config.mjs、.pipeline/templates/ 相对于本次改造前快照无 diff（以 sha256 对比；快照于第 6 步记录）",
+      "command": "node ../.pipeline/runs/p1-4-crosscut/evidence/check-forbidden.mjs",
+      "cwd": "D:\\deepseek_work\\github-work\\cbg-web",
+      "timeoutSec": 120,
+      "expect": { "exitCode": 0, "stdoutContains": "FORBIDDEN_UNTOUCHED_OK" },
+      "evidence": "evidence/C11-forbidden.txt"
+    },
+    {
+      "id": "C12",
+      "level": "L2",
+      "desc": "行为保真：Dashboard 守卫态（offline / need-browser / need-login）仍仅渲染 h1 + pill-tag，不渲染 ModuleTabs 与主题按钮（minimal 模式），与改造前一致",
+      "command": "node ../.pipeline/runs/p1-4-crosscut/evidence/check-minimal-guard.mjs",
+      "cwd": "D:\\deepseek_work\\github-work\\cbg-web",
+      "timeoutSec": 60,
+      "expect": { "exitCode": 0, "stdoutContains": "MINIMAL_GUARD_OK" },
+      "evidence": "evidence/C12-minimal.txt"
+    },
+    {
+      "id": "C13",
+      "level": "L3",
+      "desc": "refactor-map.md 完整：列出每个重复点、收敛目标、4+3 个调用点、以及 AlertBar 是否交付（含不交付理由）",
+      "command": null,
+      "expect": {
+        "artifactExists": ".pipeline/runs/p1-4-crosscut/evidence/refactor-map.md",
+        "rubric": { "accuracy": 4, "completeness": 4, "clarity": 4 }
+      },
+      "evidence": "evidence/C13-review.md"
+    },
+    {
+      "id": "C14",
+      "level": "L3",
+      "desc": "dom-fidelity.md 完整：每个调用点含改造前后 className 集合与文案集合对比，且与 C8 结果一致",
+      "command": null,
+      "expect": {
+        "artifactExists": ".pipeline/runs/p1-4-crosscut/evidence/dom-fidelity.md",
+        "rubric": { "accuracy": 4, "completeness": 4, "clarity": 4 }
+      },
+      "evidence": "evidence/C14-review.md"
+    }
+  ],
+  "passCriteria": {
+    "L1": "all",
+    "L2": "all",
+    "L3": "all",
+    "maxFixRounds": 2
+  }
+}

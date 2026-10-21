@@ -1,0 +1,8 @@
+{
+  "planVersion": "v1",
+  "frozenAt": "2026-10-21T21:20:00+08:00",
+  "planSha256": "dd977024554da0e6b75ccad990cdfdd78928204397d4862a33ac0a9aed719c43",
+  "acceptanceSha256": "1a651bf38771fe051fb07cdd6a6c92c881fa599aaa369fc8e7d6b6a541dab380",
+  "frozenBy": "模型 A",
+  "notes": "依赖与 src 基线见 evidence/baseline.sha256"
+}

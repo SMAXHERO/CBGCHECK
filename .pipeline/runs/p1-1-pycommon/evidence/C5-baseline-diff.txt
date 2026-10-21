@@ -1,0 +1,2 @@
+NO_DIFF
+C5 exit=0

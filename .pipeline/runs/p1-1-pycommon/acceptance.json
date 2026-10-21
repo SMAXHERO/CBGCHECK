@@ -1,0 +1,146 @@
+{
+  "version": "1.0",
+  "planVersion": "v1",
+  "frozenAt": "2026-10-21T20:50:00+08:00",
+  "artifacts": [
+    { "id": "A1", "path": "tools/cbg/pycommon/__init__.py", "type": "code", "profile": "python-service" },
+    { "id": "A2", "path": "tools/cbg/pycommon/httpkit.py", "type": "code", "profile": "python-service" },
+    { "id": "A3", "path": "tools/cbg/pycommon/cli.py", "type": "code", "profile": "python-service" },
+    { "id": "A4", "path": "tools/cbg/soul-service/server.py", "type": "code", "profile": "python-service" },
+    { "id": "A5", "path": "tools/cbg/inspector-service/server.py", "type": "code", "profile": "python-service" },
+    { "id": "A6", "path": "tools/cbg/pycommon/tests/test_servers.py", "type": "code", "profile": "python-service" },
+    { "id": "A7", "path": "tools/cbg/pycommon/tests/__init__.py", "type": "code", "profile": "python-service" },
+    { "id": "A8", "path": "tools/cbg/pycommon/README.md", "type": "doc" },
+    { "id": "A9", "path": "README.md", "type": "doc" }
+  ],
+  "requirements": [
+    {
+      "id": "R1",
+      "desc": "新建 tools/cbg/pycommon 共享模块，仅使用标准库，提供 CORS、JSON 响应、请求体读取、serve 启动、CLI 端口参数等公共能力",
+      "artifacts": ["A1", "A2", "A3"],
+      "checks": ["C1", "C2"]
+    },
+    {
+      "id": "R2",
+      "desc": "soul-service/server.py 与 inspector-service/server.py 改为调用 pycommon，且两服务仍可各自独立启动（python server.py --port N 能监听并响应 health）",
+      "artifacts": ["A4", "A5"],
+      "checks": ["C2", "C3", "C4"]
+    },
+    {
+      "id": "R3",
+      "desc": "对外行为不变：路由集合、HTTP 状态码、JSON 字段结构（soul 错误信封 {ok,code,msg}；inspector {ok,error:{code,message}}）、CORS 头、Cache-Control 与改造前一致",
+      "artifacts": ["A4", "A5", "A6"],
+      "checks": ["C3", "C4", "C5"]
+    },
+    {
+      "id": "R4",
+      "desc": "新增 unittest 测试：在临时端口分别启动两服务，断言 health 与至少一个业务路由（soul: /api/soul/demo；inspector: /api/inspector/meta）的响应",
+      "artifacts": ["A6", "A7"],
+      "checks": ["C4"]
+    },
+    {
+      "id": "R5",
+      "desc": "不修改 tools/cbg/scraper-service/、cbg-web/、.pipeline/templates/；不引入第三方依赖；不 git commit/push；README 仅允许追加说明",
+      "artifacts": ["A8", "A9"],
+      "checks": ["C6"]
+    },
+    {
+      "id": "R6",
+      "desc": "产出说明文档：pycommon 用途、运行测试命令，并说明保留的不统一错误信封与 Q1 的 web/ 缺失现状",
+      "artifacts": ["A8"],
+      "checks": ["C7"]
+    }
+  ],
+  "checks": [
+    {
+      "id": "C1",
+      "level": "L1",
+      "desc": "pycommon 与两服务语法编译通过",
+      "command": "python -m py_compile tools/cbg/pycommon/__init__.py tools/cbg/pycommon/httpkit.py tools/cbg/pycommon/cli.py tools/cbg/soul-service/server.py tools/cbg/inspector-service/server.py",
+      "cwd": "D:/deepseek_work/github-work",
+      "timeoutSec": 60,
+      "expect": { "exitCode": 0 },
+      "evidence": ".pipeline/evidence/C1.log"
+    },
+    {
+      "id": "C2",
+      "level": "L1",
+      "desc": "pycommon 无服务私有模块依赖，且仅导入标准库（静态检查 import 语句）",
+      "command": "python -c \"import ast,pathlib,sys; bad=[]; [bad.append((p.name,n.names[0].name)) for p in pathlib.Path('tools/cbg/pycommon').glob('*.py') for n in ast.walk(ast.parse(p.read_text(encoding='utf-8'))) if isinstance(n,ast.Import) and n.names[0].name.split('.')[0] in ('service','engine','requests','cbg_inspector','store','vendor')]; print('BAD' if bad else 'OK', bad); sys.exit(1 if bad else 0)\"",
+      "cwd": "D:/deepseek_work/github-work",
+      "timeoutSec": 30,
+      "expect": { "exitCode": 0, "stdoutContains": "OK" },
+      "evidence": ".pipeline/evidence/C2.log"
+    },
+    {
+      "id": "C3",
+      "level": "L2",
+      "desc": "两服务各自独立启动后，soul health 与 inspector health 均返回 200 且 ok==true（人工冒烟，超时自动结束）",
+      "command": "python -m unittest tools.cbg.pycommon.tests.test_servers.TestStandaloneStart -v",
+      "cwd": "D:/deepseek_work/github-work",
+      "timeoutSec": 120,
+      "expect": { "exitCode": 0, "stdoutContains": "OK" },
+      "evidence": ".pipeline/evidence/C3.log"
+    },
+    {
+      "id": "C4",
+      "level": "L2",
+      "desc": "完整 unittest 套件通过：health + 业务路由 + 404 信封 + CORS 头断言全部成功",
+      "command": "python -m unittest discover -s tools/cbg/pycommon/tests -t tools/cbg -v",
+      "cwd": "D:/deepseek_work/github-work",
+      "timeoutSec": 180,
+      "expect": { "exitCode": 0, "stdoutContains": "OK" },
+      "evidence": ".pipeline/evidence/C4.log"
+    },
+    {
+      "id": "C5",
+      "level": "L2",
+      "desc": "改造前后基线 diff：状态码、Content-Type、CORS 头、Cache-Control、JSON 键集合无差异（仅允许 Date/Server 头差异）",
+      "command": "python tools/cbg/pycommon/tests/baseline_compare.py --check",
+      "cwd": "D:/deepseek_work/github-work",
+      "timeoutSec": 180,
+      "expect": { "exitCode": 0, "stdoutContains": "NO_DIFF" },
+      "evidence": ".pipeline/evidence/C5-baseline-diff.txt"
+    },
+    {
+      "id": "C6",
+      "level": "L2",
+      "desc": "禁止路径未被改动：scraper-service/、cbg-web/、.pipeline/templates/ 无新增或修改（相对执行前基线）",
+      "command": "git status --porcelain -- tools/cbg/scraper-service cbg-web .pipeline/templates",
+      "cwd": "D:/deepseek_work/github-work",
+      "timeoutSec": 60,
+      "expect": { "exitCode": 0, "stdoutContains": "" },
+      "evidence": ".pipeline/evidence/C6-git-status.txt"
+    },
+    {
+      "id": "C7",
+      "level": "L3",
+      "desc": "pycommon/README.md 覆盖模块用途、公共 API、运行测试命令、保留的不统一错误信封与 web/ 缺失现状，事实与实现一致",
+      "command": null,
+      "cwd": "D:/deepseek_work/github-work",
+      "expect": {
+        "artifactExists": "tools/cbg/pycommon/README.md",
+        "rubric": { "accuracy": 4, "completeness": 4, "clarity": 4 }
+      },
+      "evidence": ".pipeline/evidence/C7-review.md"
+    },
+    {
+      "id": "C8",
+      "level": "L3",
+      "desc": "终审：diff 仅涉及计划范围文件；代码无死代码、无 requests 新依赖、业务逻辑未被重写",
+      "command": null,
+      "cwd": "D:/deepseek_work/github-work",
+      "expect": {
+        "artifactExists": "tools/cbg/pycommon/httpkit.py",
+        "rubric": { "accuracy": 4, "completeness": 4, "clarity": 4 }
+      },
+      "evidence": ".pipeline/evidence/C8-review.md"
+    }
+  ],
+  "passCriteria": {
+    "L1": "all",
+    "L2": "all",
+    "L3": "all",
+    "maxFixRounds": 2
+  }
+}

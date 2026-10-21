@@ -1,0 +1,79 @@
+{
+  "version": "1.0",
+  "planVersion": "v1",
+  "frozenAt": "2026-01-01T10:00:00+08:00",
+  "artifacts": [
+    { "id": "A1", "path": "src/health.py", "type": "code", "profile": "python-service" },
+    { "id": "A2", "path": "tests/test_health.py", "type": "code", "profile": "python-service" },
+    { "id": "A3", "path": "docs/healthz.md", "type": "doc" }
+  ],
+  "requirements": [
+    {
+      "id": "R1",
+      "desc": "GET /healthz 返回 200 与 {\"status\": \"ok\"}",
+      "artifacts": ["A1"],
+      "checks": ["C1", "C2"]
+    },
+    {
+      "id": "R2",
+      "desc": "依赖不可用时返回 503，且不抛未捕获异常",
+      "artifacts": ["A1"],
+      "checks": ["C3"]
+    },
+    {
+      "id": "R3",
+      "desc": "文档说明端点契约、状态码与失败语义",
+      "artifacts": ["A3"],
+      "checks": ["C4"]
+    }
+  ],
+  "checks": [
+    {
+      "id": "C1",
+      "level": "L1",
+      "desc": "健康检查单测通过",
+      "command": "python -m pytest tests/test_health.py -q",
+      "cwd": ".",
+      "timeoutSec": 120,
+      "expect": { "exitCode": 0 },
+      "evidence": "evidence/C1.log"
+    },
+    {
+      "id": "C2",
+      "level": "L2",
+      "desc": "应用启动后实测 /healthz 返回 200",
+      "command": "python scripts/smoke_health.py",
+      "cwd": ".",
+      "timeoutSec": 180,
+      "expect": { "exitCode": 0, "stdoutContains": "\"status\": \"ok\"" },
+      "evidence": "evidence/C2.log"
+    },
+    {
+      "id": "C3",
+      "level": "L2",
+      "desc": "模拟依赖故障时返回 503",
+      "command": "python -m pytest tests/test_health.py -q -k degraded",
+      "cwd": ".",
+      "timeoutSec": 120,
+      "expect": { "exitCode": 0 },
+      "evidence": "evidence/C3.log"
+    },
+    {
+      "id": "C4",
+      "level": "L3",
+      "desc": "文档覆盖端点、状态码、失败语义，事实与实现一致",
+      "command": null,
+      "expect": {
+        "artifactExists": "docs/healthz.md",
+        "rubric": { "accuracy": 4, "completeness": 4, "clarity": 4 }
+      },
+      "evidence": "evidence/C4-review.md"
+    }
+  ],
+  "passCriteria": {
+    "L1": "all",
+    "L2": "all",
+    "L3": "all",
+    "maxFixRounds": 2
+  }
+}

@@ -1,0 +1,21 @@
+== className: orig=41 new=41 缺失=0 新增=0
+== 中文文案: orig=169 new=212 缺失=0 新增=43
+   + 新增: 下的视图组件，
+   + 新增: 从 InspectorReport
+   + 新增: 保留在页面壳，本组件仅渲染；搜索
+   + 新增: 值与顺序保持不变。
+   + 新增: 函数体与注释保持不变。
+   + 新增: 原 L421
+   + 新增: 原 L566
+   + 新增: 原 L636
+   + 新增: 原 L719
+   + 新增: 原 L855
+   + 新增: 原 L924
+   + 新增: 原文件 L27
+   + 新增: 原文件 L52
+   + 新增: 原样迁出
+   + 新增: 取条数选择
+== hooks: orig=27 shell=27 OK
+== 请求函数出现次数: orig=24 shell=23
+== 被比对文件: CalcTab.tsx, constants.ts, helpers.tsx, HeroTab.tsx, OverviewTab.tsx, PveTab.tsx, RelicsTab.tsx, SpeedTab.tsx
+RESULT: PASS

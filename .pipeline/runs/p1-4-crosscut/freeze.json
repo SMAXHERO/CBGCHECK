@@ -1,0 +1,16 @@
+{
+  "version": "v1",
+  "planVersion": "v1",
+  "frozenAt": "2026-10-21T21:50:00+08:00",
+  "author": "模型 A",
+  "files": {
+    "plan.md": {
+      "sha256": "e94738bb7bc2932138c23ab4cf9696953e276c0e4d8260cc6881ab7c63bba9a3",
+      "bytes": 17096
+    },
+    "acceptance.json": {
+      "sha256": "a98e9c4f5f50638be9447ee0fea196ad8d960ed0243bc4f75c37796f397b7083",
+      "bytes": 9759
+    }
+  }
+}

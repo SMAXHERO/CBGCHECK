@@ -1,0 +1,10 @@
+  413 cbg-web/src/pages/InspectorReport.tsx
+   29 cbg-web/src/pages/inspector/constants.ts
+  133 cbg-web/src/pages/inspector/CalcTab.tsx
+  161 cbg-web/src/pages/inspector/HeroTab.tsx
+  158 cbg-web/src/pages/inspector/OverviewTab.tsx
+  111 cbg-web/src/pages/inspector/PveTab.tsx
+   96 cbg-web/src/pages/inspector/RelicsTab.tsx
+   81 cbg-web/src/pages/inspector/SpeedTab.tsx
+   63 cbg-web/src/pages/inspector/helpers.tsx
+ 1245 total

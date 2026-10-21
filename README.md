@@ -53,8 +53,10 @@
 > **别人打开同一个地址**也一样能用，但用的是**他自己机器上**的服务与账号；
 > 没有本机服务的人只会看到引导页。这是浏览器的权限设计，不是 bug。
 >
-> ⚠️ **安全提醒**：服务当前允许任意来源调用且无口令。若你曾对某个页面点过「允许」，
-> 那个页面就具备调用你本机服务的能力。详见「已知限制」一节的说明与缓解办法。
+> ⚠️ **安全提醒**：默认不设限（允许任意来源调用、无口令），以保持开箱即用。若你曾对某个页面点过「允许」，
+> 那个页面就具备调用你本机服务的能力。可选加固：设置 `CBG_PANEL_TOKEN`（访问令牌）
+> 和 `CBG_ALLOWED_ORIGINS`（来源白名单），默认行为不变。详见 [docs/security.md](docs/security.md)
+> 与「已知限制」一节的说明。
 
 ![深色主题](cbg-web/public/design/theme-dark.png)
 ![浅色主题](cbg-web/public/design/theme-light.png)
@@ -345,16 +347,21 @@ node tools/cbg/scraper-service/server.mjs --max-pages 4 --delay 5000
 │   ├── module2-scoring.md        ★ 账号评分模块：三个接口、eid 怎么拿、速度怎么算
 │   ├── module3-soul-report.md    ★ 御魂报告模块：yyx 格式、score/zscore、精确头尾
 │   ├── module4-inspector.md      ★ 看号分析模块：数据链、schemaVersion 11、六页算法、校准表
-│   └── self-host.md              本机使用 / Fork 部署 / 多人使用的说明
+│   ├── self-host.md              本机使用 / Fork 部署 / 多人使用的说明
+│   ├── security.md               可选加固：访问令牌、来源白名单、URL 白名单
+│   └── optimization-plan.md      本轮优化方案：问题清单、分期、验收标准、回滚方式
 ├── .githooks/pre-push            推送前扫描密钥（安装：git config core.hooksPath .githooks）
 ├── cbg-web/                      面板（React + Vite + TypeScript + antd + ECharts）
 │   ├── src/
+│   │   ├── api/client.ts         唯一 HTTP 入口：超时、重试、错误归一（ApiError）
 │   │   ├── api/live.ts           伴随服务客户端（含取消查询）
 │   │   ├── api/account.ts        账号评分客户端与类型
 │   │   ├── api/soul.ts           御魂报告客户端与类型（模块三）
 │   │   ├── api/inspector.ts      看号分析客户端与类型（模块四）
 │   │   ├── components/           条件面板、图表、表格、对比清单、打印视图
 │   │   ├── components/ModuleTabs.tsx  顶部模块切换（#/、#/score、#/soul、#/inspector）
+│   │   ├── components/ModuleHeader.tsx 统一顶栏（标题/角标/状态灯/搜索/主题切换，全站单源）
+│   │   ├── hooks/useExport.ts        导出 Excel / CSV / 打印的共享动作与禁用条件
 │   │   ├── pages/AccountScore.tsx     ★ 模块二：账号评分页
 │   │   ├── pages/SoulReport.tsx       ★ 模块三：御魂报告页
 │   │   ├── pages/InspectorReport.tsx  ★ 模块四：看号分析页（六个内嵌 Tab）
@@ -405,7 +412,7 @@ node tools/cbg/scraper-service/server.mjs --max-pages 4 --delay 5000
 |---|---|
 | 公网版需要「允许」授权 | 首次打开公网地址时，浏览器会问是否允许访问本地网络；允许后才能连上你本机的服务。拒绝则显示引导页 |
 | 公网版依赖你的电脑开着 | 它连的是你本机的伴随服务，不是云端后端。电脑关机 / 服务没启动，公网页面就查不了 |
-| 服务无访问口令 | CORS 允许任意来源，任何你点过「允许」的页面都能调用它。见下方「安全提醒」 |
+| 服务默认无访问口令 | 为了开箱即用，CORS 默认允许任意来源、接口无口令，任何你点过「允许」的页面都能调用它。可选用 `CBG_PANEL_TOKEN` + `CBG_ALLOWED_ORIGINS` 加固，见 [docs/security.md](docs/security.md) |
 | **部分条件服务端筛了但本地看不到** | 见下方专门一节：勾玉、皮肤数这类字段站点**接受参数并据此筛选**，但列表接口不返回，所以表格里没有这一列。界面会如实说明，不会假装它们不存在 |
 | 抓取速度受限 | 实测累计约 250 条会触发站点安全验证，所以默认 4 秒/页、单次最多 8 页（120 条）。被拦后需在浏览器里手动过验证并等冷却。**中途可用「取消查询」随时停下** |
 | **账号评分约 6 成账号算不出** | 实测 24 个账号 / 45 个「式神×首套方案」，出分率仅 **38%**。与御魂数量**无关**（r = −0.13），重试也不会变好，原因无法从账号属性预测。**速度表不受影响（100% 可得）** |
@@ -443,6 +450,11 @@ node tools/cbg/scraper-service/server.mjs --max-pages 4 --delay 5000
 这个区分由 `src/utils/predicate.ts` 的 `classifyConditionSupport()` 判断：
 参数在 `PREDICATES` 表里有判定函数 = 本地可核对，否则 = 仅服务端筛选。
 
+> **2026-10-21 修正**：**尾速度**、**招财头速**、**斗技段位**这三项此前被错误地当成了"本地可核对"——
+> 尾速度与招财头速被映射到头速度字段（「尾速 ≥15」实际在筛头速），斗技段位被拿去和积分比较。
+> 列表快照里只有头速、只有积分，没有尾速和段位字段，所以现在统一归入「仅服务端筛选」，
+> 界面会如实标注；回归用例见 `src/utils/__tests__/predicate.test.ts`。
+
 ### 安全提醒：关于「本地网络访问」权限
 
 浏览器把这个权限交由用户决定，于是产生一个实际风险：**任何你点过「允许」的页面，
@@ -454,9 +466,13 @@ node tools/cbg/scraper-service/server.mjs --max-pages 4 --delay 5000
 1. **只对你信任的页面点「允许」**——公网地址、本机地址是可信的；陌生站点一律拒绝
 2. **不用时关掉伴随服务**（终端里 `Ctrl+C`）——授权还在，但已无处可查，这是最有效的一招
 3. 在地址栏左侧的站点设置里，**撤销**不信任站点的本地网络权限
+4. **给服务加一层门（可选）**：设置访问令牌 / CORS 来源白名单，只有带口令或白名单内的页面能调用；
+   怎么开、怎么验证见 [docs/security.md](docs/security.md)
 
-> 本项目按设计**不带访问口令**：它假定运行在个人机器上、并由使用者自行控制授权。
-> 如果你打算把它暴露给更多人使用，应该自行加一层鉴权（例如在服务端校验一个自定义请求头）。
+> 默认不带口令是为了开箱即用：它假定运行在个人机器上、并由使用者自行控制授权。
+> 需要更严的边界时，用 `CBG_PANEL_TOKEN` / `CBG_ALLOWED_ORIGINS` 开启（不设置时行为与旧版一致）。
+> 注意：开启令牌后，调用方必须带 `X-Panel-Token`；内置网页面板没有令牌输入框，
+> 纯浏览器使用建议只配置来源白名单。
 
 ---
 
@@ -467,3 +483,12 @@ node tools/cbg/scraper-service/server.mjs --max-pages 4 --delay 5000
 - 请控制频率（默认已做节流），不要高频批量抓取；
 - 仅供个人比价参考，**不要用于商业用途或二次分发数据**。请遵守藏宝阁用户协议，
   因使用不当导致的账号风险由使用者自行承担。
+
+## 本机服务共享代码与测试
+
+`tools/cbg/soul-service` 与 `tools/cbg/inspector-service` 共用 `tools/cbg/pycommon/`（纯标准库的 HTTP 外壳）。
+详见 [tools/cbg/pycommon/README.md](tools/cbg/pycommon/README.md)。运行测试（仓库根）：
+
+```
+python -m unittest discover -s tools/cbg/pycommon/tests -t tools/cbg -v
+```
