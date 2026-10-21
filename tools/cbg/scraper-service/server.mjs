@@ -226,16 +226,16 @@ if (!CONFIG.noBrowser) {
      * 没浏览器时降级为「只有模块三可用」，而不是拒绝启动。
      */
     browser.on('error', (err) => {
-      state.status = 'error';
+      state.status = 'need-browser';
       state.browserReady = false;
-      state.message = `浏览器启动失败：${err.message}。模块一/二不可用，模块三仍可用（或加 --no-browser 跳过浏览器）`;
+      state.message = `浏览器启动失败：${err.message}。服务已在线但模块一/二不可用（模块三/四仍可用），修复浏览器后重启服务即可`;
       log(state.message);
       browser = null;
     });
   } catch (err) {
-    state.status = 'error';
+    state.status = 'need-browser';
     state.browserReady = false;
-    state.message = `没找到可用浏览器（Edge/Chrome）：${err.message}。模块一/二不可用，模块三仍可用（或加 --no-browser）`;
+    state.message = `没找到可用浏览器（Edge/Chrome）：${err.message}。服务已在线但模块一/二不可用（模块三/四仍可用）`;
     log(state.message);
   }
 }
@@ -286,16 +286,21 @@ async function evalInPage(expression, timeoutMs) {
 
 async function boot() {
   if (CONFIG.noBrowser) {
-    state.status = 'offline';
-    state.message = '未启动浏览器（--no-browser）：模块一/二不可用，模块三「御魂报告」可用';
+    /**
+     * 注意：这里**不能**报 'offline'。HTTP 服务其实是活的（模块三/四都能用），
+     * 只是没拉浏览器；报 offline 会让前端显示「没探测到本地查询服务」，
+     * 把「服务没起」和「服务起了但没浏览器」混成一种提示，用户会一直重启服务。
+     */
+    state.status = 'need-browser';
+    state.message = '服务在线，但本次以 --no-browser 启动、没有拉起浏览器：模块三/四可用，模块一/二需要浏览器。去掉 --no-browser 重启（或直接双击 start.bat）即可。';
     log(state.message);
     return;
   }
   if (!browser) {
     // 浏览器没起来（没装 Edge/Chrome 或 spawn 失败）：不要卡在等 DevTools 端口，直接降级
-    state.status = 'error';
+    state.status = 'need-browser';
     state.browserReady = false;
-    state.message = state.message || '浏览器未启动：模块一/二不可用，模块三仍可用';
+    state.message = state.message || '服务在线，但浏览器未启动：模块三/四可用，模块一/二需要浏览器';
     log(state.message);
     return;
   }

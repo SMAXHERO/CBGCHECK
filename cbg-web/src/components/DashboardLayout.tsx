@@ -49,6 +49,7 @@ const STATUS_STYLE: Record<ServiceStatus, { color: string; label: string }> = {
   ready: { color: 'var(--ok)', label: '实时' },
   'need-login': { color: 'var(--warn)', label: '需登录' },
   'need-captcha': { color: 'var(--warn)', label: '需滑块验证' },
+  'need-browser': { color: 'var(--warn)', label: '未启动浏览器' },
   error: { color: 'var(--accent)', label: '异常' },
   offline: { color: 'var(--faint)', label: '未连接' },
 };

@@ -245,6 +245,55 @@ export const Dashboard = ({ active = true }: { active?: boolean }) => {
     );
   }
 
+  // 服务活着但没拉起浏览器（--no-browser，或本机没有 Edge/Chrome）。
+  // 这时不能显示「没探测到本地查询服务」——那是「服务没起」的提示，会把人带偏去反复重启。
+  if (live.status === 'need-browser') {
+    return (
+      <div className="app-shell">
+        <header className="app-header">
+          <div className="head-in">
+            <h1>藏宝阁数据面板</h1>
+            <span className="pill-tag">实时模式</span>
+          </div>
+        </header>
+        <div className="layout" style={{ gridTemplateColumns: '1fr' }}>
+          <div className="guide">
+            <div className="guide-icon">🖥️</div>
+            <h2>本地服务已在线，但没有启动浏览器</h2>
+            <p>{live.serviceMessage}</p>
+            <p>
+              实时查询要靠一个真实浏览器带着你的登录态去请求藏宝阁。当前服务没有拉浏览器，
+              所以只有模块三「御魂报告」、模块四「看号分析」可用，模块一/二查不了。
+            </p>
+            <div className="guide-steps">
+              <div className="guide-step">
+                <span className="n">1</span>
+                <div>关掉当前的伴随服务（命令行窗口按 Ctrl+C，或结束 node 进程）</div>
+              </div>
+              <div className="guide-step">
+                <span className="n">2</span>
+                <div>
+                  重新启动，<b>不要加</b> <code>--no-browser</code>：直接双击 <code>start.bat</code>，
+                  或运行 <code>node tools/cbg/scraper-service/server.mjs</code>
+                </div>
+              </div>
+              <div className="guide-step">
+                <span className="n">3</span>
+                <div>会弹出一个浏览器窗口，在里面登录藏宝阁；回到本页点下面的按钮重新探测</div>
+              </div>
+            </div>
+            <div className="guide-actions">
+              <button className="btn btn-primary" onClick={() => void live.recheck()}>
+                重新探测
+              </button>
+              <span className="guide-path">当前探测地址：{SCRAPER_BASE}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (live.status === 'need-login' || live.status === 'need-captcha') {
     const isCaptcha = live.status === 'need-captcha';
     return (

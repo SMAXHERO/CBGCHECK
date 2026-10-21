@@ -13,8 +13,20 @@ import type { Listing } from '@/types';
 export const SCRAPER_BASE =
   (import.meta.env.VITE_SCRAPER_URL as string | undefined) ?? 'http://127.0.0.1:8791';
 
-/** 服务的状态机：前端据此决定显示什么引导 */
-export type ServiceStatus = 'starting' | 'ready' | 'need-login' | 'need-captcha' | 'error' | 'offline';
+/**
+ * 服务的状态机：前端据此决定显示什么引导。
+ *
+ * need-browser 与 offline 必须分开：offline = 探测不到 HTTP 服务（进程没起 / 跨域被拦），
+ * need-browser = 服务活着但没拉浏览器（--no-browser 或浏览器缺失），此时模块三/四仍可用。
+ */
+export type ServiceStatus =
+  | 'starting'
+  | 'ready'
+  | 'need-login'
+  | 'need-captcha'
+  | 'need-browser'
+  | 'error'
+  | 'offline';
 
 /** 单次查询最多取几页（每页 15 条）。服务端也会再夹一次上限。 */
 export const DEFAULT_MAX_PAGES = 8;
