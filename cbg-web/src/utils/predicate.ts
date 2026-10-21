@@ -60,8 +60,11 @@ const PREDICATES: Record<string, Predicate> = {
   max_sanjian_speed: (row, raw) => gte(row, 'sanjian_speed', raw, true),
   max_zhaocai_speed: (row, raw) => gte(row, 'zhaocai_speed', raw, true),
   tou_speed: (row, raw) => gte(row, 'tou_speed', raw, true),
-  wei_speed: (row, raw) => gte(row, 'tou_speed', raw, true),
-  zhaocai_tou_speed: (row, raw) => gte(row, 'tou_speed', raw, true),
+  // 尾速度（wei_speed）与招财头速（zhaocai_tou_speed）在列表快照里**没有对应字段**：
+  // 快照只有 tou_speed（头速），wei_num 是「尾个数」不是尾速。
+  // 之前这两项被误映射到 tou_speed，导致「尾速 ≥15」实际在筛头速，结果错了还看不出来。
+  // 现在归入 UNSUPPORTED_PARAMS：站点仍会按它筛（服务端生效），本地看不到该值，
+  // 界面会如实标成「服务端已筛选」，而不是假装筛过。
 
   // 整数类字段：参数与快照同单位，直接比
   tou_counts: (row, raw) => gte(row, 'tou_num', raw),
@@ -69,7 +72,9 @@ const PREDICATES: Record<string, Predicate> = {
   six_star_num: (row, raw) => gte(row, 'six_star', raw),
   sign_days: (row, raw) => gte(row, 'sign_days', raw),
   pvp_score: (row, raw) => gte(row, 'pvp', raw),
-  pvp_stage: (row, raw) => gte(row, 'pvp', raw), // 列表页里段位与积分同源
+  // 段位（pvp_stage）与积分（pvp_score）在站点上是两个独立参数；
+  // 快照里的 pvp 是积分（实测 2400 / 3060 这类数值），拿它当段位比较等于用分数当段位，
+  // 结论一定错。快照没有段位字段，故归入 UNSUPPORTED_PARAMS。
   collect_num: (row, raw) => gte(row, 'collect_num', raw),
   // 面板语义是「等级小于等于」
   equip_level: (row, raw) => {
@@ -105,7 +110,9 @@ export const UNSUPPORTED_PARAMS = new Set([
   'output_damage', 'attack', 'life', 'defense', 'speed', 'strike', 'strike_damage',
   'attack_effect', 'anti_effect',
   'full_speed_inventory_num', 'full_speed_inventory_speed',
-  'zhaocai_tou_counts', 'zhaocai_tou_speed', 'full_speed_yuhun',
+  // 列表快照没有尾速/招财头速/段位字段：站点会筛，但本地无法复核（详见 PREDICATES 里的注释）
+  'wei_speed', 'zhaocai_tou_speed', 'pvp_stage',
+  'zhaocai_tou_counts', 'full_speed_yuhun',
   'gameble_card', 'strength', 'money',
   'currency_900188', 'hunyu', 'soul_jade', 'currency_900218', 'currency_900217',
   'black_egg_num', 'skin_coupon', 'medal', 'six_lbscard_num', 'qianghua_yuhun_num',
@@ -229,6 +236,7 @@ export const PARAM_LABELS: Record<string, string> = {
   max_sanjian_speed: '散件一速',
   max_zhaocai_speed: '招财一速',
   tou_speed: '头速度',
+  wei_speed: '尾速度',
   tou_counts: '头个数',
   wei_counts: '尾个数',
   six_star_num: '6星式神数量',

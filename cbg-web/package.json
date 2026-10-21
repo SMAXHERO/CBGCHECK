@@ -7,6 +7,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "preview": "vite preview --port 4173",
     "typecheck": "tsc -b",
     "seed": "python ../tools/cbg/seed_web_data.py",
@@ -30,7 +32,9 @@
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "@vitejs/plugin-react": "^5.0.0",
+    "@vitest/coverage-v8": "^5.0.5",
     "typescript": "^5.7.2",
-    "vite": "^7.0.0"
+    "vite": "^7.0.0",
+    "vitest": "^5.0.5"
   }
 }
