@@ -1,4 +1,4 @@
-import { SCRAPER_BASE } from '@/api/live';
+import { request } from '@/api/client';
 
 /**
  * 模块四「看号工具」客户端。
@@ -228,37 +228,10 @@ export interface JobState {
   result?: CalcResult | { ok: boolean; [key: string]: unknown };
 }
 
-/** 带超时的 fetch；服务/内核没起来时给出可读错误，而不是裸的 AbortError */
-async function request<T>(path: string, init?: RequestInit, timeoutMs = 30000): Promise<T> {
-  const ctl = new AbortController();
-  const timer = setTimeout(() => ctl.abort(), timeoutMs);
-  try {
-    const res = await fetch(`${SCRAPER_BASE}${path}`, { ...init, signal: ctl.signal });
-    const text = await res.text();
-    let parsed: unknown = null;
-    try {
-      parsed = text ? JSON.parse(text) : null;
-    } catch {
-      /* 非 JSON（代理层 502 之类） */
-    }
-    if (!res.ok) {
-      const body = (parsed ?? {}) as { message?: string; msg?: string; error?: string };
-      throw new Error(body.message || body.msg || body.error || `HTTP ${res.status}`);
-    }
-    if (parsed && typeof parsed === 'object' && (parsed as { ok?: boolean }).ok === false) {
-      const body = parsed as { message?: string; msg?: string };
-      throw new Error(body.message || body.msg || '请求失败');
-    }
-    return parsed as T;
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
 export const inspectorApi = {
-  meta: () => request<InspectorMeta>('/api/inspector/meta', undefined, 15000),
+  meta: () => request<InspectorMeta>('/api/inspector/meta', undefined, { timeoutMs: 15000 }),
 
-  demo: () => request<InspectorReport>('/api/inspector/demo', undefined, 180000),
+  demo: () => request<InspectorReport>('/api/inspector/demo', undefined, { timeoutMs: 180000 }),
 
   report: (q: { ordersn?: string; serverid?: string; url?: string; refresh?: boolean }) => {
     const sp = new URLSearchParams();
@@ -266,7 +239,7 @@ export const inspectorApi = {
     if (q.serverid) sp.set('serverid', q.serverid);
     if (q.url) sp.set('url', q.url);
     if (q.refresh) sp.set('refresh', '1');
-    return request<InspectorReport>(`/api/inspector/report?${sp.toString()}`, undefined, 300000);
+    return request<InspectorReport>(`/api/inspector/report?${sp.toString()}`, undefined, { timeoutMs: 300000 });
   },
 
   relics: (q: {
@@ -288,7 +261,7 @@ export const inspectorApi = {
     if (q.mainAttribute) sp.set('mainAttribute', q.mainAttribute);
     if (q.subAttributes) sp.set('subAttributes', q.subAttributes);
     if (q.limit) sp.set('limit', String(q.limit));
-    return request<RelicList>(`/api/inspector/relics?${sp.toString()}`, undefined, 120000);
+    return request<RelicList>(`/api/inspector/relics?${sp.toString()}`, undefined, { timeoutMs: 120000 });
   },
 
   /** 提交 PVE 21 组合任务 */

@@ -1,4 +1,4 @@
-import { SCRAPER_BASE } from '@/api/live';
+import { request } from '@/api/client';
 
 /**
  * 模块二「账号评分」的客户端。
@@ -255,31 +255,8 @@ export interface AnalyzeError {
   message: string;
 }
 
-const request = async <T,>(path: string, init?: RequestInit, timeoutMs = 180_000): Promise<T> => {
-  const ctl = new AbortController();
-  const timer = setTimeout(() => ctl.abort(), timeoutMs);
-  try {
-    const res = await fetch(`${SCRAPER_BASE}${path}`, { ...init, signal: ctl.signal });
-    const text = await res.text();
-    let body: unknown = null;
-    try {
-      body = text ? JSON.parse(text) : null;
-    } catch {
-      throw new Error(`服务返回非 JSON（HTTP ${res.status}）：${text.slice(0, 120)}`);
-    }
-    // 400 带着结构化的 error/message，直接抛给调用方展示
-    if (!res.ok) {
-      const e = body as AnalyzeError | null;
-      const err = new Error(e?.message || `HTTP ${res.status}`) as Error & { code?: string; parsed?: unknown };
-      err.code = e?.error;
-      err.parsed = (e as unknown as { parsed?: unknown })?.parsed;
-      throw err;
-    }
-    return body as T;
-  } finally {
-    clearTimeout(timer);
-  }
-};
+/** 账号分析/取分是长请求：保持原来 request() 的 180 秒默认超时 */
+const ACCOUNT_TIMEOUT_MS = 180_000;
 
 export const accountApi = {
   /** 用地址分析（地址里含 eid 时最省事）；refresh=true 强制绕过服务端缓存 */
@@ -288,7 +265,7 @@ export const accountApi = {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ url, heroes, refresh }),
-    });
+    }, { timeoutMs: ACCOUNT_TIMEOUT_MS });
   },
 
   /** 分别给 eid + serverid（用户只有商品页地址时走这个）；refresh=true 强制绕过服务端缓存 */
@@ -297,7 +274,7 @@ export const accountApi = {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ eid, serverid, heroes, refresh }),
-    });
+    }, { timeoutMs: ACCOUNT_TIMEOUT_MS });
   },
 
   /**
@@ -309,7 +286,7 @@ export const accountApi = {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ eid, serverid, heroes, subOnly }),
-    });
+    }, { timeoutMs: ACCOUNT_TIMEOUT_MS });
   },
 };
 

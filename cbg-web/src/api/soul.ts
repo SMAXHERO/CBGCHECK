@@ -1,4 +1,4 @@
-import { SCRAPER_BASE } from '@/api/live';
+import { request } from '@/api/client';
 
 /**
  * 模块三「御魂报告」客户端。
@@ -125,39 +125,12 @@ export interface SoulSearchPayload {
   top?: number;
 }
 
-/** 带超时的 fetch；服务/内核没起来时给出可读错误，而不是裸的 AbortError */
-async function request<T>(path: string, init?: RequestInit, timeoutMs = 30000): Promise<T> {
-  const ctl = new AbortController();
-  const timer = setTimeout(() => ctl.abort(), timeoutMs);
-  try {
-    const res = await fetch(`${SCRAPER_BASE}${path}`, { ...init, signal: ctl.signal });
-    const text = await res.text();
-    let parsed: unknown = null;
-    try {
-      parsed = text ? JSON.parse(text) : null;
-    } catch {
-      /* 非 JSON（代理层 502 之类） */
-    }
-    if (!res.ok) {
-      const body = (parsed ?? {}) as { message?: string; msg?: string; error?: string };
-      throw new Error(body.message || body.msg || body.error || `HTTP ${res.status}`);
-    }
-    if (parsed && typeof parsed === 'object' && (parsed as { ok?: boolean }).ok === false) {
-      const body = parsed as { message?: string; msg?: string };
-      throw new Error(body.message || body.msg || '请求失败');
-    }
-    return parsed as T;
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
 export const soulApi = {
   /** 取式神/套装/指标枚举（前端下拉） */
-  meta: () => request<SoulMeta>('/api/soul/meta', undefined, 10000),
+  meta: () => request<SoulMeta>('/api/soul/meta', undefined, { timeoutMs: 10000 }),
 
   /** 内置示例数据（无需网络/抓取） */
-  demo: () => request<SoulReport>('/api/soul/demo', undefined, 180000),
+  demo: () => request<SoulReport>('/api/soul/demo', undefined, { timeoutMs: 180000 }),
 
   /** 按订单号/链接出报告；refresh=1 强制重抓 */
   report: (q: { ordersn?: string; serverid?: string; cbgUrl?: string; refresh?: boolean }) => {
@@ -166,14 +139,14 @@ export const soulApi = {
     if (q.serverid) sp.set('serverid', q.serverid);
     if (q.cbgUrl) sp.set('cbg_url', q.cbgUrl);
     if (q.refresh) sp.set('refresh', '1');
-    return request<SoulReport>(`/api/soul/report?${sp.toString()}`, undefined, 300000);
+    return request<SoulReport>(`/api/soul/report?${sp.toString()}`, undefined, { timeoutMs: 300000 });
   },
 
   /** 上传 yyx / 痒痒熊导出文件 */
   upload: (file: File) => {
     const fd = new FormData();
     fd.append('file', file, file.name);
-    return request<SoulReport>('/api/soul/report/upload', { method: 'POST', body: fd }, 180000);
+    return request<SoulReport>('/api/soul/report/upload', { method: 'POST', body: fd }, { timeoutMs: 180000 });
   },
 
   /** 用 CBG 原始御魂档案算精确的头/尾/17 速 */
@@ -181,7 +154,7 @@ export const soulApi = {
     request<PreciseMetrics>(
       `/api/soul/precise?ordersn=${encodeURIComponent(ordersn)}${refresh ? '&refresh=1' : ''}`,
       undefined,
-      180000,
+      { timeoutMs: 180000 },
     ),
 
   /** 提交组合搜索（异步任务） */
@@ -193,5 +166,5 @@ export const soulApi = {
     }),
 
   /** 轮询搜索结果 */
-  job: (id: string) => request<SoulJob>(`/api/soul/job?id=${encodeURIComponent(id)}`, undefined, 10000),
+  job: (id: string) => request<SoulJob>(`/api/soul/job?id=${encodeURIComponent(id)}`, undefined, { timeoutMs: 10000 }),
 };

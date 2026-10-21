@@ -1,4 +1,8 @@
 import type { Listing } from '@/types';
+import { request, ApiError, SCRAPER_BASE } from '@/api/client';
+
+/** 服务地址由 client 统一定义，这里转出以保持既有导入路径（@/api/live）不变 */
+export { SCRAPER_BASE };
 
 /**
  * 实时数据访问层 —— 伴随服务（tools/cbg/scraper-service）的客户端。
@@ -7,11 +11,9 @@ import type { Listing } from '@/types';
  * 网页（部署在任何域上）都不可能自己带着会话去请求。会话只能长在一个真实浏览器里，
  * 这个服务负责拉起浏览器、借用它的登录态发请求，再把结果通过 HTTP 交给网页。
  *
- * 服务地址默认本机 8791；可以用 VITE_SCRAPER_URL 覆盖（构建时注入）。
+ * 服务地址（SCRAPER_BASE）与 HTTP 客户端统一在 '@/api/client'，地址默认本机 8791，
+ * 可以用 VITE_SCRAPER_URL 覆盖（构建时注入）。
  */
-
-export const SCRAPER_BASE =
-  (import.meta.env.VITE_SCRAPER_URL as string | undefined) ?? 'http://127.0.0.1:8791';
 
 /**
  * 服务的状态机：前端据此决定显示什么引导。
@@ -79,26 +81,12 @@ export interface ResultPoll {
   result: SearchResult | null;
 }
 
-/** 带超时的 fetch：服务没起来时不能一直挂着 */
-async function request<T>(path: string, init?: RequestInit, timeoutMs = 8000): Promise<T> {
-  const ctl = new AbortController();
-  const timer = setTimeout(() => ctl.abort(), timeoutMs);
-  try {
-    const res = await fetch(`${SCRAPER_BASE}${path}`, { ...init, signal: ctl.signal });
-    if (!res.ok && res.status >= 500) {
-      throw new Error(`服务返回 HTTP ${res.status}`);
-    }
-    return (await res.json()) as T;
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
 export const liveApi = {
   /** 探测服务是否在运行；不抛异常，失败即视为 offline */
   async health(): Promise<HealthInfo> {
     try {
-      return await request<HealthInfo>('/api/health', undefined, 3000);
+      // 探测必须快速失败：关掉 GET 重试，避免服务离线时把 3 秒拖成两轮
+      return await request<HealthInfo>('/api/health', undefined, { timeoutMs: 3000, retryGet: 0 });
     } catch {
       return {
         ok: false,
@@ -121,15 +109,28 @@ export const liveApi = {
     values: Record<string, string>,
     maxPages = DEFAULT_MAX_PAGES,
   ): Promise<{ ok: boolean; jobId?: string; error?: string; message?: string }> {
-    return request('/api/search', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ values, maxPages }),
-    }, 15000);
+    try {
+      return await request<{ ok: boolean; jobId?: string; error?: string; message?: string }>(
+        '/api/search',
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ values, maxPages }),
+        },
+        { timeoutMs: 15000 },
+      );
+    } catch (err) {
+      // 409 BUSY = 服务正在跑上一轮查询，属于正常业务分支而不是连接故障。
+      // 换回结构化返回值，让界面显示「请稍等它跑完」，不要落进「服务不可达」的兜底文案。
+      if (err instanceof ApiError && (err.code === 'BUSY' || err.status === 409)) {
+        return { ok: false, error: 'BUSY', message: err.message };
+      }
+      throw err;
+    }
   },
 
   async result(): Promise<ResultPoll> {
-    return request<ResultPoll>('/api/result', undefined, 8000);
+    return request<ResultPoll>('/api/result', undefined, { timeoutMs: 8000 });
   },
 
   /**
@@ -141,15 +142,15 @@ export const liveApi = {
    * 已取到的部分结果会保留并返回，前端会标注它不完整。
    */
   async cancel(): Promise<{ ok: boolean; cancelled: boolean; message?: string }> {
-    return request('/api/cancel', { method: 'POST' }, 8000);
+    return request('/api/cancel', { method: 'POST' }, { timeoutMs: 8000 });
   },
 
   async logs(): Promise<{ ok: boolean; logs: string[] }> {
-    return request('/api/logs', undefined, 5000);
+    return request('/api/logs', undefined, { timeoutMs: 5000 });
   },
 
   async shutdown(): Promise<void> {
-    await request('/api/shutdown', { method: 'POST' }, 5000);
+    await request('/api/shutdown', { method: 'POST' }, { timeoutMs: 5000 });
   },
 };
 
